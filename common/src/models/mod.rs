@@ -37,6 +37,7 @@ pub mod network;
 pub mod relation;
 pub mod tag;
 pub mod transfer;
+pub mod transfer2;
 
 pub type PrimaryId = i64;
 

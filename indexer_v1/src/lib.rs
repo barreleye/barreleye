@@ -1,7 +1,7 @@
 use console::style;
 use derive_more::Display;
 use eyre::Result;
-use num_format::{SystemLocale, ToFormattedString};
+// use num_format::{SystemLocale, ToFormattedString};
 use sea_orm::ColumnTrait;
 use serde_json::Value as JsonValue;
 use std::{
@@ -22,42 +22,23 @@ use tokio::{
 use uuid::Uuid;
 
 use barreleye_common::{
-	chain::{ModuleId, WarehouseData},
+	chain::{WarehouseData},
 	models::{
 		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
 		NetworkColumn, PrimaryId, PrimaryIds, Relation, SoftDeleteModel, Transfer,
 	},
-	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Verbosity,
-	Warnings, INDEXER_HEARTBEAT,
+	utils, App, AppError, Progress, ProgressReadyType, ProgressStep, Verbosity,
+	Warnings, INDEXER_HEARTBEAT, INDEXER_PROMOTION,
 };
 
-mod blocks;
-mod upstream;
-
-#[derive(Clone, Debug)]
-struct NetworkParams {
-	pub network_id: PrimaryId,
-	pub range: (BlockHeight, Option<BlockHeight>),
-	pub modules: Vec<ModuleId>,
-}
-
-impl NetworkParams {
-	pub fn new(
-		network_id: PrimaryId,
-		min: BlockHeight,
-		max: Option<BlockHeight>,
-		modules: &[ModuleId],
-	) -> Self {
-		Self { network_id, range: (min, max), modules: modules.to_vec() }
-	}
-}
+mod extract;
 
 #[derive(Display, Debug)]
 enum IndexType {
-	#[display(fmt = "blocks")]
-	Blocks,
-	#[display(fmt = "upstream")]
-	Upstream,
+	#[display(fmt = "extract")]
+	Extract,
+	// #[display(fmt = "normalize")]
+	// Normalize,
 }
 
 #[derive(Clone)]
@@ -84,14 +65,14 @@ impl Indexer {
 			set.spawn({
 				let s = self.clone();
 				let r = rx.clone();
-				async move { s.index_blocks(r).await }
+				async move { s.extract(r).await }
 			});
 
-			set.spawn({
-				let s = self.clone();
-				let r = rx.clone();
-				async move { s.index_upstream(r).await }
-			});
+			// set.spawn({
+			// 	let s = self.clone();
+			// 	let r = rx.clone();
+			// 	async move { s.index_upstream(r).await }
+			// });
 
 			let ret = tokio::select! {
 				_ = signal::ctrl_c() => {
@@ -115,12 +96,11 @@ impl Indexer {
 	}
 
 	async fn primary_check(&self) -> Result<()> {
-		let indexer_promotion = self.app.settings.indexer_promotion;
 		let db = self.app.db();
 		let uuid = self.app.uuid;
 
 		loop {
-			let cool_down_period = utils::ago_in_seconds(indexer_promotion / 2);
+			let cool_down_period = utils::ago_in_seconds(INDEXER_PROMOTION / 2);
 
 			let last_primary = Config::get::<_, Uuid>(db, ConfigKey::Primary).await?;
 			match last_primary {
@@ -134,7 +114,7 @@ impl Indexer {
 						self.app.set_is_primary(true).await?;
 					}
 				}
-				Some(hit) if utils::ago_in_seconds(indexer_promotion) > hit.updated_at => {
+				Some(hit) if utils::ago_in_seconds(INDEXER_PROMOTION) > hit.updated_at => {
 					// attempt to upgrade to primary (set is_primary on the next iteration)
 					Config::set_where::<_, Uuid>(db, ConfigKey::Primary, uuid, hit).await?;
 				}
@@ -262,10 +242,10 @@ impl Indexer {
 		}
 	}
 
-	fn format_number(&self, n: usize) -> Result<String> {
-		let locale = SystemLocale::default()?;
-		Ok(n.to_formatted_string(&locale))
-	}
+	// fn format_number(&self, n: usize) -> Result<String> {
+	// 	let locale = SystemLocale::default()?;
+	// 	Ok(n.to_formatted_string(&locale))
+	// }
 }
 
 pub struct Pipe {

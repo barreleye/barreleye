@@ -6,7 +6,6 @@ use url::Url;
 use crate::{
 	banner, cache::Driver as CacheDriver, db::Driver as DatabaseDriver, utils,
 	warehouse::Driver as WarehouseDriver, AppError, Cache, Env, Verbosity, Warnings,
-	INDEXER_HEARTBEAT,
 };
 
 #[derive(Parser, Debug)]
@@ -41,17 +40,37 @@ pub struct Settings {
 	#[arg(skip)]
 	pub verbosity: Verbosity,
 
+	/// Where to store extracted blockchain data.
+	/// Can be either a folder or S3-compatible storage.
+	///
+	/// Folder eg: file:///path_to_folder
+	/// Amazon S3 eg: http://s3.us-east-1.amazonaws.com/bucket/
+	/// Google Cloud Storage eg: http://storage.googleapis.com/bucket_name/
+	#[arg(
+		help_heading = "Data options",
+		short,
+		long,
+		verbatim_doc_comment,
+		env = "BARRELEYE_STORAGE",
+		default_value_t = format!(
+			"file://{}",
+			utils::project_dir(Some("storage")).display().to_string(),
+		),
+        value_hint = ValueHint::DirPath,
+		value_name = "URL"
+	)]
+	pub storage: String,
+
 	/// Database to connect to. Supports PostgreSQL, MySQL and SQLite.
 	///
 	/// Postgres eg: postgres://username:password@localhost:5432/database_name
-	///
 	/// MySQL eg: mysql://username:password@localhost:3306/database_name
-	///
 	/// SQLite eg: sqlite://database_path?mode=rwc
 	#[arg(
 		help_heading = "Data options",
 		short,
 		long,
+		verbatim_doc_comment,
 		env = "BARRELEYE_DATABASE",
 		default_value_t = format!(
 			"sqlite://{}?mode=rwc",
@@ -79,9 +98,7 @@ pub struct Settings {
 	#[arg(help_heading = "Data options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
-	/// Big data storage.
-	/// The only supported warehouse driver for now is Clickhouse.
-	/// By default will check first if it's running on localhost.
+	/// Warehouse for big data. Currently only Clickhouse is supported.
 	///
 	/// Clickhouse eg: http://username:password@localhost:8123/database_name
 	#[arg(
@@ -96,22 +113,18 @@ pub struct Settings {
 	#[arg(skip)]
 	pub warehouse_driver: WarehouseDriver,
 
-	/// A healthy indexer produces frequent heartbeats. When they stop, this is how
-	/// long the other nodes will wait before attempting to take over as the next primary.
-	#[arg(help_heading = "Indexer options", long, default_value_t = 20, value_name = "SECONDS")]
-	pub indexer_promotion: u64,
-
 	/// Directory for cached data.
-	/// In a multi-node setup, this should be shared file storage.
-	#[arg(
-		help_heading = "Indexer options",
-		long,
-		env = "BARRELEYE_INDEXER_CACHE_DIR",
-		default_value_os_t = utils::project_dir(Some("cache")),
+    /// In a multi-node setup, this should be shared file storage.
+    #[arg(
+        help_heading = "Indexer options",
+        long,
+		verbatim_doc_comment,
+        env = "BARRELEYE_INDEXER_CACHE_DIR",
+        default_value_os_t = utils::project_dir(Some("cache")),
         value_hint = ValueHint::DirPath,
-		value_name = "PATH"
-	)]
-	pub indexer_cache_dir: PathBuf,
+        value_name = "PATH"
+    )]
+    pub indexer_cache_dir: PathBuf,
 	#[arg(skip)]
 	pub cache_driver: CacheDriver,
 
@@ -125,12 +138,13 @@ pub struct Settings {
 	#[arg(skip)]
 	pub ipv4: Option<IpAddr>,
 
+	/// Provide an empty string not to listen on IPv6.
 	#[arg(help_heading = "Server options", long, default_value = "", value_name = "IP_V6_ADDRESS")]
 	http_ipv6: String,
 	#[arg(skip)]
 	pub ipv6: Option<IpAddr>,
 
-	#[arg(help_heading = "Server options", long, default_value_t = 22775, value_name = "PORT")]
+	#[arg(help_heading = "Server options", long, default_value_t = 4000, value_name = "PORT")]
 	pub http_port: u16,
 }
 
@@ -236,15 +250,6 @@ impl Settings {
 		} else {
 			None
 		};
-
-		// check that promotion period is not too low
-		if settings.indexer_promotion < INDEXER_HEARTBEAT * 3 {
-			return Err(AppError::Config {
-				config: "indexer_promotion",
-				error: "Indexer promotion is too low. Increase it.",
-			}
-			.into());
-		}
 
 		Ok((settings, warnings))
 	}

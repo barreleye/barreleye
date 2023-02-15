@@ -13,54 +13,94 @@
 
 ## What is Barreleye?
 
-Barreleye is an open-source, multi-chain blockchain analytics tool. It's goal is to help answer the following questions:
+Barreleye is an **open-source blockchain analytics tool** that's optimized for address-based queries (eg: who has what assets and where did they come from).
 
-1. What assets does an address hold?
-1. Where did these assets come from?
-1. What other wallets might be related?
+The goals of the project are to:
+
+1. Provide address-focused analytics via a REST API
+1. Support different blockchain architectures (Bitcoin, EVM)
+1. Be easy to get started with on a single machine
+1. Support massive scalability to support business needs
 
 **Note:** This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
 
-## Try
+## Download
 
-Barreleye requires [Clickhouse](https://github.com/ClickHouse/ClickHouse) 22.8+ to run (default configs point to a locally running server):
-
-### Via package manager
+<!-- ### Via package manager (not recommended right now; outdated)
 
 ```bash
 cargo install barreleye
-barreleye --warehouse=http://localhost:8123/database_name
 ```
 
-### From source
+### From source -->
 
 Requires Rust 1.65.0+:
 
 ```bash
 git clone https://github.com/barreleye/barreleye
 cd barreleye
-cargo run -- --warehouse=http://localhost:8123/database_name
+cargo build
 ```
 
-Notes:
+## Try
 
-- Use `barreleye --help` to see all options
-- Default RDBMS is configured to use [SQLite](https://www.sqlite.org/) ([MySQL](https://www.mysql.com/) and [PostgreSQL](https://www.postgresql.org/) are also supported)
-- Clickhouse 22.8+ is required because it supports `allow_experimental_lightweight_delete` for MergeTree table engine family.
+To run Barreleye locally:
 
-## Basics
+```bash
+./barreleye
+```
 
-Barreleye consists of two parts: the indexer and the server. The indexer connects to specified RPC nodes to process blocks, and the server handles management and analytics requests.
+This will do the following:
 
-**Note:** Indexing continuously processes data from the genesis block. Make sure your RPC node can handle the amount of requests.
+- Run migrations (including seeding with a random public Ethereum RPC node)
+- Start the server, which will handle analytics API requests
+- Start the indexer, which will:
+  - Store extracted blockchain data locally
+  - Store relational data in SQLite locally
+  - Store warehouse data in DuckDB locally
 
-To start just the indexer, without the server: `cargo run -- --only-indexer`. Note that only one indexer is active at a time.
+By default, extracted blockchain data is stored in Parquet files. For production you'd probably want to store them in AWS S3 or GCS:
 
-To run only the HTTP server: `cargo run -- --only-http`
+```bash
+./barreleye \
+  --storage http://s3.us-east-1.amazonaws.com/bucket_name/
+  # --storage http://storage.googleapis.com/bucket_name/
+```
 
-To run them all together: `cargo run`
+You can also use a hosted RDBMS like PostgreSQL or MySQL instead of SQLite:
 
-## Add networks
+```bash
+./barreleye \
+  --storage http://s3.us-east-1.amazonaws.com/bucket/ \
+  --database postgres://username:password@postgres-host:5432/database_name
+  # --database mysql://username:password@mysql-host:3306/database_name
+```
+
+And a hosted warehouse OLAP instead of DuckDB. Currently only Clickhouse is supported:
+
+```bash
+./barreleye \
+  --storage http://s3.us-east-1.amazonaws.com/bucket/ \
+  --database postgres://username:password@localhost:5432/database_name \
+  --warehouse http://username:password@localhost:8123/database_name
+```
+
+Finally, to speed up indexing run your own Ethereum node and bump up the rate-limit:
+
+```bash
+curl -X PUT \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY>" \
+  -d '{
+    "rpcNode": "<YOUR_OWN_RPC_NODE_URL>",
+    "rps": 1500
+  }' \
+  http://localhost:4000/v0/networks/net_ethereum
+```
+
+## Add other networks
+
+Barreleye works with Bitcoin, EVM-compatible chains and Solana.
 
 A default API key is generated on the first run, so to get it:
 
@@ -83,7 +123,7 @@ curl -X POST \
     "rpcEndpoints": ["http://username:password@127.0.0.1:8332"],
     "rps": 100
   }' \
-  http://localhost:22775/v0/networks
+  http://localhost:4000/v0/networks
 ```
 
 Add an EVM-based RPC node:
@@ -101,7 +141,7 @@ curl -X POST \
     "rpcEndpoints": ["http://127.0.0.1:8545"],
     "rps": 100
   }' \
-  http://localhost:22775/v0/networks
+  http://localhost:4000/v0/networks
 ```
 
 ⏳ Indexing will take a while. To monitor progress:
@@ -110,7 +150,7 @@ curl -X POST \
 curl -X GET \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <API_KEY>" \
-  http://localhost:22775/v0/stats
+  http://localhost:4000/v0/stats
 ```
 
 ## Analytics
@@ -120,7 +160,7 @@ To get networks, assets, labels, etc:
 ```bash
 curl -X GET \
   -H "Content-Type: application/json" \
-  http://localhost:22775/v0/info?address=<BLOCKCHAIN_ADDRESS>
+  http://localhost:4000/v0/info?address=<BLOCKCHAIN_ADDRESS>
 ```
 
 To find connected labeled addresses that might have funded the requested address through multiple hops:
@@ -128,7 +168,7 @@ To find connected labeled addresses that might have funded the requested address
 ```bash
 curl -X GET \
   -H "Content-Type: application/json" \
-  http://localhost:22775/v0/upstream?address=<BLOCKCHAIN_ADDRESS>
+  http://localhost:4000/v0/upstream?address=<BLOCKCHAIN_ADDRESS>
 ```
 
 ## Random Notes
