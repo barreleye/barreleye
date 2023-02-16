@@ -15,12 +15,12 @@
 
 Barreleye is an **open-source blockchain analytics tool** that's optimized for address-based queries (eg: who has what assets and where did they come from).
 
-The goals of the project are to:
+Features:
 
-1. Provide address-focused analytics via a REST API
-1. Support different blockchain architectures (Bitcoin, EVM)
-1. Be easy to get started with on a single machine
-1. Support massive scalability to support business needs
+1. Address-focused analytics via REST API
+1. Multi-chain support (Bitcoin, EVM)
+1. Easy to get started with on a single machine
+1. Massive scalability for business use-cases
 
 **Note:** This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
 
@@ -39,7 +39,7 @@ Requires Rust 1.65.0+:
 ```bash
 git clone https://github.com/barreleye/barreleye
 cd barreleye
-cargo build
+cargo build && cargo install
 ```
 
 ## Try
@@ -53,13 +53,13 @@ To run Barreleye locally:
 This will do the following:
 
 - Run migrations (including seeding with a random public Ethereum RPC node)
-- Start the server, which will handle analytics API requests
+- Start the server, which will handle API requests
 - Start the indexer, which will:
-  - Store extracted blockchain data locally
+  - Store extracted blockchain data in Parquet files locally
   - Store relational data in SQLite locally
   - Store warehouse data in DuckDB locally
 
-By default, extracted blockchain data is stored in Parquet files. For production you'd probably want to store them in AWS S3 or GCS:
+For production you'd probably want to store extracted blockchain data in S3 or GCS:
 
 ```bash
 ./barreleye \
@@ -76,7 +76,7 @@ You can also use a hosted RDBMS like PostgreSQL or MySQL instead of SQLite:
   # --database mysql://username:password@mysql-host:3306/database_name
 ```
 
-And a hosted warehouse OLAP instead of DuckDB. Currently only Clickhouse is supported:
+And a hosted warehouse OLAP instead of DuckDB (currently only Clickhouse is supported):
 
 ```bash
 ./barreleye \
