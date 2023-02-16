@@ -167,6 +167,12 @@ impl ChainTrait for Evm {
 
 		Ok(ret)
 	}
+
+	async fn extract_block(&self, block_height: BlockHeight) -> Result<bool> {
+		info!("extracting block {block_height}");
+		let is_extracted = true;
+		Ok(is_extracted)
+	}
 }
 
 impl Evm {

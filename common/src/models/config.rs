@@ -13,6 +13,11 @@ use crate::{models::PrimaryId, utils, BlockHeight};
 pub enum ConfigKey {
 	#[display(fmt = "primary")]
 	Primary,
+	#[display(fmt = "indexer_extract_tail_sync_n{_0}")]
+	IndexerExtractTailSync(PrimaryId),
+	#[display(fmt = "indexer_extract_chunk_sync_n{_0}_b{_1}")]
+	IndexerExtractChunkSync(PrimaryId, BlockHeight),
+
 	#[display(fmt = "indexer_tail_sync_n{_0}")]
 	IndexerTailSync(PrimaryId),
 	#[display(fmt = "indexer_chunk_sync_n{_0}_b{_1}")]
@@ -42,6 +47,11 @@ impl From<String> for ConfigKey {
 
 		match template.to_string().as_str() {
 			"primary" => Self::Primary,
+			"indexer_extract_tail_sync_n{}" if n.len() == 1 => Self::IndexerExtractTailSync(n[0]),
+			"indexer_extract_chunk_sync_n{}_b{}" if n.len() == 2 => {
+				Self::IndexerExtractChunkSync(n[0], n[1] as BlockHeight)
+			}
+
 			"indexer_tail_sync_n{}" if n.len() == 1 => Self::IndexerTailSync(n[0]),
 			"indexer_chunk_sync_n{}_b{}" if n.len() == 2 => {
 				Self::IndexerChunkSync(n[0], n[1] as BlockHeight)

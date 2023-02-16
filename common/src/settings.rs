@@ -114,8 +114,8 @@ pub struct Settings {
 	pub warehouse_driver: WarehouseDriver,
 
 	/// Directory for cached data.
-    /// In a multi-node setup, this should be shared file storage.
-    #[arg(
+	/// In a multi-node setup, this should be shared file storage.
+	#[arg(
         help_heading = "Indexer options",
         long,
 		verbatim_doc_comment,
@@ -124,7 +124,7 @@ pub struct Settings {
         value_hint = ValueHint::DirPath,
         value_name = "PATH"
     )]
-    pub indexer_cache_dir: PathBuf,
+	pub indexer_cache_dir: PathBuf,
 	#[arg(skip)]
 	pub cache_driver: CacheDriver,
 

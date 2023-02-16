@@ -28,3 +28,4 @@ tokio = { version = "1.25.0", features = ["full"] }
 barreleye-common = { path = "./common", version = "0.0.1" }
 barreleye-indexer = { path = "./indexer_v1", version = "0.0.1" }
 barreleye-server = { path = "./server", version = "0.0.1" }
+env_logger = "0.10.0"

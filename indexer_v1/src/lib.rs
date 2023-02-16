@@ -1,9 +1,9 @@
-use console::style;
-use derive_more::Display;
+#[macro_use]
+extern crate log;
+
 use eyre::Result;
-// use num_format::{SystemLocale, ToFormattedString};
+use num_format::{SystemLocale, ToFormattedString};
 use sea_orm::ColumnTrait;
-use serde_json::Value as JsonValue;
 use std::{
 	collections::{HashMap, HashSet},
 	sync::Arc,
@@ -11,35 +11,22 @@ use std::{
 };
 use tokio::{
 	signal,
-	sync::{
-		broadcast,
-		mpsc::{Receiver, Sender},
-		watch,
-	},
+	sync::watch,
 	task::JoinSet,
 	time::{sleep, Duration},
 };
 use uuid::Uuid;
 
 use barreleye_common::{
-	chain::{WarehouseData},
 	models::{
 		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
 		NetworkColumn, PrimaryId, PrimaryIds, Relation, SoftDeleteModel, Transfer,
 	},
-	utils, App, AppError, Progress, ProgressReadyType, ProgressStep, Verbosity,
-	Warnings, INDEXER_HEARTBEAT, INDEXER_PROMOTION,
+	utils, App, AppError, Progress, ProgressReadyType, ProgressStep, Warnings, INDEXER_HEARTBEAT,
+	INDEXER_PROMOTION,
 };
 
 mod extract;
-
-#[derive(Display, Debug)]
-enum IndexType {
-	#[display(fmt = "extract")]
-	Extract,
-	// #[display(fmt = "normalize")]
-	// Normalize,
-}
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -232,51 +219,8 @@ impl Indexer {
 		Ok(())
 	}
 
-	fn log(&self, index_type: IndexType, detailed: bool, message: &str) {
-		if self.app.settings.verbosity > Verbosity::Silent || !detailed {
-			println!(
-				"{} {}: {message}",
-				style("Indexer").cyan().bold(),
-				style(format!("({index_type})")).dim()
-			);
-		}
-	}
-
-	// fn format_number(&self, n: usize) -> Result<String> {
-	// 	let locale = SystemLocale::default()?;
-	// 	Ok(n.to_formatted_string(&locale))
-	// }
-}
-
-pub struct Pipe {
-	config_key: ConfigKey,
-	sender: Sender<(ConfigKey, JsonValue, WarehouseData)>,
-	receipt: Receiver<()>,
-	pub abort: broadcast::Receiver<()>,
-}
-
-impl Pipe {
-	pub fn new(
-		config_key: ConfigKey,
-		sender: Sender<(ConfigKey, JsonValue, WarehouseData)>,
-		receipt: Receiver<()>,
-		abort: broadcast::Receiver<()>,
-	) -> Self {
-		Self { config_key, sender, receipt, abort }
-	}
-
-	pub async fn push(
-		&mut self,
-		config_value: JsonValue,
-		warehouse_data: WarehouseData,
-	) -> Result<()> {
-		self.sender.send((self.config_key, config_value, warehouse_data)).await?;
-
-		tokio::select! {
-			_ = self.receipt.recv() => {}
-			_ = self.abort.recv() => {}
-		}
-
-		Ok(())
+	fn format_number(&self, n: usize) -> Result<String> {
+		let locale = SystemLocale::default()?;
+		Ok(n.to_formatted_string(&locale))
 	}
 }

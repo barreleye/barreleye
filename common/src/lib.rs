@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 use chrono::NaiveDateTime;
 use clap::{builder::PossibleValue, ValueEnum};
 use console::{style, Emoji};
@@ -32,6 +35,7 @@ pub use db::Db;
 pub use errors::AppError;
 pub use progress::{Progress, ReadyType as ProgressReadyType, Step as ProgressStep};
 pub use settings::Settings;
+pub use storage::Storage;
 pub use warehouse::Warehouse;
 
 pub mod cache;
@@ -41,9 +45,9 @@ pub mod errors;
 pub mod models;
 pub mod progress;
 pub mod settings;
+pub mod storage;
 pub mod utils;
 pub mod warehouse;
-pub mod warehouse2;
 
 mod banner;
 
@@ -66,6 +70,7 @@ pub struct App {
 	pub networks: Arc<RwLock<HashMap<PrimaryId, Arc<BoxedChain>>>>,
 	pub settings: Arc<Settings>,
 	pub cache: Arc<RwLock<Cache>>,
+	pub storage: Arc<RwLock<Storage>>,
 	db: Arc<Db>,
 	pub warehouse: Arc<Warehouse>,
 	is_ready: Arc<AtomicBool>,
@@ -77,6 +82,7 @@ impl App {
 	pub async fn new(
 		settings: Arc<Settings>,
 		cache: Arc<RwLock<Cache>>,
+		storage: Arc<RwLock<Storage>>,
 		db: Arc<Db>,
 		warehouse: Arc<Warehouse>,
 	) -> Result<Self> {
@@ -85,6 +91,7 @@ impl App {
 			networks: Arc::new(RwLock::new(HashMap::new())),
 			settings,
 			cache,
+			storage,
 			db,
 			warehouse,
 			is_ready: Arc::new(AtomicBool::new(false)),

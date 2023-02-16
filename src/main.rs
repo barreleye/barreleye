@@ -3,16 +3,17 @@ use std::sync::Arc;
 use tokio::{signal, sync::RwLock, task::JoinSet};
 
 use barreleye_common::{
-	quit, App, AppError, Cache, Db, Progress, ProgressStep, Settings, Warehouse,
+	quit, App, AppError, Cache, Db, Progress, ProgressStep, Settings, Storage, Warehouse,
 };
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
 
-mod log;
+// mod log;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-	log::setup()?;
+	env_logger::init();
+	// log::setup()?;
 
 	let (raw_settings, mut warnings) = Settings::new().unwrap_or_else(|e| {
 		quit(match e.downcast_ref::<AppError>() {
@@ -32,6 +33,8 @@ async fn main() -> Result<()> {
 		quit(AppError::WarehouseConnection { url: url.to_string() });
 	}));
 
+	let storage = Arc::new(RwLock::new(Storage::new(settings.clone())));
+
 	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
 		quit(AppError::DatabaseConnection { url: url.to_string() });
 	}));
@@ -40,7 +43,7 @@ async fn main() -> Result<()> {
 	warehouse.run_migrations().await?;
 	db.run_migrations().await?;
 
-	let app = Arc::new(App::new(settings.clone(), cache, db, warehouse).await?);
+	let app = Arc::new(App::new(settings.clone(), cache, storage, db, warehouse).await?);
 	warnings.extend(app.get_warnings().await?);
 
 	let mut set = JoinSet::new();

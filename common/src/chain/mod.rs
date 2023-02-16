@@ -52,6 +52,8 @@ pub trait ChainTrait: Send + Sync {
 		modules: Vec<ModuleId>,
 	) -> Result<Option<WarehouseData>>;
 
+	async fn extract_block(&self, block_height: BlockHeight) -> Result<bool>;
+
 	async fn rate_limit(&self) {
 		if let Some(rate_limiter) = &self.get_rate_limiter() {
 			rate_limiter.until_ready().await;
