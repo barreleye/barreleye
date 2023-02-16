@@ -64,7 +64,7 @@ For production you'd probably want to store extracted blockchain data in S3 or G
 ```bash
 ./barreleye \
   --storage http://s3.us-east-1.amazonaws.com/bucket_name/
-  # --storage http://storage.googleapis.com/bucket_name/
+# --storage http://storage.googleapis.com/bucket_name/
 ```
 
 You can also use a hosted RDBMS like PostgreSQL or MySQL instead of SQLite:
@@ -73,7 +73,7 @@ You can also use a hosted RDBMS like PostgreSQL or MySQL instead of SQLite:
 ./barreleye \
   --storage http://s3.us-east-1.amazonaws.com/bucket/ \
   --database postgres://username:password@postgres-host:5432/database_name
-  # --database mysql://username:password@mysql-host:3306/database_name
+# --database mysql://username:password@mysql-host:3306/database_name
 ```
 
 And a hosted warehouse OLAP instead of DuckDB (currently only Clickhouse is supported):
