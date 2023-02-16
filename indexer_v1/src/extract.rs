@@ -123,9 +123,9 @@ impl Indexer {
 				// if first time, split up network into chunks for faster initial syncing
 				let chunks = num_cpus::get();
 				if last_read_block == 0 &&
-					chunks > 0 && Config::get_many_by_keywords::<_, (BlockHeight, BlockHeight)>(
+					chunks > 0 && Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
-					vec![format!("indexer_extract_chunk_sync_n{nid}")],
+					vec![ConfigKey::IndexerExtractChunkSync(nid, 0)],
 				)
 				.await?
 				.is_empty()
@@ -180,12 +180,11 @@ impl Indexer {
 				);
 
 				// push all fast-sync block ranges
-				for (config_key, block_range) in
-					Config::get_many_by_keywords::<_, (BlockHeight, BlockHeight)>(
-						self.app.db(),
-						vec![format!("extract_chunk_sync_n{nid}")],
-					)
-					.await?
+				for (config_key, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+					self.app.db(),
+					vec![ConfigKey::IndexerExtractChunkSync(nid, 0)],
+				)
+				.await?
 				{
 					network_range_map.insert(
 						config_key,

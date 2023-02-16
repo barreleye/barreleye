@@ -225,7 +225,7 @@ impl Model {
 		keys.dedup();
 
 		Ok(Entity::find()
-			.filter(Column::Key.is_in(keys.iter().map(|k| k.to_string())))
+			.filter(Self::adjust_filter(keys))
 			.all(c)
 			.await?
 			.into_iter()
@@ -242,6 +242,7 @@ impl Model {
 			.collect())
 	}
 
+	// @TODO delete me
 	pub async fn get_many_by_keywords<C, T>(
 		c: &C,
 		keywords: Vec<String>,
@@ -268,6 +269,7 @@ impl Model {
 			.collect())
 	}
 
+	// @TODO delete me
 	pub async fn exist_by_keywords<C>(c: &C, keywords: Vec<String>) -> Result<bool>
 	where
 		C: ConnectionTrait,
@@ -297,12 +299,31 @@ impl Model {
 		Ok(())
 	}
 
+	// @TODO delete me
 	pub async fn delete_all_by_keywords<C>(c: &C, keywords: Vec<String>) -> Result<()>
 	where
 		C: ConnectionTrait,
 	{
 		Entity::delete_many().filter(Self::get_keyword_conditions(keywords)).exec(c).await?;
 		Ok(())
+	}
+
+	fn adjust_filter(keys: Vec<ConfigKey>) -> Condition {
+		let mut condition = Condition::any();
+
+		// only match zeros: `example_a100_b0_c123` => `example_a100_b%_c123`
+		let r = Regex::new(r"_([a-z])0").unwrap();
+
+		for key in keys.into_iter().map(|k| k.to_string()) {
+			let adjusted_key = r.replace(&key, "_$1%");
+			condition = condition.add(if adjusted_key.contains('%') {
+				Column::Key.like(&adjusted_key.clone())
+			} else {
+				Column::Key.eq(&key)
+			});
+		}
+
+		condition
 	}
 
 	fn get_keyword_conditions(keywords: Vec<String>) -> Condition {
