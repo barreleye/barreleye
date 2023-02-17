@@ -1,6 +1,11 @@
 use clap::{Parser, ValueHint};
 use eyre::Result;
-use std::{fs, net::IpAddr, path::PathBuf, str::FromStr};
+use std::{
+	fs,
+	net::IpAddr,
+	path::{Path, PathBuf},
+	str::FromStr,
+};
 use url::Url;
 
 use crate::{
@@ -59,7 +64,9 @@ pub struct Settings {
         value_hint = ValueHint::DirPath,
 		value_name = "URL"
 	)]
-	pub storage: String,
+	storage: String,
+	pub storage_path: Option<PathBuf>,
+	pub storage_url: Option<String>,
 
 	/// Database to connect to. Supports PostgreSQL, MySQL and SQLite.
 	///
@@ -250,6 +257,35 @@ impl Settings {
 		} else {
 			None
 		};
+
+		// test storage
+		let folder_prefix = "file://";
+		if settings.storage.starts_with('/') ||
+			settings.storage.to_lowercase().starts_with(folder_prefix)
+		{
+			let storage = if settings.storage.to_lowercase().starts_with(folder_prefix) {
+				settings.storage[folder_prefix.to_string().len()..].to_string()
+			} else {
+				settings.storage.clone()
+			};
+
+			let path = Path::new(&storage);
+			if fs::create_dir_all(path).is_err() ||
+				PathBuf::from(path).into_os_string().into_string().is_err()
+			{
+				return Err(AppError::Config {
+					config: "storage",
+					error: "invalid storage directory",
+				}
+				.into());
+			} else {
+				settings.storage_path = Some(PathBuf::from(path));
+			}
+		} else if Url::parse(&settings.storage).is_err() {
+			return Err(AppError::Config { config: "storage", error: "invalid storage URL" }.into());
+		} else {
+			settings.storage_url = Some(settings.storage.clone());
+		}
 
 		Ok((settings, warnings))
 	}

@@ -70,7 +70,7 @@ pub struct App {
 	pub networks: Arc<RwLock<HashMap<PrimaryId, Arc<BoxedChain>>>>,
 	pub settings: Arc<Settings>,
 	pub cache: Arc<RwLock<Cache>>,
-	pub storage: Arc<RwLock<Storage>>,
+	pub storage: Arc<Storage>,
 	db: Arc<Db>,
 	pub warehouse: Arc<Warehouse>,
 	is_ready: Arc<AtomicBool>,
@@ -82,7 +82,7 @@ impl App {
 	pub async fn new(
 		settings: Arc<Settings>,
 		cache: Arc<RwLock<Cache>>,
-		storage: Arc<RwLock<Storage>>,
+		storage: Arc<Storage>,
 		db: Arc<Db>,
 		warehouse: Arc<Warehouse>,
 	) -> Result<Self> {

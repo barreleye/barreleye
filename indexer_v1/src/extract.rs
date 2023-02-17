@@ -218,6 +218,7 @@ impl Indexer {
 						abort_sender.subscribe(),
 					);
 					let db = self.app.db().clone();
+					let storage = self.app.storage.clone();
 
 					async move {
 						let mut block_height = network_params.range.0;
@@ -267,7 +268,7 @@ impl Indexer {
 
 							let is_done = tokio::select! {
 								_ = pipe.abort.recv() => true,
-								v = chain.extract_block(block_height) => !v?,
+								v = chain.extract_block(storage.clone(), block_height) => !v?,
 							};
 
 							if is_done {

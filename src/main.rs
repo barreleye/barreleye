@@ -33,7 +33,9 @@ async fn main() -> Result<()> {
 		quit(AppError::WarehouseConnection { url: url.to_string() });
 	}));
 
-	let storage = Arc::new(RwLock::new(Storage::new(settings.clone())));
+	let storage = Arc::new(Storage::new(settings.clone()).unwrap_or_else(|url| {
+		quit(AppError::DatabaseConnection { url: url.to_string() }); // @TODO
+	}));
 
 	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
 		quit(AppError::DatabaseConnection { url: url.to_string() });

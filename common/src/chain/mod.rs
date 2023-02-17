@@ -8,7 +8,7 @@ use tokio::task::JoinSet;
 pub use crate::chain::bitcoin::Bitcoin;
 use crate::{
 	models::{Amount, Link, Network, Relation, Transfer},
-	utils, BlockHeight, PrimaryId, RateLimiter, Warehouse,
+	utils, BlockHeight, PrimaryId, RateLimiter, Storage, Warehouse,
 };
 pub use evm::Evm;
 pub use u256::U256;
@@ -52,7 +52,8 @@ pub trait ChainTrait: Send + Sync {
 		modules: Vec<ModuleId>,
 	) -> Result<Option<WarehouseData>>;
 
-	async fn extract_block(&self, block_height: BlockHeight) -> Result<bool>;
+	async fn extract_block(&self, storage: Arc<Storage>, block_height: BlockHeight)
+		-> Result<bool>;
 
 	async fn rate_limit(&self) {
 		if let Some(rate_limiter) = &self.get_rate_limiter() {

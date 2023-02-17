@@ -12,15 +12,17 @@ use crate::{
 	cache::CacheKey,
 	chain::{ChainTrait, ModuleId, ModuleTrait, WarehouseData},
 	models::Network,
-	utils, BlockHeight, Cache, RateLimiter,
+	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
 use client::{Auth, Client};
+use models::{Block, ParquetFile};
 use modules::{
 	BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinRelationBalanceTransfer,
 	BitcoinRelationNoChange, BitcoinTransfer,
 };
 
 mod client;
+mod models;
 mod modules;
 
 pub struct Bitcoin {
@@ -153,10 +155,34 @@ impl ChainTrait for Bitcoin {
 		Ok(ret)
 	}
 
-	async fn extract_block(&self, block_height: BlockHeight) -> Result<bool> {
-		info!("extracting block {block_height}");
-		let is_extracted = true;
-		Ok(is_extracted)
+	async fn extract_block(
+		&self,
+		storage: Arc<Storage>,
+		block_height: BlockHeight,
+	) -> Result<bool> {
+		let storage_db = storage.get(self.network.network_id, block_height)?;
+
+		self.rate_limit().await;
+		if let Ok(block_hash) = self.client.as_ref().unwrap().get_block_hash(block_height).await {
+			self.rate_limit().await;
+			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
+				let extracted_block = Block {
+					hash: block_hash.to_string(),
+					version: block.header.version,
+					prev_blockhash: block.header.prev_blockhash.to_string(),
+					merkle_root: block.header.merkle_root.to_string(),
+					time: block.header.time,
+					bits: block.header.bits,
+					nonce: block.header.nonce,
+				};
+
+				storage_db.insert(extracted_block)?;
+			}
+		}
+
+		storage_db.commit(vec![ParquetFile::Block.to_string()])?;
+
+		Ok(true)
 	}
 }
 

@@ -14,7 +14,7 @@ use crate::{
 	cache::CacheKey,
 	chain::{ChainTrait, ModuleId, ModuleTrait, WarehouseData},
 	models::Network,
-	utils, BlockHeight, Cache, RateLimiter,
+	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
 use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
 
@@ -168,7 +168,11 @@ impl ChainTrait for Evm {
 		Ok(ret)
 	}
 
-	async fn extract_block(&self, block_height: BlockHeight) -> Result<bool> {
+	async fn extract_block(
+		&self,
+		_storage: Arc<Storage>,
+		block_height: BlockHeight,
+	) -> Result<bool> {
 		info!("extracting block {block_height}");
 		let is_extracted = true;
 		Ok(is_extracted)
