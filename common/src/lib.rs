@@ -34,6 +34,7 @@ pub use cache::Cache;
 pub use db::Db;
 pub use errors::AppError;
 pub use progress::{Progress, ReadyType as ProgressReadyType, Step as ProgressStep};
+pub use s3::{Service as S3Service, S3};
 pub use settings::Settings;
 pub use storage::Storage;
 pub use warehouse::Warehouse;
@@ -44,6 +45,7 @@ pub mod db;
 pub mod errors;
 pub mod models;
 pub mod progress;
+pub mod s3;
 pub mod settings;
 pub mod storage;
 pub mod utils;
@@ -285,16 +287,6 @@ impl App {
 
 		Ok(address.to_string())
 	}
-}
-
-#[derive(Display, Default, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub enum Verbosity {
-	#[default]
-	Silent = 0,
-	Warnings = 1,
-	Info = 2,
-	Debug = 3,
-	Trace = 4,
 }
 
 #[derive(Display, Debug, Serialize, Deserialize)]

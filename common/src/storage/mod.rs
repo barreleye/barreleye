@@ -41,6 +41,7 @@ impl Storage {
 
 		if self.settings.storage_url.is_some() {
 			self.install_extension(&db, "httpfs")?;
+			self.set_credentials(&db)?;
 		}
 
 		Ok(db)
@@ -64,6 +65,31 @@ impl Storage {
 			}
 			if !extension.loaded {
 				commands.push(format!("LOAD {name};"));
+			}
+
+			if !commands.is_empty() {
+				db.execute_batch(&commands.join(""))?;
+			}
+		}
+
+		Ok(())
+	}
+
+	fn set_credentials(&self, db: &Connection) -> Result<()> {
+		if let Some(s3) = self.settings.storage_url.clone() {
+			let mut commands = vec![];
+
+			if let Some(region) = s3.region {
+				commands.push(format!("SET s3_region='{region}';"));
+			} else if let Some(domain) = s3.domain {
+				commands.push(format!("SET s3_endpoint='{domain}';"));
+			}
+
+			if let Some(s3_access_key_id) = self.settings.s3_access_key_id.clone() {
+				commands.push(format!("SET s3_access_key_id='{}';", s3_access_key_id));
+			}
+			if let Some(s3_secret_access_key) = self.settings.s3_secret_access_key.clone() {
+				commands.push(format!("SET s3_secret_access_key='{}';", s3_secret_access_key));
 			}
 
 			if !commands.is_empty() {
@@ -105,8 +131,8 @@ impl StorageDb {
 		for file in files.into_iter() {
 			if let Some(storage_path) = &self.settings.storage_path {
 				let absolute_path = storage_path
-					.join(self.network_id.to_string())
-					.join(self.block_height.to_string());
+					.join(format!("network_id={}", self.network_id))
+					.join(format!("block_height={}", self.block_height));
 
 				// duckdb does not automatically create full path if parts dont exist
 				fs::create_dir_all(&absolute_path)?;
@@ -115,8 +141,17 @@ impl StorageDb {
 					r"COPY {file} TO '{}/{file}.parquet' (FORMAT PARQUET);",
 					absolute_path.into_os_string().into_string().unwrap()
 				));
-			} else if let Some(_storage_url) = &self.settings.storage_url {
-				// @TODO implement copying to s3
+			} else if let Some(storage_url) = &self.settings.storage_url {
+				let s3_path = format!(
+					"{}/network_id={}/block_height={}",
+					storage_url.bucket.as_ref().unwrap(),
+					self.network_id,
+					self.block_height,
+				);
+
+				commands.push(format!(
+					r"COPY {file} TO 's3://{s3_path}/{file}.parquet' (FORMAT PARQUET);"
+				));
 			}
 		}
 

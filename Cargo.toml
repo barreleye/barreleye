@@ -21,6 +21,8 @@ members = [ "common", "indexer_v1", "server" ]
 log = "0.4.17"
 color-eyre = "0.6.2"
 eyre = "0.6.8"
+env_logger = "0.10.0"
+dotenv = "0.15.0"
 chrono = { version = "0.4.23", default-features = false, features = ["clock", "std"] }
 fern = { version = "0.6.1", features = ["colored"] }
 tokio = { version = "1.25.0", features = ["full"] }
@@ -28,4 +30,3 @@ tokio = { version = "1.25.0", features = ["full"] }
 barreleye-common = { path = "./common", version = "0.0.1" }
 barreleye-indexer = { path = "./indexer_v1", version = "0.0.1" }
 barreleye-server = { path = "./server", version = "0.0.1" }
-env_logger = "0.10.0"

@@ -11,13 +11,14 @@ pub enum AppError<'a> {
 	#[display(fmt = "Could not start server @ `{url}`: {error}")]
 	ServerStartup { url: String, error: String },
 
-	#[display(
-		fmt = "Barreleye requires Clickhouse to run. Provide the connection URL with \"--warehouse=<URL>\". Could not connect to warehouse @ `{url}`"
-	)]
-	WarehouseConnection { url: String },
+	#[display(fmt = "Could not connect to storage @ `{url}`")]
+	StorageConnection { url: String },
 
 	#[display(fmt = "Could not connect to database @ `{url}`")]
 	DatabaseConnection { url: String },
+
+	#[display(fmt = "Could not connect to warehouse @ `{url}`")]
+	WarehouseConnection { url: String },
 
 	#[display(fmt = "Could not complete network setup:\n{error}")]
 	Network { error: String },

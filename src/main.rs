@@ -1,3 +1,6 @@
+extern crate dotenv;
+
+use dotenv::dotenv;
 use eyre::Result;
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock, task::JoinSet};
@@ -12,6 +15,7 @@ use barreleye_server::Server;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+	dotenv().ok();
 	env_logger::init();
 	// log::setup()?;
 
@@ -34,7 +38,7 @@ async fn main() -> Result<()> {
 	}));
 
 	let storage = Arc::new(Storage::new(settings.clone()).unwrap_or_else(|url| {
-		quit(AppError::DatabaseConnection { url: url.to_string() }); // @TODO
+		quit(AppError::StorageConnection { url: url.to_string() });
 	}));
 
 	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {

@@ -14,8 +14,10 @@ unsound = "deny"
 yanked = "deny"
 notice = "warn"
 ignore = [
-  # @TODO On windows, `atty` dereferences a potentially unaligned pointer
-  "RUSTSEC-2021-0145"
+    # @TODO dotenv is Unmaintained
+    "RUSTSEC-2021-0141",
+    # @TODO On windows, `atty` dereferences a potentially unaligned pointer
+    "RUSTSEC-2021-0145"
 ]
 
 [licenses]

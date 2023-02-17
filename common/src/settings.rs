@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::{
 	banner, cache::Driver as CacheDriver, db::Driver as DatabaseDriver, utils,
-	warehouse::Driver as WarehouseDriver, AppError, Cache, Env, Verbosity, Warnings,
+	warehouse::Driver as WarehouseDriver, AppError, Cache, Env, S3Service, Warnings, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -40,19 +40,15 @@ pub struct Settings {
 	#[arg(skip)]
 	pub is_server: bool,
 
-	#[arg(help_heading = "Runtime options", long, default_value_t = false)]
-	verbose: bool,
-	#[arg(skip)]
-	pub verbosity: Verbosity,
-
 	/// Where to store extracted blockchain data.
 	/// Can be either a folder or S3-compatible storage.
 	///
 	/// Folder eg: file:///path_to_folder
-	/// Amazon S3 eg: http://s3.us-east-1.amazonaws.com/bucket/
+	/// Amazon S3 eg: http://s3.us-east-1.amazonaws.com/bucket_name/
 	/// Google Cloud Storage eg: http://storage.googleapis.com/bucket_name/
+	/// MinIO eg: http://localhost/bucket_name/
 	#[arg(
-		help_heading = "Data options",
+		help_heading = "Storage options",
 		short,
 		long,
 		verbatim_doc_comment,
@@ -66,7 +62,23 @@ pub struct Settings {
 	)]
 	storage: String,
 	pub storage_path: Option<PathBuf>,
-	pub storage_url: Option<String>,
+	pub storage_url: Option<S3>,
+
+	#[arg(
+		help_heading = "Storage options",
+		long,
+		env = "BARRELEYE_S3_ACCESS_KEY_ID",
+		value_name = "ACCESS_KEY"
+	)]
+	pub s3_access_key_id: Option<String>,
+
+	#[arg(
+		help_heading = "Storage options",
+		long,
+		env = "BARRELEYE_S3_SECRET_ACCESS_KEY",
+		value_name = "SECRET"
+	)]
+	pub s3_secret_access_key: Option<String>,
 
 	/// Database to connect to. Supports PostgreSQL, MySQL and SQLite.
 	///
@@ -74,7 +86,7 @@ pub struct Settings {
 	/// MySQL eg: mysql://username:password@localhost:3306/database_name
 	/// SQLite eg: sqlite://database_path?mode=rwc
 	#[arg(
-		help_heading = "Data options",
+		help_heading = "Database options",
 		short,
 		long,
 		verbatim_doc_comment,
@@ -90,26 +102,26 @@ pub struct Settings {
 	#[arg(skip)]
 	pub database_driver: DatabaseDriver,
 
-	#[arg(help_heading = "Data options", long, default_value_t = 5, value_name = "NUMBER")]
+	#[arg(help_heading = "Database options", long, default_value_t = 5, value_name = "NUMBER")]
 	pub database_min_connections: u32,
 
-	#[arg(help_heading = "Data options", long, default_value_t = 100, value_name = "NUMBER")]
+	#[arg(help_heading = "Database options", long, default_value_t = 100, value_name = "NUMBER")]
 	pub database_max_connections: u32,
 
-	#[arg(help_heading = "Data options", long, default_value_t = 8, value_name = "SECONDS")]
+	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_connect_timeout: u64,
 
-	#[arg(help_heading = "Data options", long, default_value_t = 8, value_name = "SECONDS")]
+	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_idle_timeout: u64,
 
-	#[arg(help_heading = "Data options", long, default_value_t = 8, value_name = "SECONDS")]
+	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
 	/// Warehouse for big data. Currently only Clickhouse is supported.
 	///
 	/// Clickhouse eg: http://username:password@localhost:8123/database_name
 	#[arg(
-		help_heading = "Data options",
+		help_heading = "Warehouse options",
 		short,
 		long,
 		env = "BARRELEYE_WAREHOUSE",
@@ -166,11 +178,6 @@ impl Settings {
 				(false, false) => (true, true),
 				(i, s) => (i, s),
 			};
-
-		// setup verbosity (@TODO simple for now)
-		if settings.verbose {
-			settings.verbosity = Verbosity::Info
-		}
 
 		// show banner
 		banner::show(settings.env, settings.is_indexer, settings.is_server)?;
@@ -284,7 +291,20 @@ impl Settings {
 		} else if Url::parse(&settings.storage).is_err() {
 			return Err(AppError::Config { config: "storage", error: "invalid storage URL" }.into());
 		} else {
-			settings.storage_url = Some(settings.storage.clone());
+			let err = AppError::Config { config: "storage", error: "invalid storage URL" };
+
+			// check url
+			if Url::parse(&settings.storage).is_err() {
+				return Err(err.into());
+			}
+
+			// check that service is known
+			let storage_url = S3::from_str(&settings.storage)?;
+			if storage_url.service == S3Service::Unknown || storage_url.bucket.is_none() {
+				return Err(err.into());
+			}
+
+			settings.storage_url = Some(storage_url);
 		}
 
 		Ok((settings, warnings))
