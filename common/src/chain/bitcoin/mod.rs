@@ -15,7 +15,7 @@ use crate::{
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
 use client::{Auth, Client};
-use models::{Block, ParquetFile};
+use models::{Block, ParquetFile, Transaction as Tx};
 use modules::{
 	BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinRelationBalanceTransfer,
 	BitcoinRelationNoChange, BitcoinTransfer,
@@ -166,7 +166,7 @@ impl ChainTrait for Bitcoin {
 		if let Ok(block_hash) = self.client.as_ref().unwrap().get_block_hash(block_height).await {
 			self.rate_limit().await;
 			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
-				let extracted_block = Block {
+				storage_db.insert(Block {
 					hash: block_hash.to_string(),
 					version: block.header.version,
 					prev_blockhash: block.header.prev_blockhash.to_string(),
@@ -174,13 +174,22 @@ impl ChainTrait for Bitcoin {
 					time: block.header.time,
 					bits: block.header.bits,
 					nonce: block.header.nonce,
-				};
+				})?;
 
-				storage_db.insert(extracted_block)?;
+				for tx in block.txdata.into_iter() {
+					storage_db.insert(Tx {
+						hash: tx.txid().as_hash().to_string(),
+						version: tx.version,
+						lock_time: tx.lock_time.into(),
+						inputs: tx.input.len() as u32,
+						outputs: tx.output.len() as u32,
+					})?;
+				}
 			}
 		}
 
-		storage_db.commit(vec![ParquetFile::Block.to_string()])?;
+		storage_db
+			.commit(vec![ParquetFile::Block.to_string(), ParquetFile::Transactions.to_string()])?;
 
 		Ok(true)
 	}
