@@ -1,5 +1,8 @@
 use duckdb::{params, Connection};
-use ethers::types::{H160, H256, U256};
+use ethers::{
+	abi::AbiEncode,
+	types::{H160, H256, U256},
+};
 use eyre::Result;
 
 use super::ParquetFile;
@@ -23,7 +26,7 @@ pub struct Block {
 impl StorageModelTrait for Block {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
-			r"CREATE TEMP TABLE IF NOT EXISTS {} (
+			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 hash VARCHAR,
                 parent_hash VARCHAR NOT NULL,
                 author VARCHAR,
@@ -35,7 +38,7 @@ impl StorageModelTrait for Block {
                 timestamp UINT64,
                 total_difficulty VARCHAR,
                 base_fee_per_gas VARCHAR
-            );",
+            );"#,
 			ParquetFile::Block
 		))?;
 
@@ -47,7 +50,7 @@ impl StorageModelTrait for Block {
 
 		db.execute(
 			&format!(
-				r"INSERT INTO {} (
+				r#"INSERT INTO {} (
                     hash,
                     parent_hash,
                     author,
@@ -61,16 +64,16 @@ impl StorageModelTrait for Block {
                     base_fee_per_gas
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                );",
+                );"#,
 				ParquetFile::Block
 			),
 			params![
-				self.hash.map(|v| v.to_string()),
-				self.parent_hash.to_string(),
+				self.hash.map(|v| v.encode_hex()),
+				self.parent_hash.encode_hex(),
 				self.author.map(|v| v.to_string()),
-				self.state_root.to_string(),
-				self.transactions_root.to_string(),
-				self.receipts_root.to_string(),
+				self.state_root.encode_hex(),
+				self.transactions_root.encode_hex(),
+				self.receipts_root.encode_hex(),
 				self.number,
 				self.gas_used.to_string(),
 				self.timestamp,

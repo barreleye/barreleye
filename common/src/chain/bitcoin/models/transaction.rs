@@ -16,13 +16,13 @@ pub struct Transaction {
 impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
-			r"CREATE TEMP TABLE IF NOT EXISTS {} (
+			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 hash VARCHAR NOT NULL,
                 version INT32 NOT NULL,
                 lock_time UINT32 NOT NULL,
                 inputs UINT32 NOT NULL,
                 outputs UINT32 NOT NULL
-            );",
+            );"#,
 			ParquetFile::Transactions
 		))?;
 
@@ -34,11 +34,11 @@ impl StorageModelTrait for Transaction {
 
 		db.execute(
 			&format!(
-				r"INSERT INTO {} (
+				r#"INSERT INTO {} (
                     hash, version, lock_time, inputs, outputs
                 ) VALUES (
                     ?, ?, ?, ?, ?
-                );",
+                );"#,
 				ParquetFile::Transactions
 			),
 			params![self.hash, self.version, self.lock_time, self.inputs, self.outputs],

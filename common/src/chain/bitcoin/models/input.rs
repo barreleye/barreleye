@@ -13,10 +13,10 @@ pub struct Input {
 impl StorageModelTrait for Input {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
-			r"CREATE TEMP TABLE IF NOT EXISTS {} (
+			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 previous_output_tx_hash VARCHAR NOT NULL,
                 previous_output_vout UINT32 NOT NULL
-            );",
+            );"#,
 			ParquetFile::Inputs
 		))?;
 
@@ -28,11 +28,11 @@ impl StorageModelTrait for Input {
 
 		db.execute(
 			&format!(
-				r"INSERT INTO {} (
+				r#"INSERT INTO {} (
                     previous_output_tx_hash, previous_output_vout
                 ) VALUES (
                     ?, ?
-                );",
+                );"#,
 				ParquetFile::Inputs
 			),
 			params![self.previous_output_tx_hash, self.previous_output_vout],

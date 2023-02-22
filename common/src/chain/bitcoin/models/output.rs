@@ -13,10 +13,10 @@ pub struct Output {
 impl StorageModelTrait for Output {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
-			r"CREATE TEMP TABLE IF NOT EXISTS {} (
+			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 value UINT64 NOT NULL,
                 script_pubkey VARCHAR NOT NULL
-            );",
+            );"#,
 			ParquetFile::Outputs
 		))?;
 
@@ -28,11 +28,11 @@ impl StorageModelTrait for Output {
 
 		db.execute(
 			&format!(
-				r"INSERT INTO {} (
+				r#"INSERT INTO {} (
                     value, script_pubkey
                 ) VALUES (
                     ?, ?
-                );",
+                );"#,
 				ParquetFile::Outputs
 			),
 			params![self.value, self.script_pubkey],

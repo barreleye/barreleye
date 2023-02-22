@@ -226,7 +226,7 @@ impl Indexer {
 			self.log(
 				IndexType::Blocks,
 				true,
-				&format!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold(),),
+				&format!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold()),
 			);
 
 			let mut futures = JoinSet::new();

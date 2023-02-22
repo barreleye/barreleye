@@ -116,7 +116,7 @@ mod tests {
 		]);
 
 		for (from, to) in data.into_iter() {
-			assert_eq!(with_masked_auth(&from), to,)
+			assert_eq!(with_masked_auth(&from), to)
 		}
 	}
 

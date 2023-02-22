@@ -1,5 +1,6 @@
 use duckdb::{params, Connection};
 use ethers::{
+	abi::AbiEncode,
 	types::{H160, H256, U256},
 	utils,
 };
@@ -25,18 +26,18 @@ pub struct Transaction {
 impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
-			r"CREATE TEMP TABLE IF NOT EXISTS {} (
+			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 hash VARCHAR NOT NULL,
                 nonce VARCHAR NOT NULL,
                 transaction_index VARCHAR,
-                from VARCHAR NOT NULL,
-                to VARCHAR,
+                "from" VARCHAR NOT NULL,
+                "to" VARCHAR,
                 value VARCHAR NOT NULL,
                 gas_price VARCHAR,
                 gas VARCHAR NOT NULL,
                 transaction_type UINT64,
                 chain_id VARCHAR
-            );",
+            );"#,
 			ParquetFile::Transactions
 		))?;
 
@@ -48,12 +49,12 @@ impl StorageModelTrait for Transaction {
 
 		db.execute(
 			&format!(
-				r"INSERT INTO {} (
+				r#"INSERT INTO {} (
                     hash,
                     nonce,
                     transaction_index,
-                    from,
-                    to,
+                    "from",
+                    "to",
                     value,
                     gas_price,
                     gas,
@@ -61,11 +62,11 @@ impl StorageModelTrait for Transaction {
                     chain_id
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                );",
+                );"#,
 				ParquetFile::Transactions
 			),
 			params![
-				self.hash.to_string(),
+				self.hash.encode_hex(),
 				self.nonce.to_string(),
 				self.transaction_index,
 				utils::to_checksum(&self.from, None),

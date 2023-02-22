@@ -49,9 +49,9 @@ impl Storage {
 
 	fn install_extension(&self, db: &Connection, name: &str) -> Result<()> {
 		let mut statement = db.prepare(&format!(
-			r"SELECT installed, loaded
+			r#"SELECT installed, loaded
 			FROM duckdb_extensions()
-			WHERE extension_name = '{name}';"
+			WHERE extension_name = '{name}';"#
 		))?;
 
 		let mut rows = statement
@@ -138,7 +138,7 @@ impl StorageDb {
 				fs::create_dir_all(&absolute_path)?;
 
 				commands.push(format!(
-					r"COPY {file} TO '{}/{file}.parquet' (FORMAT PARQUET);",
+					"COPY {file} TO '{}/{file}.parquet' (FORMAT PARQUET);",
 					absolute_path.into_os_string().into_string().unwrap()
 				));
 			} else if let Some(storage_url) = &self.settings.storage_url {
@@ -150,7 +150,7 @@ impl StorageDb {
 				);
 
 				commands.push(format!(
-					r"COPY {file} TO 's3://{s3_path}/{file}.parquet' (FORMAT PARQUET);"
+					"COPY {file} TO 's3://{s3_path}/{file}.parquet' (FORMAT PARQUET);"
 				));
 			}
 		}

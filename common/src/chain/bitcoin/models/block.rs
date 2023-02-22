@@ -18,7 +18,7 @@ pub struct Block {
 impl StorageModelTrait for Block {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
-			r"CREATE TEMP TABLE IF NOT EXISTS {} (
+			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 hash VARCHAR NOT NULL,
                 version INT32 NOT NULL,
                 prev_blockhash VARCHAR NOT NULL,
@@ -26,7 +26,7 @@ impl StorageModelTrait for Block {
                 time UINT32 NOT NULL,
                 bits UINT32 NOT NULL,
                 nonce UINT32 NOT NULL
-            );",
+            );"#,
 			ParquetFile::Block
 		))?;
 
@@ -38,11 +38,11 @@ impl StorageModelTrait for Block {
 
 		db.execute(
 			&format!(
-				r"INSERT INTO {} (
+				r#"INSERT INTO {} (
                     hash, version, prev_blockhash, merkle_root, time, bits, nonce
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, ?
-                );",
+                );"#,
 				ParquetFile::Block
 			),
 			params![

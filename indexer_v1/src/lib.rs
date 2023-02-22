@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate log;
 
+use console::style;
 use eyre::Result;
 use num_format::{SystemLocale, ToFormattedString};
 use sea_orm::ColumnTrait;
@@ -22,8 +23,8 @@ use barreleye_common::{
 		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
 		NetworkColumn, PrimaryId, PrimaryIds, Relation, SoftDeleteModel, Transfer,
 	},
-	utils, App, AppError, Progress, ProgressReadyType, ProgressStep, Warnings, INDEXER_HEARTBEAT,
-	INDEXER_PROMOTION,
+	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Warnings,
+	INDEXER_HEARTBEAT, INDEXER_PROMOTION,
 };
 
 mod extract;
@@ -62,11 +63,10 @@ impl Indexer {
 			// });
 
 			let ret = tokio::select! {
-				_ = signal::ctrl_c() => {
-					break Ok(())
-				},
+				_ = signal::ctrl_c() => break Ok(()),
 				v = self.primary_check() => v,
 				v = self.networks_check(tx) => v,
+				v = self.show_progress() => v,
 				v = async {
 					while let Some(res) = set.join_next().await {
 						res??;
@@ -132,6 +132,55 @@ impl Indexer {
 			}
 
 			sleep(Duration::from_secs(1)).await;
+		}
+	}
+
+	async fn show_progress(&self) -> Result<()> {
+		loop {
+			if self.app.is_leading() {
+				for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
+					let nid = network_id;
+					let mut scores = vec![];
+
+					let block_height =
+						Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
+							.await?
+							.map(|v| v.value)
+							.unwrap_or(0);
+
+					if block_height == 0 {
+						scores.push(0.0);
+					} else {
+						let tail_block = Config::get::<_, BlockHeight>(
+							self.app.db(),
+							ConfigKey::IndexerExtractTailSync(nid),
+						)
+						.await?
+						.map(|v| v.value)
+						.unwrap_or(0);
+
+						let mut done_blocks = tail_block;
+						for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+							self.app.db(),
+							vec![ConfigKey::IndexerExtractChunkSync(nid, 0)],
+						)
+						.await?
+						{
+							done_blocks -= block_range.value.1 - block_range.value.0;
+						}
+
+						scores.push(done_blocks as f64 / block_height as f64);
+					}
+
+					let progress = scores.iter().sum::<f64>() / scores.len() as f64;
+					Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
+						.await?;
+
+					info!("{} @ {:.4}%…", style(chain.get_network().name).bold(), progress * 100.0);
+				}
+			}
+
+			sleep(Duration::from_secs(10)).await;
 		}
 	}
 
