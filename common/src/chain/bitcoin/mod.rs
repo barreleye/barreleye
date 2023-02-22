@@ -170,10 +170,10 @@ impl ChainTrait for Bitcoin {
 			self.rate_limit().await;
 			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
 				storage_db.insert(ParquetBlock {
-					hash: block_hash.to_string(),
+					hash: block_hash,
 					version: block.header.version,
-					prev_blockhash: block.header.prev_blockhash.to_string(),
-					merkle_root: block.header.merkle_root.to_string(),
+					prev_blockhash: block.header.prev_blockhash,
+					merkle_root: block.header.merkle_root,
 					time: block.header.time,
 					bits: block.header.bits,
 					nonce: block.header.nonce,
@@ -181,7 +181,7 @@ impl ChainTrait for Bitcoin {
 
 				for tx in block.txdata.into_iter() {
 					storage_db.insert(ParquetTransaction {
-						hash: tx.txid().as_hash().to_string(),
+						hash: tx.txid().as_hash(),
 						version: tx.version,
 						lock_time: tx.lock_time.into(),
 						inputs: tx.input.len() as u32,

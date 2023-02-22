@@ -502,6 +502,7 @@ dependencies = [
  "eyre",
  "futures",
  "governor",
+ "hex",
  "indicatif 0.17.3",
  "itertools",
  "log",

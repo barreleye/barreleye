@@ -32,6 +32,7 @@ governor = "0.5.1"
 base64 = "0.21.0"
 itertools = "0.10.5"
 futures = "0.3.26"
+hex = "0.4.3"
 bitcoincore-rpc-json = "0.16.0"
 duckdb = { version = "0.7.0", features = ["bundled"] }
 reqwest = { version = "0.11.14", features = ["rustls-tls"] }

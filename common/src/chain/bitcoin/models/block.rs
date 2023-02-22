@@ -1,3 +1,4 @@
+use bitcoin::{BlockHash, TxMerkleNode};
 use duckdb::{params, Connection};
 use eyre::Result;
 
@@ -6,10 +7,10 @@ use crate::storage::StorageModelTrait;
 
 #[derive(Debug)]
 pub struct Block {
-	pub hash: String,
+	pub hash: BlockHash,
 	pub version: i32,
-	pub prev_blockhash: String,
-	pub merkle_root: String,
+	pub prev_blockhash: BlockHash,
+	pub merkle_root: TxMerkleNode,
 	pub time: u32,
 	pub bits: u32,
 	pub nonce: u32,
@@ -19,10 +20,10 @@ impl StorageModelTrait for Block {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash VARCHAR NOT NULL,
+                hash BLOB NOT NULL,
                 version INT32 NOT NULL,
-                prev_blockhash VARCHAR NOT NULL,
-                merkle_root VARCHAR NOT NULL,
+                prev_blockhash BLOB NOT NULL,
+                merkle_root BLOB NOT NULL,
                 time UINT32 NOT NULL,
                 bits UINT32 NOT NULL,
                 nonce UINT32 NOT NULL
@@ -46,10 +47,10 @@ impl StorageModelTrait for Block {
 				ParquetFile::Block
 			),
 			params![
-				self.hash,
+				hex::decode(self.hash.to_string())?,
 				self.version,
-				self.prev_blockhash,
-				self.merkle_root,
+				hex::decode(self.prev_blockhash.to_string())?,
+				hex::decode(self.merkle_root.to_string())?,
 				self.time,
 				self.bits,
 				self.nonce,

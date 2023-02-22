@@ -1,3 +1,4 @@
+use bitcoin::hashes::sha256d::Hash;
 use duckdb::{params, Connection};
 use eyre::Result;
 
@@ -6,7 +7,7 @@ use crate::storage::StorageModelTrait;
 
 #[derive(Debug)]
 pub struct Transaction {
-	pub hash: String,
+	pub hash: Hash,
 	pub version: i32,
 	pub lock_time: u32,
 	pub inputs: u32,
@@ -17,7 +18,7 @@ impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash VARCHAR NOT NULL,
+                hash BLOB NOT NULL,
                 version INT32 NOT NULL,
                 lock_time UINT32 NOT NULL,
                 inputs UINT32 NOT NULL,
@@ -41,7 +42,13 @@ impl StorageModelTrait for Transaction {
                 );"#,
 				ParquetFile::Transactions
 			),
-			params![self.hash, self.version, self.lock_time, self.inputs, self.outputs],
+			params![
+				hex::decode(self.hash.to_string())?,
+				self.version,
+				self.lock_time,
+				self.inputs,
+				self.outputs
+			],
 		)?;
 
 		Ok(())

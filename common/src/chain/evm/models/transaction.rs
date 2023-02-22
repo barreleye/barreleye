@@ -2,7 +2,6 @@ use duckdb::{params, Connection};
 use ethers::{
 	abi::AbiEncode,
 	types::{H160, H256, U256},
-	utils,
 };
 use eyre::Result;
 
@@ -27,11 +26,11 @@ impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash VARCHAR NOT NULL,
+                hash BLOB NOT NULL,
                 nonce VARCHAR NOT NULL,
                 transaction_index VARCHAR,
-                "from" VARCHAR NOT NULL,
-                "to" VARCHAR,
+                "from" BLOB NOT NULL,
+                "to" BLOB,
                 value VARCHAR NOT NULL,
                 gas_price VARCHAR,
                 gas VARCHAR NOT NULL,
@@ -66,11 +65,11 @@ impl StorageModelTrait for Transaction {
 				ParquetFile::Transactions
 			),
 			params![
-				self.hash.encode_hex(),
+				self.hash.encode(),
 				self.nonce.to_string(),
 				self.transaction_index,
-				utils::to_checksum(&self.from, None),
-				self.to.map(|v| utils::to_checksum(&v, None)),
+				self.from.encode(),
+				self.to.map(|v| v.encode()),
 				self.value.to_string(),
 				self.gas_price.map(|v| v.to_string()),
 				self.gas.to_string(),
