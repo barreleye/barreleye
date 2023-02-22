@@ -15,7 +15,10 @@ use crate::{
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
 use client::{Auth, Client};
-use models::{Block, ParquetFile, Transaction as Tx};
+use models::{
+	Block as ParquetBlock, Input as ParquetInput, Output as ParquetOutput, ParquetFile,
+	Transaction as ParquetTransaction,
+};
 use modules::{
 	BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinRelationBalanceTransfer,
 	BitcoinRelationNoChange, BitcoinTransfer,
@@ -166,7 +169,7 @@ impl ChainTrait for Bitcoin {
 		if let Ok(block_hash) = self.client.as_ref().unwrap().get_block_hash(block_height).await {
 			self.rate_limit().await;
 			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
-				storage_db.insert(Block {
+				storage_db.insert(ParquetBlock {
 					hash: block_hash.to_string(),
 					version: block.header.version,
 					prev_blockhash: block.header.prev_blockhash.to_string(),
@@ -177,19 +180,41 @@ impl ChainTrait for Bitcoin {
 				})?;
 
 				for tx in block.txdata.into_iter() {
-					storage_db.insert(Tx {
+					storage_db.insert(ParquetTransaction {
 						hash: tx.txid().as_hash().to_string(),
 						version: tx.version,
 						lock_time: tx.lock_time.into(),
 						inputs: tx.input.len() as u32,
 						outputs: tx.output.len() as u32,
 					})?;
+
+					for txin in tx.input.into_iter() {
+						storage_db.insert(ParquetInput {
+							previous_output_tx_hash: txin
+								.previous_output
+								.txid
+								.as_hash()
+								.to_string(),
+							previous_output_vout: txin.previous_output.vout,
+						})?;
+					}
+
+					for txout in tx.output.into_iter() {
+						storage_db.insert(ParquetOutput {
+							value: txout.value,
+							script_pubkey: txout.script_pubkey.to_string(),
+						})?;
+					}
 				}
 			}
 		}
 
-		storage_db
-			.commit(vec![ParquetFile::Block.to_string(), ParquetFile::Transactions.to_string()])?;
+		storage_db.commit(vec![
+			ParquetFile::Block.to_string(),
+			ParquetFile::Transactions.to_string(),
+			ParquetFile::Inputs.to_string(),
+			ParquetFile::Outputs.to_string(),
+		])?;
 
 		Ok(true)
 	}
