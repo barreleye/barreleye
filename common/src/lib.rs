@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use chrono::NaiveDateTime;
 use clap::{builder::PossibleValue, ValueEnum};
 use console::{style, Emoji};

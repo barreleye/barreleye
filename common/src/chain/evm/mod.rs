@@ -16,8 +16,10 @@ use crate::{
 	models::Network,
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
+use models::{Block as ParquetBlock, ParquetFile, Transaction as ParquetTransaction};
 use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
 
+mod models;
 mod modules;
 
 static TRANSFER_FROM_TO_AMOUNT: &str =
@@ -170,12 +172,67 @@ impl ChainTrait for Evm {
 
 	async fn extract_block(
 		&self,
-		_storage: Arc<Storage>,
+		storage: Arc<Storage>,
 		block_height: BlockHeight,
 	) -> Result<bool> {
-		info!("extracting block {block_height}");
-		let is_extracted = true;
-		Ok(is_extracted)
+		let storage_db = storage.get(self.network.network_id, block_height)?;
+		let provider = self.provider.as_ref().unwrap();
+
+		self.rate_limit().await;
+		match provider.get_block_with_txs(block_height).await? {
+			Some(block) if block.number.is_some() => {
+				storage_db.insert(ParquetBlock {
+					hash: block.hash,
+					parent_hash: block.parent_hash,
+					author: block.author,
+					state_root: block.state_root,
+					transactions_root: block.transactions_root,
+					receipts_root: block.receipts_root,
+					number: block.number.map(|v| v.as_u64()),
+					gas_used: block.gas_used,
+					timestamp: block.timestamp.as_u64(),
+					total_difficulty: block.total_difficulty,
+					base_fee_per_gas: block.base_fee_per_gas,
+				})?;
+
+				for tx in block.transactions.into_iter() {
+					// skip if pending
+					if tx.block_hash.is_none() {
+						continue;
+					}
+
+					// process tx only if receipt exists
+					self.rate_limit().await;
+					if let Some(receipt) = provider.get_transaction_receipt(tx.hash()).await? {
+						// skip if tx reverted
+						if let Some(status) = receipt.status {
+							if status == U64::zero() {
+								continue;
+							}
+						}
+
+						storage_db.insert(ParquetTransaction {
+							hash: tx.hash,
+							nonce: tx.nonce,
+							transaction_index: tx.transaction_index.map(|v| v.as_u64()),
+							from: tx.from,
+							to: tx.to,
+							value: tx.value,
+							gas_price: tx.gas_price,
+							gas: tx.gas,
+							transaction_type: tx.transaction_type.map(|v| v.as_u64()),
+							chain_id: tx.chain_id,
+						})?;
+					}
+				}
+			}
+			_ => {}
+		};
+
+		storage_db
+			.commit(vec![ParquetFile::Block.to_string(), ParquetFile::Transactions.to_string()])?;
+
+		Ok(true)
 	}
 }
 
