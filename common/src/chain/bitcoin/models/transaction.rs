@@ -10,8 +10,8 @@ pub struct Transaction {
 	pub hash: Hash,
 	pub version: i32,
 	pub lock_time: u32,
-	pub inputs: u32,
-	pub outputs: u32,
+	pub inputs: u32,  // count
+	pub outputs: u32, // count
 }
 
 impl StorageModelTrait for Transaction {

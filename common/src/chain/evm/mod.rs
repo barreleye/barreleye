@@ -16,7 +16,10 @@ use crate::{
 	models::Network,
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
-use models::{Block as ParquetBlock, ParquetFile, Transaction as ParquetTransaction};
+use models::{
+	Block as ParquetBlock, Log as ParquetLog, ParquetFile, Receipt as ParquetReceipt,
+	Transaction as ParquetTransaction,
+};
 use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
 
 mod models;
@@ -223,14 +226,49 @@ impl ChainTrait for Evm {
 							transaction_type: tx.transaction_type.map(|v| v.as_u64()),
 							chain_id: tx.chain_id,
 						})?;
+
+						storage_db.insert(ParquetReceipt {
+							transaction_hash: receipt.transaction_hash,
+							transaction_index: receipt.transaction_index.as_u64(),
+							block_hash: receipt.block_hash,
+							block_number: receipt.block_number.map(|v| v.as_u64()),
+							from: receipt.from,
+							to: receipt.to,
+							cumulative_gas_used: receipt.cumulative_gas_used,
+							gas_used: receipt.gas_used,
+							contract_address: receipt.contract_address,
+							logs: receipt.logs.len() as u32,
+							status: receipt.status.map(|v| v.as_u64()),
+							root: receipt.root,
+							transaction_type: receipt.transaction_type.map(|v| v.as_u64()),
+							effective_gas_price: receipt.effective_gas_price,
+						})?;
+
+						for log in receipt.logs.into_iter() {
+							storage_db.insert(ParquetLog {
+								address: log.address,
+								topics: log.topics,
+								data: log.data,
+								transaction_hash: log.transaction_hash,
+								transaction_index: log.transaction_index.map(|v| v.as_u64()),
+								log_index: log.log_index,
+								transaction_log_index: log.transaction_log_index,
+								log_type: log.log_type,
+								removed: log.removed,
+							})?;
+						}
 					}
 				}
 			}
 			_ => {}
 		};
 
-		storage_db
-			.commit(vec![ParquetFile::Block.to_string(), ParquetFile::Transactions.to_string()])?;
+		storage_db.commit(vec![
+			ParquetFile::Block.to_string(),
+			ParquetFile::Transactions.to_string(),
+			ParquetFile::Receipts.to_string(),
+			ParquetFile::Logs.to_string(),
+		])?;
 
 		Ok(true)
 	}
