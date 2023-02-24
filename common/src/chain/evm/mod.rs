@@ -16,14 +16,14 @@ use crate::{
 	models::Network,
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
-use models::{
+use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
+use schema::{
 	Block as ParquetBlock, Log as ParquetLog, ParquetFile, Receipt as ParquetReceipt,
 	Transaction as ParquetTransaction,
 };
-use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
 
-mod models;
 mod modules;
+mod schema;
 
 static TRANSFER_FROM_TO_AMOUNT: &str =
 	"ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -218,8 +218,8 @@ impl ChainTrait for Evm {
 							hash: tx.hash,
 							nonce: tx.nonce,
 							transaction_index: tx.transaction_index.map(|v| v.as_u64()),
-							from: tx.from,
-							to: tx.to,
+							from_address: tx.from,
+							to_address: tx.to,
 							value: tx.value,
 							gas_price: tx.gas_price,
 							gas: tx.gas,
@@ -232,8 +232,8 @@ impl ChainTrait for Evm {
 							transaction_index: receipt.transaction_index.as_u64(),
 							block_hash: receipt.block_hash,
 							block_number: receipt.block_number.map(|v| v.as_u64()),
-							from: receipt.from,
-							to: receipt.to,
+							from_address: receipt.from,
+							to_address: receipt.to,
 							cumulative_gas_used: receipt.cumulative_gas_used,
 							gas_used: receipt.gas_used,
 							contract_address: receipt.contract_address,

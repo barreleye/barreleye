@@ -175,7 +175,6 @@ curl -X GET \
 
 - Be aware of your RPC node limits. Indexer makes a significant amount of RPC calls to index historical and new blocks.
 - For indexing, you might have to set Clickhouse's `max_server_memory_usage_to_ram_ratio` to `2` ([read more](https://github.com/ClickHouse/ClickHouse/issues/17631))
-- Warehouse's `experimental_relations` table (along with modules) is not accurate and should not be relied on right now
 
 ## Get Involved
 

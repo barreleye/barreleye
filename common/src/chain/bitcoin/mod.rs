@@ -15,18 +15,18 @@ use crate::{
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
 use client::{Auth, Client};
-use models::{
-	Block as ParquetBlock, Input as ParquetInput, Output as ParquetOutput, ParquetFile,
-	Transaction as ParquetTransaction,
-};
 use modules::{
 	BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinRelationBalanceTransfer,
 	BitcoinRelationNoChange, BitcoinTransfer,
 };
+use schema::{
+	Block as ParquetBlock, Input as ParquetInput, Output as ParquetOutput, ParquetFile,
+	Transaction as ParquetTransaction,
+};
 
 mod client;
-mod models;
 mod modules;
+mod schema;
 
 pub struct Bitcoin {
 	cache: Arc<RwLock<Cache>>,
