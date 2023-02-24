@@ -7,7 +7,7 @@ use tokio::task::JoinSet;
 
 pub use crate::chain::bitcoin::Bitcoin;
 use crate::{
-	models::{Amount, Link, Network, Relation, Transfer},
+	models::{Amount, Link, Network, Transfer},
 	utils, BlockHeight, PrimaryId, RateLimiter, Storage, Warehouse,
 };
 pub use evm::Evm;
@@ -25,8 +25,6 @@ pub enum ModuleId {
 	BitcoinCoinbase = 101,
 	BitcoinTransfer = 102,
 	BitcoinBalance = 103,
-	BitcoinRelationBalanceTransfer = 104,
-	BitcoinRelationNoChange = 105,
 	EvmTransfer = 201,
 	EvmBalance = 202,
 	EvmTokenTransfer = 203,
@@ -75,7 +73,6 @@ pub struct WarehouseData {
 	saved_at: NaiveDateTime,
 	pub transfers: HashSet<Transfer>,
 	pub amounts: HashSet<Amount>,
-	pub relations: HashSet<Relation>,
 	pub links: HashSet<Link>,
 }
 
@@ -85,7 +82,7 @@ impl WarehouseData {
 	}
 
 	pub fn len(&self) -> usize {
-		self.transfers.len() + self.amounts.len() + self.relations.len() + self.links.len()
+		self.transfers.len() + self.amounts.len() + self.links.len()
 	}
 
 	pub fn is_empty(&self) -> bool {
@@ -119,13 +116,6 @@ impl WarehouseData {
 				async move { Amount::create_many(&w, a).await }
 			});
 		}
-		if !self.relations.is_empty() {
-			set.spawn({
-				let w = warehouse.clone();
-				let r = self.relations.clone().into_iter().collect();
-				async move { Relation::create_many(&w, r).await }
-			});
-		}
 		if !self.links.is_empty() {
 			set.spawn({
 				let w = warehouse.clone();
@@ -147,7 +137,6 @@ impl WarehouseData {
 
 		self.transfers.clear();
 		self.amounts.clear();
-		self.relations.clear();
 		self.links.clear();
 	}
 }
@@ -156,7 +145,6 @@ impl AddAssign for WarehouseData {
 	fn add_assign(&mut self, rhs: WarehouseData) {
 		self.transfers.extend(rhs.transfers);
 		self.amounts.extend(rhs.amounts);
-		self.relations.extend(rhs.relations);
 		self.links.extend(rhs.links);
 	}
 }

@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::{
-	models::{transfer::TABLE as TRANSFERS_TABLE, PrimaryId, PrimaryIds},
+	models::{warehouse::transfer::TABLE as TRANSFERS_TABLE, PrimaryId, PrimaryIds},
 	warehouse::Warehouse,
 	BlockHeight,
 };

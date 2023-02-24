@@ -15,10 +15,7 @@ use crate::{
 	utils, BlockHeight, Cache, RateLimiter, Storage,
 };
 use client::{Auth, Client};
-use modules::{
-	BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinRelationBalanceTransfer,
-	BitcoinRelationNoChange, BitcoinTransfer,
-};
+use modules::{BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinTransfer};
 use schema::{
 	Block as ParquetBlock, Input as ParquetInput, Output as ParquetOutput, ParquetFile,
 	Transaction as ParquetTransaction,
@@ -55,8 +52,6 @@ impl Bitcoin {
 			modules: vec![
 				Box::new(BitcoinTransfer::new(network_id)),
 				Box::new(BitcoinBalance::new(network_id)),
-				Box::new(BitcoinRelationBalanceTransfer::new(network_id)),
-				Box::new(BitcoinRelationNoChange::new(network_id)),
 				Box::new(BitcoinCoinbase::new(network_id)),
 			],
 		}
@@ -336,7 +331,7 @@ impl Bitcoin {
 		Ok(ret)
 	}
 
-	fn is_valid_address(&self, address: &str) -> bool {
+	fn _is_valid_address(&self, address: &str) -> bool {
 		!address.contains(':')
 	}
 }

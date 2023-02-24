@@ -63,7 +63,7 @@ impl Pipe {
 }
 
 impl Indexer {
-	pub async fn extract(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
+	pub async fn copy(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
 		let mut started_indexing = false;
 
 		'indexing: loop {

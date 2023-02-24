@@ -8,7 +8,7 @@ use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-	models::{entity_tag, BasicModel, EntityTagColumn, PrimaryId, PrimaryIds, SoftDeleteModel},
+	models::{db::entity_tag, BasicModel, EntityTagColumn, PrimaryId, PrimaryIds, SoftDeleteModel},
 	utils, IdPrefix,
 };
 

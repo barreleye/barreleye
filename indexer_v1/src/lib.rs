@@ -21,13 +21,13 @@ use uuid::Uuid;
 use barreleye_common::{
 	models::{
 		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
-		NetworkColumn, PrimaryId, PrimaryIds, Relation, SoftDeleteModel, Transfer,
+		NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
 	},
 	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Warnings,
 	INDEXER_HEARTBEAT, INDEXER_PROMOTION,
 };
 
-mod extract;
+mod copy;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -53,7 +53,7 @@ impl Indexer {
 			set.spawn({
 				let s = self.clone();
 				let r = rx.clone();
-				async move { s.extract(r).await }
+				async move { s.copy(r).await }
 			});
 
 			// set.spawn({
@@ -240,25 +240,14 @@ impl Indexer {
 			.await?;
 
 			// delete from warehouse
-			let (
-				transfers_deleted,
-				relations_deleted,
-				balances_deleted,
-				amounts_deleted,
-				links_deleted,
-			) = tokio::join!(
+			let (transfers_deleted, balances_deleted, amounts_deleted, links_deleted) = tokio::join!(
 				Transfer::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
-				Relation::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
 				Balance::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
 				Amount::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
 				Link::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
 			);
 
-			transfers_deleted
-				.and(relations_deleted)
-				.and(balances_deleted)
-				.and(amounts_deleted)
-				.and(links_deleted)?;
+			transfers_deleted.and(balances_deleted).and(amounts_deleted).and(links_deleted)?;
 
 			// finally delete only the networks we grabbed earlier
 			Network::prune_all_where(self.app.db(), NetworkColumn::NetworkId.is_in(network_ids))

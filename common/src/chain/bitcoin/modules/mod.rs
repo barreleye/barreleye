@@ -9,14 +9,10 @@ use crate::{
 };
 pub use balance::BitcoinBalance;
 pub use coinbase::BitcoinCoinbase;
-pub use relation_balance_transfer::BitcoinRelationBalanceTransfer;
-pub use relation_no_change::BitcoinRelationNoChange;
 pub use transfer::BitcoinTransfer;
 
 mod balance;
 mod coinbase;
-mod relation_balance_transfer;
-mod relation_no_change;
 mod transfer;
 
 #[async_trait]

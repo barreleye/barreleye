@@ -6,7 +6,10 @@ use sea_orm::{
 use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::models::{entity, tag, BasicModel, EntityColumn, PrimaryId, PrimaryIds, TagColumn};
+use crate::models::{
+	db::{entity, tag},
+	BasicModel, EntityColumn, PrimaryId, PrimaryIds, TagColumn,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
 #[sea_orm(table_name = "entity_tags")]

@@ -8,35 +8,12 @@ use sea_orm::{
 use sea_orm_migration::prelude::IntoCondition;
 use std::ops::{Deref, DerefMut};
 
-pub use self::config::{Config, ConfigKey};
 use crate::utils;
-pub use address::{Address, AddressActiveModel, Column as AddressColumn};
-pub use amount::Amount;
-pub use api_key::{ApiKey, ApiKeyActiveModel, Column as ApiKeyColumn};
-pub use balance::Balance;
-pub use entity::{
-	Column as EntityColumn, JoinedEntity, LabeledEntity as Entity,
-	LabeledEntityActiveModel as EntityActiveModel, SanitizedEntity,
-};
-pub use entity_tag::{Column as EntityTagColumn, EntityTag};
-pub use link::{Link, LinkUuid};
-pub use network::{Column as NetworkColumn, Network, NetworkActiveModel, SanitizedNetwork};
-pub use relation::{Reason as RelationReason, Relation};
-pub use tag::{Column as TagColumn, JoinedTag, SanitizedTag, Tag, TagActiveModel};
-pub use transfer::Transfer;
+pub use db::*;
+pub use warehouse::*;
 
-pub mod address;
-pub mod amount;
-pub mod api_key;
-pub mod balance;
-pub mod config;
-pub mod entity;
-pub mod entity_tag;
-pub mod link;
-pub mod network;
-pub mod relation;
-pub mod tag;
-pub mod transfer;
+mod db;
+mod warehouse;
 
 pub type PrimaryId = i64;
 

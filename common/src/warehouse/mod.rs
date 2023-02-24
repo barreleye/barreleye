@@ -207,37 +207,6 @@ impl Warehouse {
 			.await
 			.wrap_err(self.url_without_database.clone())?;
 
-		self.clickhouse
-			.client
-			.query(&format!(
-				r#"
-					CREATE TABLE IF NOT EXISTS {}.experimental_relations
-					(
-						uuid UUID,
-						module_id UInt16,
-						network_id UInt64,
-						block_height UInt64,
-						tx_hash String,
-						from_address String,
-						to_address String,
-						reason UInt16,
-						created_at DateTime
-					)
-					ENGINE = ReplacingMergeTree
-					ORDER BY (
-						module_id,
-						network_id,
-						from_address,
-						to_address
-					)
-					PARTITION BY toYYYYMM(created_at);
-				"#,
-				self.db_name
-			))
-			.execute()
-			.await
-			.wrap_err(self.url_without_database.clone())?;
-
 		Ok(())
 	}
 
