@@ -62,6 +62,11 @@ impl Indexer {
 		let mut config_key_map = HashMap::<ConfigKey, BlockHeight>::new();
 
 		'indexing: loop {
+			if !self.app.is_leading() {
+				sleep(Duration::from_secs(1)).await;
+				continue;
+			}
+
 			// get all networks that are not being processed in chunks
 			let mut networks = vec![];
 			for network in
@@ -100,7 +105,7 @@ impl Indexer {
 					.collect::<HashMap<PrimaryId, BlockHeight>>()
 			};
 			if block_height_map.is_empty() {
-				debug!("Indexer (link): No fully processed networks. Waiting…");
+				debug!("No fully processed networks yet. Waiting…");
 				sleep(Duration::from_secs(10)).await;
 				continue;
 			}
@@ -118,7 +123,7 @@ impl Indexer {
 				.map(|a| (a.network_id, a.address.clone()))
 				.collect::<HashSet<(PrimaryId, String)>>();
 			if addresses.is_empty() {
-				debug!("Indexer (link): No addresses to link");
+				debug!("No addresses to link");
 				sleep(Duration::from_secs(10)).await;
 				continue;
 			}
@@ -281,7 +286,7 @@ impl Indexer {
 			loop {
 				tokio::select! {
 					_ = networks_updated.changed() => {
-						debug!("Indexer (link): Restarting… (networks updated)");
+						debug!("Restarting… (networks updated)");
 						break 'indexing Ok(());
 					}
 					result = futures.join_next() => {
@@ -300,7 +305,7 @@ impl Indexer {
 			// commit if collected enough
 			if warehouse_data.should_commit(is_at_the_tip) && self.app.is_leading() {
 				debug!(
-					"Indexer (link): Pushing {} record(s) to warehouse",
+					"Pushing {} record(s) to warehouse",
 					style(self.format_number(warehouse_data.len())?).bold(),
 				);
 

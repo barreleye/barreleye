@@ -79,6 +79,11 @@ impl Indexer {
 		let mut config_key_map = HashMap::<ConfigKey, serde_json::Value>::new();
 
 		'indexing: loop {
+			if !self.app.is_leading() {
+				sleep(Duration::from_secs(1)).await;
+				continue;
+			}
+
 			if self.app.should_reconnect().await? {
 				self.app.connect_networks(true).await?;
 			}
@@ -95,7 +100,6 @@ impl Indexer {
 				.await?
 				.is_empty()
 				{
-					debug!("Indexer (process): No fully copied networks. Waiting…");
 					continue;
 				}
 
@@ -229,16 +233,19 @@ impl Indexer {
 				}
 			}
 
+			if network_params_map.is_empty() {
+				debug!("No fully synced networks yet. Waiting…");
+				sleep(Duration::from_secs(10)).await;
+				continue;
+			}
+
 			let (pipe_sender, mut pipe_receiver) = mpsc::channel(network_params_map.len());
 			let (abort_sender, _) = broadcast::channel(network_params_map.len());
 			let should_keep_going = Arc::new(AtomicBool::new(true));
 			let mut receipts = HashMap::<ConfigKey, Sender<()>>::new();
 
 			let thread_count = network_params_map.len();
-			debug!(
-				"Indexer (process): Launching {} thread(s)",
-				style(self.format_number(thread_count)?).bold()
-			);
+			debug!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold());
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_params_map.clone().into_iter() {
@@ -360,7 +367,7 @@ impl Indexer {
 			loop {
 				tokio::select! {
 					_ = networks_updated.changed() => {
-						debug!("Indexer (process): Restarting… (networks updated)");
+						debug!("Restarting… (networks updated)");
 						abort()?;
 						break 'indexing Ok(());
 					}
@@ -380,7 +387,7 @@ impl Indexer {
 						}
 
 						debug!(
-							"Indexer (process): Thread {} → {} record(s)",
+							"Thread {} → {} record(s)",
 							style(config_key).bold(),
 							self.format_number(new_data.len())?,
 						);
@@ -404,7 +411,7 @@ impl Indexer {
 						// buffer fills up or enough time has passed
 						if warehouse_data.should_commit(false) {
 							debug!(
-								"Indexer (process): Pushing {} record(s) to warehouse",
+								"Pushing {} record(s) to warehouse",
 								style(self.format_number(warehouse_data.len())?).bold(),
 							);
 

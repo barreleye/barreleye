@@ -65,6 +65,11 @@ impl Pipe {
 impl Indexer {
 	pub async fn copy(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
 		'indexing: loop {
+			if !self.app.is_leading() {
+				sleep(Duration::from_secs(1)).await;
+				continue;
+			}
+
 			if self.app.should_reconnect().await? {
 				self.app.connect_networks(true).await?;
 			}
@@ -144,10 +149,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, mpsc::Sender<()>>::new();
 
 			let thread_count = network_range_map.len();
-			debug!(
-				"Indexer (copy): Launching {} thread(s)",
-				style(self.format_number(thread_count)?).bold()
-			);
+			debug!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold());
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_range_map.clone().into_iter() {
@@ -243,7 +245,7 @@ impl Indexer {
 			loop {
 				tokio::select! {
 					_ = networks_updated.changed() => {
-						debug!("Indexer (copy): Restarting… (networks updated)");
+						debug!("Restarting… (networks updated)");
 						abort()?;
 						break 'indexing Ok(());
 					}
