@@ -28,6 +28,7 @@ use barreleye_common::{
 };
 
 mod copy;
+mod link;
 mod process;
 
 #[derive(Clone)]
@@ -61,6 +62,12 @@ impl Indexer {
 				let s = self.clone();
 				let r = rx.clone();
 				async move { s.process(r).await }
+			});
+
+			set.spawn({
+				let s = self.clone();
+				let r = rx.clone();
+				async move { s.link(r).await }
 			});
 
 			let ret = tokio::select! {

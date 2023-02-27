@@ -13,7 +13,7 @@
 
 ## What is Barreleye?
 
-Barreleye is an **open-source blockchain analytics tool** that's optimized for address-based queries (eg: who has what assets and where did they come from).
+Barreleye is an **open-source blockchain analytics tool** that's optimized for address-oriented queries (eg: who has what assets and where they came from).
 
 Features:
 
@@ -53,13 +53,13 @@ To run Barreleye locally:
 This will do the following:
 
 - Run migrations (including seeding with a random public Ethereum RPC node)
-- Start the server, which will handle API requests
+- Start the server, which will handle admin & analytics API requests
 - Start the indexer, which will:
   - Store extracted blockchain data in Parquet files locally
   - Store relational data in SQLite locally
   - Store warehouse data in DuckDB locally
 
-For production you'd probably want to store extracted blockchain data in S3 or GCS:
+For production you'd probably want to store extracted blockchain data in anything S3-compatible (S3, GCS, MinIO, etc):
 
 ```bash
 ./barreleye \
@@ -85,7 +85,7 @@ And a hosted warehouse OLAP instead of DuckDB (currently only Clickhouse is supp
   --warehouse http://username:password@localhost:8123/database_name
 ```
 
-Finally, to speed up indexing run your own Ethereum node and bump up the rate-limit:
+Finally, to speed up indexing run your own Ethereum node with a higher rate-limit:
 
 ```bash
 curl -X PUT \

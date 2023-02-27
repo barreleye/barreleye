@@ -95,6 +95,7 @@ impl Indexer {
 				.await?
 				.is_empty()
 				{
+					debug!("Indexer (process): No fully copied networks. Waiting…");
 					continue;
 				}
 
@@ -403,7 +404,7 @@ impl Indexer {
 						// buffer fills up or enough time has passed
 						if warehouse_data.should_commit(false) {
 							debug!(
-								"Pushing {} record(s) to warehouse",
+								"Indexer (process): Pushing {} record(s) to warehouse",
 								style(self.format_number(warehouse_data.len())?).bold(),
 							);
 
