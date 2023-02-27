@@ -60,6 +60,7 @@ impl Indexer {
 	pub async fn link(&self, mut networks_updated: Receiver<SystemTime>) -> Result<()> {
 		let mut warehouse_data = WarehouseData::new();
 		let mut config_key_map = HashMap::<ConfigKey, BlockHeight>::new();
+		let mut blocked_and_notified = false;
 
 		'indexing: loop {
 			if !self.app.is_leading() {
@@ -67,14 +68,18 @@ impl Indexer {
 				continue;
 			}
 
-			// get all networks that are not being processed in chunks
+			// skip network if "process" step is not done yet
 			let mut networks = vec![];
 			for network in
 				Network::get_all_by_env(self.app.db(), self.app.settings.env, Some(false))
 					.await?
 					.into_iter()
 			{
-				if Config::get_many::<_, (BlockHeight, BlockHeight)>(
+				let process_step_started = matches!(Config::get::<_, BlockHeight>(
+                    self.app.db(),
+                    ConfigKey::IndexerProcessTailSync(network.network_id),
+                ).await?, Some(hit) if hit.value > 0);
+				let process_step_synced = Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
 					vec![
 						ConfigKey::IndexerProcessChunkSync(network.network_id, 0),
@@ -82,8 +87,8 @@ impl Indexer {
 					],
 				)
 				.await?
-				.is_empty()
-				{
+				.is_empty();
+				if process_step_started && process_step_synced {
 					networks.push(network);
 				}
 			}
@@ -105,9 +110,14 @@ impl Indexer {
 					.collect::<HashMap<PrimaryId, BlockHeight>>()
 			};
 			if block_height_map.is_empty() {
-				debug!("No fully processed networks yet. Waiting…");
+				if !blocked_and_notified {
+					debug!("No fully processed networks yet. Waiting…");
+					blocked_and_notified = true;
+				}
 				sleep(Duration::from_secs(10)).await;
 				continue;
+			} else {
+				blocked_and_notified = false;
 			}
 
 			// break the link chains that contain newly added addresses in the middle

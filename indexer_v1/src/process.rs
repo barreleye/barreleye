@@ -77,6 +77,7 @@ impl Indexer {
 	pub async fn process(&self, mut networks_updated: Receiver<SystemTime>) -> Result<()> {
 		let mut warehouse_data = WarehouseData::new();
 		let mut config_key_map = HashMap::<ConfigKey, serde_json::Value>::new();
+		let mut blocked_and_notified = false;
 
 		'indexing: loop {
 			if !self.app.is_leading() {
@@ -92,14 +93,18 @@ impl Indexer {
 			for (network_id, chain) in self.app.networks.read().await.iter() {
 				let nid = *network_id;
 
-				// skip if not done with the copy's chunk-splitting step
-				if !Config::get_many::<_, (BlockHeight, BlockHeight)>(
+				// skip if "copy" step is not done yet
+				let copy_step_started = matches!(Config::get::<_, BlockHeight>(
+                    self.app.db(),
+                    ConfigKey::IndexerCopyTailSync(nid),
+                ).await?, Some(hit) if hit.value > 0);
+				let copy_step_synced = Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
 					vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
 				)
 				.await?
-				.is_empty()
-				{
+				.is_empty();
+				if !copy_step_started || !copy_step_synced {
 					continue;
 				}
 
@@ -234,9 +239,14 @@ impl Indexer {
 			}
 
 			if network_params_map.is_empty() {
-				debug!("No fully synced networks yet. Waiting…");
+				if !blocked_and_notified {
+					debug!("No fully synced networks yet. Waiting…");
+					blocked_and_notified = true;
+				}
 				sleep(Duration::from_secs(10)).await;
 				continue;
+			} else {
+				blocked_and_notified = false;
 			}
 
 			let (pipe_sender, mut pipe_receiver) = mpsc::channel(network_params_map.len());
