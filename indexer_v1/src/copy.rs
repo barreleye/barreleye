@@ -64,99 +64,44 @@ impl Pipe {
 
 impl Indexer {
 	pub async fn copy(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
-		let mut started_indexing = false;
-
 		'indexing: loop {
-			if !self.app.is_leading() {
-				if started_indexing {
-					info!("Stopping…");
-				}
-
-				started_indexing = false;
-				sleep(Duration::from_secs(1)).await;
-				continue;
-			}
-
-			if !started_indexing {
-				started_indexing = true;
-				info!("Starting…");
-			}
-
 			if self.app.should_reconnect().await? {
 				self.app.connect_networks(true).await?;
 			}
 
-			if self.app.networks.read().await.is_empty() {
-				info!("No active networks. Standing by…");
-				sleep(Duration::from_secs(5)).await;
-				continue;
-			}
-
 			let mut network_range_map = HashMap::new();
 
-			for (network_id, chain) in self.app.networks.read().await.iter() {
+			for (network_id, _) in self.app.networks.read().await.iter() {
 				let nid = *network_id;
 
-				let mut last_read_block = Config::get::<_, BlockHeight>(
+				let mut last_copied_block = Config::get::<_, BlockHeight>(
 					self.app.db(),
-					ConfigKey::IndexerExtractTailSync(nid),
+					ConfigKey::IndexerCopyTailSync(nid),
 				)
 				.await?
 				.map(|h| h.value)
 				.unwrap_or(0);
 
-				let block_height = {
-					let config_key = ConfigKey::BlockHeight(nid);
-					match Config::get::<_, BlockHeight>(self.app.db(), config_key).await? {
-						Some(hit) if hit.value > last_read_block => hit.value,
-						_ => {
-							let block_height = chain.get_block_height().await?;
-
-							Config::set::<_, BlockHeight>(self.app.db(), config_key, block_height)
-								.await?;
-
-							block_height
-						}
-					}
-				};
+				let block_height =
+					self.get_updated_block_height(nid, Some(last_copied_block)).await?;
 
 				// if first time, split up network into chunks for faster initial syncing
-				let chunks = num_cpus::get();
-				if last_read_block == 0 &&
-					chunks > 0 && Config::get_many::<_, (BlockHeight, BlockHeight)>(
-					self.app.db(),
-					vec![ConfigKey::IndexerExtractChunkSync(nid, 0)],
-				)
-				.await?
-				.is_empty()
+				if last_copied_block == 0 &&
+					self.app.num_cpus > 0 &&
+					Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+					)
+					.await?
+					.is_empty()
 				{
-					let chunk_size = ((block_height - 1) as f64 / chunks as f64).floor() as u64;
+					let block_sync_ranges = self
+						.get_block_sync_ranges(block_height)?
+						.into_iter()
+						.map(|(min, max)| (ConfigKey::IndexerCopyChunkSync(nid, max), (min, max)))
+						.collect::<HashMap<_, _>>();
 
-					// create chunks
-					let block_sync_ranges = {
-						let mut ret = HashMap::new();
-
-						let mut block_height_min = 0;
-						let mut block_height_max = chunk_size;
-
-						for i in 0..chunks {
-							if i + 1 == chunks {
-								block_height_max = block_height - 1
-							}
-
-							ret.insert(
-								ConfigKey::IndexerExtractChunkSync(nid, block_height_max),
-								(block_height_min, block_height_max),
-							);
-
-							block_height_min = block_height_max + 1;
-							block_height_max += chunk_size;
-						}
-
-						ret
-					};
-
-					// create tail-sync indexes
+					// create chunk sync indexes
 					Config::set_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
 						block_sync_ranges,
@@ -164,25 +109,25 @@ impl Indexer {
 					.await?;
 
 					// fast-forward last read block to almost block_height
-					last_read_block = block_height - 1;
+					last_copied_block = block_height - 1;
 					Config::set::<_, BlockHeight>(
 						self.app.db(),
-						ConfigKey::IndexerExtractTailSync(nid),
-						last_read_block,
+						ConfigKey::IndexerCopyTailSync(nid),
+						last_copied_block,
 					)
 					.await?;
 				}
 
 				// push tail index to process latest blocks
 				network_range_map.insert(
-					ConfigKey::IndexerExtractTailSync(nid),
-					NetworkRange::new(nid, last_read_block, None),
+					ConfigKey::IndexerCopyTailSync(nid),
+					NetworkRange::new(nid, last_copied_block, None),
 				);
 
 				// push all fast-sync block ranges
 				for (config_key, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
-					vec![ConfigKey::IndexerExtractChunkSync(nid, 0)],
+					vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
 				)
 				.await?
 				{
@@ -199,7 +144,10 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, mpsc::Sender<()>>::new();
 
 			let thread_count = network_range_map.len();
-			info!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold());
+			debug!(
+				"Indexer (copy): Launching {} thread(s)",
+				style(self.format_number(thread_count)?).bold()
+			);
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_range_map.clone().into_iter() {
@@ -225,8 +173,8 @@ impl Indexer {
 						let block_height_max = network_params.range.1;
 
 						let config_value = |block_height| match config_key {
-							ConfigKey::IndexerExtractTailSync(_) => json!(block_height),
-							ConfigKey::IndexerExtractChunkSync(_, _) => {
+							ConfigKey::IndexerCopyTailSync(_) => json!(block_height),
+							ConfigKey::IndexerCopyChunkSync(_, _) => {
 								json!((block_height, block_height_max.unwrap()))
 							}
 							_ => panic!("no return value for {config_key}"),
@@ -295,7 +243,7 @@ impl Indexer {
 			loop {
 				tokio::select! {
 					_ = networks_updated.changed() => {
-						info!("Restarting… (networks updated)");
+						debug!("Indexer (copy): Restarting… (networks updated)");
 						abort()?;
 						break 'indexing Ok(());
 					}
@@ -321,11 +269,11 @@ impl Indexer {
 
 						// save the new config value
 						match config_key {
-							ConfigKey::IndexerExtractTailSync(_) => {
+							ConfigKey::IndexerCopyTailSync(_) => {
 								let value = json_parse::<BlockHeight>(config_value)?;
 								Config::set::<_, BlockHeight>(self.app.db(), config_key, value).await?;
 							}
-							ConfigKey::IndexerExtractChunkSync(_, _) => {
+							ConfigKey::IndexerCopyChunkSync(_, _) => {
 								let (block_range_min, block_range_max) =
 									json_parse::<(BlockHeight, BlockHeight)>(config_value)?;
 

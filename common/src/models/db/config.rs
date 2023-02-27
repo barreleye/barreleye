@@ -19,19 +19,18 @@ use crate::{models::PrimaryId, utils, BlockHeight};
 pub enum ConfigKey {
 	#[display(fmt = "primary")]
 	Primary,
-	#[display(fmt = "indexer_extract_tail_sync_n{_0}")]
-	IndexerExtractTailSync(PrimaryId),
-	#[display(fmt = "indexer_extract_chunk_sync_n{_0}_b{_1}")]
-	IndexerExtractChunkSync(PrimaryId, BlockHeight),
-
-	#[display(fmt = "indexer_tail_sync_n{_0}")]
-	IndexerTailSync(PrimaryId),
-	#[display(fmt = "indexer_chunk_sync_n{_0}_b{_1}")]
-	IndexerChunkSync(PrimaryId, BlockHeight),
-	#[display(fmt = "indexer_module_sync_n{_0}_m{_1}")]
-	IndexerModuleSync(PrimaryId, u16),
-	#[display(fmt = "indexer_module_synced_n{_0}_m{_1}")]
-	IndexerModuleSynced(PrimaryId, u16),
+	#[display(fmt = "indexer_copy_tail_sync_n{_0}")]
+	IndexerCopyTailSync(PrimaryId),
+	#[display(fmt = "indexer_copy_chunk_sync_n{_0}_b{_1}")]
+	IndexerCopyChunkSync(PrimaryId, BlockHeight),
+	#[display(fmt = "indexer_process_tail_sync_n{_0}")]
+	IndexerProcessTailSync(PrimaryId),
+	#[display(fmt = "indexer_process_chunk_sync_n{_0}_b{_1}")]
+	IndexerProcessChunkSync(PrimaryId, BlockHeight),
+	#[display(fmt = "indexer_process_module_sync_n{_0}_m{_1}")]
+	IndexerProcessModuleSync(PrimaryId, u16),
+	#[display(fmt = "indexer_process_module_synced_n{_0}_m{_1}")]
+	IndexerProcessModuleSynced(PrimaryId, u16),
 	#[display(fmt = "indexer_upstream_sync_n{_0}_a{_1}")]
 	IndexerUpstreamSync(PrimaryId, PrimaryId),
 	#[display(fmt = "indexer_n{_0}_progress")]
@@ -53,20 +52,19 @@ impl From<String> for ConfigKey {
 
 		match template.to_string().as_str() {
 			"primary" => Self::Primary,
-			"indexer_extract_tail_sync_n{}" if n.len() == 1 => Self::IndexerExtractTailSync(n[0]),
-			"indexer_extract_chunk_sync_n{}_b{}" if n.len() == 2 => {
-				Self::IndexerExtractChunkSync(n[0], n[1] as BlockHeight)
+			"indexer_copy_tail_sync_n{}" if n.len() == 1 => Self::IndexerCopyTailSync(n[0]),
+			"indexer_copy_chunk_sync_n{}_b{}" if n.len() == 2 => {
+				Self::IndexerCopyChunkSync(n[0], n[1] as BlockHeight)
 			}
-
-			"indexer_tail_sync_n{}" if n.len() == 1 => Self::IndexerTailSync(n[0]),
-			"indexer_chunk_sync_n{}_b{}" if n.len() == 2 => {
-				Self::IndexerChunkSync(n[0], n[1] as BlockHeight)
+			"indexer_process_tail_sync_n{}" if n.len() == 1 => Self::IndexerProcessTailSync(n[0]),
+			"indexer_process_chunk_sync_n{}_b{}" if n.len() == 2 => {
+				Self::IndexerProcessChunkSync(n[0], n[1] as BlockHeight)
 			}
-			"indexer_module_sync_n{}_m{}" if n.len() == 2 => {
-				Self::IndexerModuleSync(n[0], n[1] as u16)
+			"indexer_process_module_sync_n{}_m{}" if n.len() == 2 => {
+				Self::IndexerProcessModuleSync(n[0], n[1] as u16)
 			}
-			"indexer_module_synced_n{}_m{}" if n.len() == 2 => {
-				Self::IndexerModuleSynced(n[0], n[1] as u16)
+			"indexer_process_module_synced_n{}_m{}" if n.len() == 2 => {
+				Self::IndexerProcessModuleSynced(n[0], n[1] as u16)
 			}
 			"indexer_upstream_sync_n{}_a{}" if n.len() == 2 => {
 				Self::IndexerUpstreamSync(n[0], n[1])
@@ -88,10 +86,18 @@ mod tests {
 	fn test_config_key_str() {
 		let config_keys = HashMap::from([
 			(ConfigKey::Primary, "primary"),
-			(ConfigKey::IndexerTailSync(123), "indexer_tail_sync_n123"),
-			(ConfigKey::IndexerChunkSync(123, 456), "indexer_chunk_sync_n123_b456"),
-			(ConfigKey::IndexerModuleSync(123, 456), "indexer_module_sync_n123_m456"),
-			(ConfigKey::IndexerModuleSynced(123, 456), "indexer_module_synced_n123_m456"),
+			(ConfigKey::IndexerCopyTailSync(123), "indexer_copy_tail_sync_n123"),
+			(ConfigKey::IndexerCopyChunkSync(123, 456), "indexer_copy_chunk_sync_n123_b456"),
+			(ConfigKey::IndexerProcessTailSync(123), "indexer_process_tail_sync_n123"),
+			(ConfigKey::IndexerProcessChunkSync(123, 456), "indexer_process_chunk_sync_n123_b456"),
+			(
+				ConfigKey::IndexerProcessModuleSync(123, 456),
+				"indexer_process_module_sync_n123_m456",
+			),
+			(
+				ConfigKey::IndexerProcessModuleSynced(123, 456),
+				"indexer_process_module_synced_n123_m456",
+			),
 			(ConfigKey::IndexerUpstreamSync(123, 456), "indexer_upstream_sync_n123_a456"),
 			(ConfigKey::IndexerProgress(123), "indexer_n123_progress"),
 			(ConfigKey::BlockHeight(123), "block_height_n123"),

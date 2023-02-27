@@ -28,6 +28,7 @@ use barreleye_common::{
 };
 
 mod copy;
+mod process;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -56,11 +57,11 @@ impl Indexer {
 				async move { s.copy(r).await }
 			});
 
-			// set.spawn({
-			// 	let s = self.clone();
-			// 	let r = rx.clone();
-			// 	async move { s.index_upstream(r).await }
-			// });
+			set.spawn({
+				let s = self.clone();
+				let r = rx.clone();
+				async move { s.process(r).await }
+			});
 
 			let ret = tokio::select! {
 				_ = signal::ctrl_c() => break Ok(()),
@@ -136,51 +137,72 @@ impl Indexer {
 	}
 
 	async fn show_progress(&self) -> Result<()> {
+		let mut started_indexing = false;
+
 		loop {
-			if self.app.is_leading() {
-				for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
-					let nid = network_id;
-					let mut scores = vec![];
+			if !self.app.is_leading() {
+				if started_indexing {
+					debug!("Stopping…");
+				}
 
-					let block_height =
-						Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
-							.await?
-							.map(|v| v.value)
-							.unwrap_or(0);
+				started_indexing = false;
+				sleep(Duration::from_secs(1)).await;
+				continue;
+			}
 
-					if block_height == 0 {
-						scores.push(0.0);
-					} else {
-						let tail_block = Config::get::<_, BlockHeight>(
-							self.app.db(),
-							ConfigKey::IndexerExtractTailSync(nid),
-						)
+			if !started_indexing {
+				started_indexing = true;
+				debug!("Starting…");
+			}
+
+			if self.app.networks.read().await.is_empty() {
+				debug!("No active networks. Standing by…");
+				sleep(Duration::from_secs(10)).await;
+				continue;
+			}
+
+			for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
+				let nid = network_id;
+				let mut scores = vec![];
+
+				let block_height =
+					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
 						.await?
 						.map(|v| v.value)
 						.unwrap_or(0);
 
-						let mut done_blocks = tail_block;
-						for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
-							self.app.db(),
-							vec![ConfigKey::IndexerExtractChunkSync(nid, 0)],
-						)
-						.await?
-						{
-							done_blocks -= block_range.value.1 - block_range.value.0;
-						}
+				if block_height == 0 {
+					scores.push(0.0);
+				} else {
+					let tail_block = Config::get::<_, BlockHeight>(
+						self.app.db(),
+						ConfigKey::IndexerCopyTailSync(nid),
+					)
+					.await?
+					.map(|v| v.value)
+					.unwrap_or(0);
 
-						scores.push(done_blocks as f64 / block_height as f64);
+					let mut done_blocks = tail_block;
+					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+					)
+					.await?
+					{
+						done_blocks -= block_range.value.1 - block_range.value.0;
 					}
 
-					let progress = scores.iter().sum::<f64>() / scores.len() as f64;
-					Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
-						.await?;
-
-					info!("{} @ {:.4}%…", style(chain.get_network().name).bold(), progress * 100.0);
+					scores.push(done_blocks as f64 / block_height as f64);
 				}
+
+				let progress = scores.iter().sum::<f64>() / scores.len() as f64;
+				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
+					.await?;
+
+				info!("{} @ {:.4}%…", style(chain.get_network().name).bold(), progress * 100.0);
 			}
 
-			sleep(Duration::from_secs(10)).await;
+			sleep(Duration::from_secs(5)).await;
 		}
 	}
 
@@ -260,5 +282,55 @@ impl Indexer {
 	fn format_number(&self, n: usize) -> Result<String> {
 		let locale = SystemLocale::default()?;
 		Ok(n.to_formatted_string(&locale))
+	}
+
+	async fn get_updated_block_height(
+		&self,
+		network_id: PrimaryId,
+		last_known_block_height: Option<BlockHeight>,
+	) -> Result<BlockHeight> {
+		let mut ret = 0;
+
+		if let Some(chain) = self.app.networks.read().await.get(&network_id) {
+			let config_key = ConfigKey::BlockHeight(network_id);
+			ret = match Config::get::<_, BlockHeight>(self.app.db(), config_key).await? {
+				Some(hit) if hit.value > last_known_block_height.unwrap_or(0) => hit.value,
+				_ => {
+					let block_height = chain.get_block_height().await?;
+
+					Config::set::<_, BlockHeight>(self.app.db(), config_key, block_height).await?;
+
+					block_height
+				}
+			};
+		}
+
+		Ok(ret)
+	}
+
+	fn get_block_sync_ranges(
+		&self,
+		block_height: BlockHeight,
+	) -> Result<Vec<(BlockHeight, BlockHeight)>> {
+		let mut ret = vec![];
+
+		let chunks = self.app.num_cpus;
+		let chunk_size = ((block_height - 1) as f64 / chunks as f64).floor() as u64;
+
+		let mut block_height_min = 0;
+		let mut block_height_max = chunk_size;
+
+		for i in 0..chunks {
+			if i + 1 == chunks {
+				block_height_max = block_height - 1
+			}
+
+			ret.push((block_height_min, block_height_max));
+
+			block_height_min = block_height_max + 1;
+			block_height_max += chunk_size;
+		}
+
+		Ok(ret)
 	}
 }

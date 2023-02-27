@@ -13,8 +13,8 @@ workspace = ".."
 tokio = { version = "1.25.0", features = ["full"] }
 log = "0.4.17"
 eyre = "0.6.8"
-axum = "0.6.8"
-axum-extra = { version = "0.5.0", features = ["query"] }
+axum = "0.6.9"
+axum-extra = { version = "0.6.0", features = ["query"] }
 derive_more = "0.99.17"
 serde = "1.0.152"
 console = "0.15.5"

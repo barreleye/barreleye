@@ -35,7 +35,7 @@ pub async fn handler(State(app): State<Arc<App>>) -> ServerResult<Json<Response>
 			.map(|v| v.value)
 			.unwrap_or(0);
 
-		let tail_index = Config::get::<_, u64>(app.db(), ConfigKey::IndexerTailSync(nid))
+		let tail_index = Config::get::<_, u64>(app.db(), ConfigKey::IndexerCopyTailSync(nid))
 			.await?
 			.map(|v| v.value)
 			.unwrap_or(0);
