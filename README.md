@@ -59,7 +59,7 @@ This will do the following:
   - Store relational data in SQLite locally
   - Store warehouse data in DuckDB locally
 
-For production you'd probably want to store extracted blockchain data in anything S3-compatible (S3, GCS, MinIO, etc):
+For production you'd probably want to store extracted blockchain data in anything S3-compatible (eg: R2, GCS, MinIO, etc):
 
 ```bash
 ./barreleye \
@@ -85,7 +85,7 @@ And a hosted warehouse OLAP instead of DuckDB (currently only Clickhouse is supp
   --warehouse http://username:password@localhost:8123/database_name
 ```
 
-Finally, to speed up indexing run your own Ethereum node with a higher rate-limit (rps = requests per second):
+Finally, to speed up indexing run your own Ethereum archive node with a higher rate-limit (rps = requests per second):
 
 ```bash
 curl -X PUT \
