@@ -13,14 +13,14 @@
 
 ## What is Barreleye?
 
-Barreleye is an open-source **entity-based blockchain analytics** tool. It can show what digital assets an entity has and trace back where they came from.
+Barreleye is an open-source **entity-based blockchain analytics** tool. It can show what digital assets an address has and trace back where they came from.
 
 Features:
 
 1. **Simple.** Easy to get started with on a single machine.
-1. **Scalable.** Speed & scalability for demanding business use-cases.
-1. **Extendable.** Integrate into your own systems via REST API.
-1. **Multi-chain.** Supports Bitcoin and EVM-based networks.
+1. **Scalable.** Optimized for demanding business use-cases.
+1. **Extendable.** API-based interface so it can be integrated into other systems.
+1. **Multi-chain.** Supports Bitcoin and EVM-based networks (with ability to add more).
 
 **Note:** This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
 
