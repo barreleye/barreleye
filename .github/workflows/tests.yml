@@ -28,7 +28,7 @@ jobs:
       - name: Lint
         run: |
           rustfmt +nightly **/*.rs
-          cargo clippy --all -- -D warnings
+          cargo clippy --all -- -D warnings -A clippy::redundant_async_block
       - name: Install cargo check tools
         run: |
           cargo install --locked cargo-deny || true
