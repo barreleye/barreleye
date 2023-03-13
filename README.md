@@ -13,14 +13,14 @@
 
 ## What is Barreleye?
 
-Barreleye is an **open-source blockchain analytics tool** that's optimized for address-oriented queries (eg: who has what assets and where they came from).
+Barreleye is an open-source **entity-based blockchain analytics** tool. It can show what digital assets an entity has and trace back where they came from.
 
 Features:
 
-1. Address-focused analytics via REST API
-1. Multi-chain support (Bitcoin, EVM)
-1. Easy to get started with on a single machine
-1. Massive scalability for business use-cases
+1. **Simple.** Easy to get started with on a single machine.
+1. **Scalable.** Speed & scalability for demanding business use-cases.
+1. **Extendable.** Integrate into your own systems via REST API.
+1. **Multi-chain.** Supports Bitcoin and EVM-based networks.
 
 **Note:** This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
 
@@ -100,9 +100,9 @@ curl -X PUT \
 
 ## Add other networks
 
-Barreleye works with Bitcoin, EVM-compatible chains and Solana.
+For now, Barreleye works with Bitcoin and EVM-compatible chains.
 
-A default API key is generated on the first run, so to get it:
+A default API key is generated on the first run, so to get it - connect to your RDBMS and run:
 
 ```sql
 select uuid from api_keys;

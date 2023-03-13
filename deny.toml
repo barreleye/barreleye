@@ -17,7 +17,11 @@ ignore = [
     # @TODO dotenv is Unmaintained
     "RUSTSEC-2021-0141",
     # @TODO On windows, `atty` dereferences a potentially unaligned pointer
-    "RUSTSEC-2021-0145"
+    "RUSTSEC-2021-0145",
+    # @TODO mach is unmaintained
+    "RUSTSEC-2020-0168",
+    # @TODO `libsqlite3-sys` via C SQLite CVE-2022-35737 (@TODO waiting for sqlx update)
+    "RUSTSEC-2022-0090"
 ]
 
 [licenses]
