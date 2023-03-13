@@ -15,7 +15,7 @@ name = "barreleye"
 path = "src/main.rs"
 
 [workspace]
-members = [ "common", "indexer_v1", "server" ]
+members = [ "common", "indexer", "server" ]
 
 [dependencies]
 log = "0.4.17"
@@ -28,5 +28,5 @@ fern = { version = "0.6.1", features = ["colored"] }
 tokio = { version = "1.26.0", features = ["full"] }
 
 barreleye-common = { path = "./common", version = "0.0.1" }
-barreleye-indexer = { path = "./indexer_v1", version = "0.0.1" }
+barreleye-indexer = { path = "./indexer", version = "0.0.1" }
 barreleye-server = { path = "./server", version = "0.0.1" }
