@@ -108,8 +108,8 @@ Add a Bitcoin RPC node:
 
 ```bash
 curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <API_KEY>" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "name": "Bitcoin",
     "env": "mainnet",
@@ -126,8 +126,8 @@ Add an EVM-based RPC node:
 
 ```bash
 curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <API_KEY>" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "name": "Ethereum",
     "env": "mainnet",
@@ -144,8 +144,8 @@ curl -X POST \
 
 ```bash
 curl -X GET \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <API_KEY>" \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
   http://localhost:4000/v0/stats
 ```
 
@@ -155,16 +155,16 @@ To get networks, assets, labels, etc:
 
 ```bash
 curl -X GET \
-  -H "Content-Type: application/json" \
-  http://localhost:4000/v0/info?address=<BLOCKCHAIN_ADDRESS>
+  -H 'Content-Type: application/json' \
+  http://localhost:4000/v0/info?address=$BLOCKCHAIN_ADDRESS
 ```
 
 To find connected labeled addresses that might have funded the requested address through multiple hops:
 
 ```bash
 curl -X GET \
-  -H "Content-Type: application/json" \
-  http://localhost:4000/v0/upstream?address=<BLOCKCHAIN_ADDRESS>
+  -H 'Content-Type: application/json' \
+  http://localhost:4000/v0/upstream?address=$BLOCKCHAIN_ADDRESS
 ```
 
 ## Random Notes
