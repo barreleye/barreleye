@@ -206,7 +206,11 @@ impl Indexer {
 				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
 					.await?;
 
-				info!("{} @ {:.4}%", style(chain.get_network().name).bold(), progress * 100.0);
+				info!(
+					"{} ({:.4}% synced, 0% processed)", // @TODO
+					style(chain.get_network().name).bold(),
+					progress * 100.0
+				);
 			}
 
 			sleep(Duration::from_secs(5)).await;
