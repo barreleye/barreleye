@@ -67,21 +67,16 @@ impl Evm {
 #[async_trait]
 impl ChainTrait for Evm {
 	async fn connect(&mut self) -> Result<bool> {
-		let rpc_endpoints: Vec<String> =
-			serde_json::from_value(self.network.rpc_endpoints.clone())?;
+		if let Ok(provider) =
+			Provider::<RetryClient<Http>>::new_client(&self.network.rpc_endpoint, 10, 1_000)
+		{
+			if let Some(rate_limiter) = &self.rate_limiter {
+				rate_limiter.until_ready().await;
+			}
 
-		for url in rpc_endpoints.into_iter() {
-			if let Ok(provider) = Provider::<RetryClient<Http>>::new_client(&url, 10, 1_000) {
-				if let Some(rate_limiter) = &self.rate_limiter {
-					rate_limiter.until_ready().await;
-				}
-
-				if provider.get_block_number().await.is_ok() {
-					self.rpc = Some(url);
-					self.provider = Some(Arc::new(provider));
-
-					break;
-				}
+			if provider.get_block_number().await.is_ok() {
+				self.rpc = Some(self.network.rpc_endpoint.clone());
+				self.provider = Some(Arc::new(provider));
 			}
 		}
 

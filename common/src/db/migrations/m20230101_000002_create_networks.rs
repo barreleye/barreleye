@@ -22,10 +22,10 @@ impl MigrationTrait for Migration {
 					.col(ColumnDef::new(Networks::Id).unique_key().string().not_null())
 					.col(ColumnDef::new(Networks::Name).unique_key().string().not_null())
 					.col(ColumnDef::new(Networks::Env).small_integer().not_null())
-					.col(ColumnDef::new(Networks::Blockchain).small_integer().not_null())
+					.col(ColumnDef::new(Networks::Architecture).small_integer().not_null())
 					.col(ColumnDef::new(Networks::ChainId).big_integer().not_null())
-					.col(ColumnDef::new(Networks::BlockTimeMs).big_integer().not_null())
-					.col(ColumnDef::new(Networks::RpcEndpoints).json().not_null())
+					.col(ColumnDef::new(Networks::BlockTime).big_integer().not_null())
+					.col(ColumnDef::new(Networks::RpcEndpoint).string().not_null())
 					.col(ColumnDef::new(Networks::Rps).integer().not_null())
 					.col(ColumnDef::new(Networks::IsDeleted).boolean().not_null())
 					.col(ColumnDef::new(Networks::UpdatedAt).date_time().null())
@@ -64,10 +64,10 @@ enum Networks {
 	Id,
 	Name,
 	Env,
-	Blockchain,
+	Architecture,
 	ChainId,
-	BlockTimeMs,
-	RpcEndpoints,
+	BlockTime,
+	RpcEndpoint,
 	Rps,
 	IsDeleted,
 	UpdatedAt,

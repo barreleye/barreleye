@@ -5,11 +5,10 @@ use sea_orm::{
 	Condition, ConnectionTrait, Set,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 use crate::{
 	models::{BasicModel, PrimaryId, PrimaryIds, SoftDeleteModel},
-	utils, Blockchain, Env, IdPrefix,
+	utils, Architecture, Env, IdPrefix,
 };
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
@@ -22,10 +21,10 @@ pub struct Model {
 	pub id: String,
 	pub name: String,
 	pub env: Env,
-	pub blockchain: Blockchain,
+	pub architecture: Architecture,
 	pub chain_id: i64,
-	pub block_time_ms: i64,
-	pub rpc_endpoints: Json,
+	pub block_time: i64,
+	pub rpc_endpoint: String,
 	pub rps: i32,
 	#[serde(skip_serializing)]
 	pub is_deleted: bool,
@@ -81,20 +80,20 @@ impl Model {
 	pub fn new_model(
 		name: &str,
 		env: Env,
-		blockchain: Blockchain,
+		architecture: Architecture,
 		chain_id: i64,
-		block_time_ms: i64,
-		rpc_endpoints: Vec<String>,
+		block_time: i64,
+		rpc_endpoint: String,
 		rps: i32,
 	) -> ActiveModel {
 		ActiveModel {
 			id: Set(utils::new_unique_id(IdPrefix::Network)),
 			name: Set(name.to_string()),
 			env: Set(env),
-			blockchain: Set(blockchain),
+			architecture: Set(architecture),
 			chain_id: Set(chain_id),
-			block_time_ms: Set(block_time_ms),
-			rpc_endpoints: Set(json!(rpc_endpoints)),
+			block_time: Set(block_time),
+			rpc_endpoint: Set(rpc_endpoint),
 			is_deleted: Set(false),
 			rps: Set(rps),
 			..Default::default()
@@ -147,10 +146,10 @@ impl Model {
 		Ok(q.one(c).await?)
 	}
 
-	pub async fn get_by_env_blockchain_and_chain_id<C>(
+	pub async fn get_by_env_architecture_and_chain_id<C>(
 		c: &C,
 		env: Env,
-		blockchain: Blockchain,
+		architecture: Architecture,
 		chain_id: i64,
 		is_deleted: Option<bool>,
 	) -> Result<Option<Self>>
@@ -159,7 +158,7 @@ impl Model {
 	{
 		let mut q = Entity::find()
 			.filter(Column::Env.eq(env))
-			.filter(Column::Blockchain.eq(blockchain))
+			.filter(Column::Architecture.eq(architecture))
 			.filter(Column::ChainId.eq(chain_id));
 
 		if let Some(is_deleted) = is_deleted {

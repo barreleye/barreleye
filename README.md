@@ -112,12 +112,9 @@ curl -X POST \
   -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "name": "Bitcoin",
-    "env": "mainnet",
-    "blockchain": "bitcoin",
-    "chainId": 0,
-    "blockTimeMs": 600000,
-    "rpcEndpoints": ["http://username:password@127.0.0.1:8332"],
-    "rps": 100
+    "architecture": "bitcoin",
+    "blockTime": 600000,
+    "rpcEndpoint": "http://username:password@127.0.0.1:8332"
   }' \
   http://localhost:4000/v0/networks
 ```
@@ -130,12 +127,9 @@ curl -X POST \
   -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "name": "Ethereum",
-    "env": "mainnet",
-    "blockchain": "evm",
-    "chainId": 1,
-    "blockTimeMs": 12000,
-    "rpcEndpoints": ["http://127.0.0.1:8545"],
-    "rps": 100
+    "architecture": "evm",
+    "blockTime": 12000,
+    "rpcEndpoint": "http://127.0.0.1:8545"
   }' \
   http://localhost:4000/v0/networks
 ```

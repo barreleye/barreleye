@@ -5,7 +5,6 @@ use axum::{
 };
 use sea_orm::ActiveModelTrait;
 use serde::Deserialize;
-use serde_json::json;
 use std::sync::Arc;
 
 use crate::{errors::ServerError, ServerResult};
@@ -13,7 +12,7 @@ use barreleye_common::{
 	models::{
 		optional_set, BasicModel, Config, ConfigKey, Network, NetworkActiveModel, SoftDeleteModel,
 	},
-	App, Blockchain, Env,
+	App, Architecture, Env,
 };
 
 #[derive(Deserialize)]
@@ -21,10 +20,10 @@ use barreleye_common::{
 pub struct Payload {
 	name: Option<String>,
 	env: Option<Env>,
-	blockchain: Option<Blockchain>,
+	architecture: Option<Architecture>,
 	chain_id: Option<u64>,
-	block_time_ms: Option<u64>,
-	rpc_endpoints: Option<Vec<String>>,
+	block_time: Option<u64>,
+	rpc_endpoint: Option<String>,
 	rps: Option<u32>,
 }
 
@@ -47,10 +46,10 @@ pub async fn handler(
 
 	// check for duplicate chain id
 	if let Some(chain_id) = payload.chain_id {
-		if Network::get_by_env_blockchain_and_chain_id(
+		if Network::get_by_env_architecture_and_chain_id(
 			app.db(),
 			payload.env.unwrap_or(network.env),
-			payload.blockchain.unwrap_or(network.blockchain),
+			payload.architecture.unwrap_or(network.architecture),
 			chain_id as i64,
 			None,
 		)
@@ -67,10 +66,10 @@ pub async fn handler(
 	let update_data = NetworkActiveModel {
 		name: optional_set(payload.name.clone()),
 		env: optional_set(payload.env),
-		blockchain: optional_set(payload.blockchain),
+		architecture: optional_set(payload.architecture),
 		chain_id: optional_set(payload.chain_id.map(|v| v as i64)),
-		block_time_ms: optional_set(payload.block_time_ms.map(|v| v as i64)),
-		rpc_endpoints: optional_set(payload.rpc_endpoints.clone().map(|v| json!(v))),
+		block_time: optional_set(payload.block_time.map(|v| v as i64)),
+		rpc_endpoint: optional_set(payload.rpc_endpoint.clone()),
 		rps: optional_set(payload.rps.map(|v| v as i32)),
 		..Default::default()
 	};

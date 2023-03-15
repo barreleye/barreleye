@@ -61,29 +61,22 @@ impl Bitcoin {
 #[async_trait]
 impl ChainTrait for Bitcoin {
 	async fn connect(&mut self) -> Result<bool> {
-		let rpc_endpoints: Vec<String> =
-			serde_json::from_value(self.network.rpc_endpoints.clone())?;
-
-		for url in rpc_endpoints.into_iter() {
-			if let Ok(u) = Url::parse(&url) {
-				let auth = match (u.username(), u.password()) {
-					(username, Some(password)) => {
-						Auth::UserPass(username.to_string(), password.to_string())
-					}
-					_ => Auth::None,
-				};
-
-				if let Some(rate_limiter) = &self.rate_limiter {
-					rate_limiter.until_ready().await;
+		if let Ok(u) = Url::parse(&self.network.rpc_endpoint) {
+			let auth = match (u.username(), u.password()) {
+				(username, Some(password)) => {
+					Auth::UserPass(username.to_string(), password.to_string())
 				}
+				_ => Auth::None,
+			};
 
-				let client = Client::new_without_retry(&url, auth.clone());
-				if client.get_blockchain_info().await.is_ok() {
-					self.client = Some(Arc::new(Client::new(&url, auth)));
-					self.rpc = Some(url);
+			if let Some(rate_limiter) = &self.rate_limiter {
+				rate_limiter.until_ready().await;
+			}
 
-					break;
-				}
+			let client = Client::new_without_retry(&self.network.rpc_endpoint, auth.clone());
+			if client.get_blockchain_info().await.is_ok() {
+				self.client = Some(Arc::new(Client::new(&self.network.rpc_endpoint, auth)));
+				self.rpc = Some(self.network.rpc_endpoint.clone());
 			}
 		}
 

@@ -122,9 +122,9 @@ impl App {
 			let network_id = n.network_id;
 			let c = self.cache.clone();
 
-			let boxed_chain: BoxedChain = match n.blockchain {
-				Blockchain::Bitcoin => Box::new(Bitcoin::new(c, n)),
-				Blockchain::Evm => Box::new(Evm::new(c, n)),
+			let boxed_chain: BoxedChain = match n.architecture {
+				Architecture::Bitcoin => Box::new(Bitcoin::new(c, n)),
+				Architecture::Evm => Box::new(Evm::new(c, n)),
 			};
 
 			ret.insert(network_id, Arc::new(boxed_chain));
@@ -171,14 +171,14 @@ impl App {
 				let c = self.cache.clone();
 
 				tokio::spawn({
-					let mut boxed_chain: BoxedChain = match n.blockchain {
-						Blockchain::Bitcoin => Box::new(Bitcoin::new(c, n.clone())),
-						Blockchain::Evm => Box::new(Evm::new(c, n.clone())),
+					let mut boxed_chain: BoxedChain = match n.architecture {
+						Architecture::Bitcoin => Box::new(Bitcoin::new(c, n.clone())),
+						Architecture::Evm => Box::new(Evm::new(c, n.clone())),
 					};
 
 					async move {
 						if !silent {
-							pb.set_message("trying rpc endpoints…");
+							pb.set_message("connecting…");
 						}
 
 						if boxed_chain.connect().await? {
@@ -195,7 +195,7 @@ impl App {
 								pb.finish_with_message("could not connect");
 							}
 
-							Err(eyre!("{}: Could not connect to any RPC endpoint.", n.name))
+							Err(eyre!("{}: Could not connect to an RPC endpoint.", n.name))
 						}
 					}
 				})
@@ -334,7 +334,7 @@ impl ValueEnum for Env {
 	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
-pub enum Blockchain {
+pub enum Architecture {
 	#[serde(rename = "bitcoin")]
 	#[default]
 	Bitcoin = 1,

@@ -1,42 +1,45 @@
 use axum::{extract::State, Json};
 use serde::Deserialize;
-use serde_json::json;
 use std::sync::Arc;
 
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	chain::{Bitcoin, ChainTrait, Evm},
 	models::{BasicModel, Config, ConfigKey, Network},
-	App, Blockchain, Env,
+	App, Architecture, Env,
 };
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
 	name: String,
-	env: Env,
-	blockchain: Blockchain,
-	chain_id: u64,
-	block_time_ms: u64,
-	rpc_endpoints: Vec<String>,
-	rps: u32,
+	architecture: Architecture,
+	block_time: u64,
+	rpc_endpoint: String,
+	env: Option<Env>,
+	chain_id: Option<u64>,
+	rps: Option<u32>,
 }
 
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<Json<Network>> {
+	let env = payload.env.unwrap_or_default();
+	let chain_id = payload.chain_id.unwrap_or_default();
+	let rps = payload.rps.unwrap_or(100);
+
 	// check for duplicate name
 	if Network::get_by_name(app.db(), &payload.name, None).await?.is_some() {
 		return Err(ServerError::Duplicate { field: "name".to_string(), value: payload.name });
 	}
 
 	// check for duplicate chain id
-	if Network::get_by_env_blockchain_and_chain_id(
+	if Network::get_by_env_architecture_and_chain_id(
 		app.db(),
-		payload.env,
-		payload.blockchain,
-		payload.chain_id as i64,
+		env,
+		payload.architecture,
+		chain_id as i64,
 		None,
 	)
 	.await?
@@ -44,16 +47,16 @@ pub async fn handler(
 	{
 		return Err(ServerError::Duplicate {
 			field: "chainId".to_string(),
-			value: payload.chain_id.to_string(),
+			value: chain_id.to_string(),
 		});
 	}
 
 	// check rpc connection
 	let c = app.cache.clone();
-	let n = Network { rpc_endpoints: json!(payload.rpc_endpoints.clone()), ..Default::default() };
-	let mut boxed_chain: Box<dyn ChainTrait> = match payload.blockchain {
-		Blockchain::Bitcoin => Box::new(Bitcoin::new(c, n)),
-		Blockchain::Evm => Box::new(Evm::new(c, n)),
+	let n = Network { rpc_endpoint: payload.rpc_endpoint.clone(), ..Default::default() };
+	let mut boxed_chain: Box<dyn ChainTrait> = match payload.architecture {
+		Architecture::Bitcoin => Box::new(Bitcoin::new(c, n)),
+		Architecture::Evm => Box::new(Evm::new(c, n)),
 	};
 	if !boxed_chain.connect().await? {
 		return Err(ServerError::InvalidService { name: boxed_chain.get_network().name });
@@ -64,12 +67,12 @@ pub async fn handler(
 		app.db(),
 		Network::new_model(
 			&payload.name,
-			payload.env,
-			payload.blockchain,
-			payload.chain_id as i64,
-			payload.block_time_ms as i64,
-			payload.rpc_endpoints,
-			payload.rps as i32,
+			env,
+			payload.architecture,
+			chain_id as i64,
+			payload.block_time as i64,
+			payload.rpc_endpoint,
+			rps as i32,
 		),
 	)
 	.await?;

@@ -324,7 +324,7 @@ impl Indexer {
 											)
 											.await?;
 										} else {
-											let timeout = chain.get_network().block_time_ms;
+											let timeout = chain.get_network().block_time;
 											sleep(Duration::from_millis(timeout as u64)).await;
 											continue;
 										}
