@@ -57,7 +57,7 @@ impl BitcoinModuleTrait for BitcoinBalance {
 			}
 		}
 
-		let tx_hash = tx.txid().as_hash().to_string();
+		let tx_hash = tx.txid().as_raw_hash().to_string();
 
 		for (address, (amount_in, amount_out)) in balance_map.into_iter() {
 			ret.amounts.insert(Amount::new(

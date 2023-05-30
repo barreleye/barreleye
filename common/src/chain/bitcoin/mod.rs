@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use bitcoin::{
-	blockdata::transaction::Transaction, hash_types::Txid, util::address::Address,
+	address::Address, blockdata::transaction::Transaction, hash_types::Txid,
 	Network as BitcoinNetwork,
 };
 use eyre::Result;
@@ -37,7 +37,6 @@ pub struct Bitcoin {
 
 impl Bitcoin {
 	pub fn new(cache: Arc<RwLock<Cache>>, network: Network) -> Self {
-		let chain_id = network.chain_id as u32;
 		let rps = network.rps as u32;
 		let network_id = network.network_id;
 
@@ -46,8 +45,7 @@ impl Bitcoin {
 			network,
 			rpc: None,
 			client: None,
-			bitcoin_network: BitcoinNetwork::from_magic(chain_id)
-				.unwrap_or(BitcoinNetwork::Bitcoin),
+			bitcoin_network: BitcoinNetwork::Bitcoin,
 			rate_limiter: utils::get_rate_limiter(rps),
 			modules: vec![
 				Box::new(BitcoinTransfer::new(network_id)),
@@ -104,10 +102,13 @@ impl ChainTrait for Bitcoin {
 	}
 
 	fn format_address(&self, address: &str) -> String {
-		match Address::from_str(address) {
-			Ok(parsed_address) => parsed_address.to_string(),
-			_ => address.to_string(),
+		if let Ok(unknown_address) = Address::from_str(address) {
+			if let Ok(parsed_address) = unknown_address.require_network(self.bitcoin_network) {
+				return parsed_address.to_string();
+			}
 		}
+
+		address.to_string()
 	}
 
 	async fn get_block_height(&self) -> Result<BlockHeight> {
@@ -159,19 +160,19 @@ impl ChainTrait for Bitcoin {
 			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
 				storage_db.insert(ParquetBlock {
 					hash: block_hash,
-					version: block.header.version,
+					version: block.header.version.to_consensus(),
 					prev_blockhash: block.header.prev_blockhash,
 					merkle_root: block.header.merkle_root,
 					time: block.header.time,
-					bits: block.header.bits,
+					bits: block.header.bits.to_consensus(),
 					nonce: block.header.nonce,
 				})?;
 
 				for tx in block.txdata.into_iter() {
 					storage_db.insert(ParquetTransaction {
-						hash: tx.txid().as_hash(),
+						hash: *tx.txid().as_raw_hash(),
 						version: tx.version,
-						lock_time: tx.lock_time.into(),
+						lock_time: tx.lock_time.to_consensus_u32(),
 						inputs: tx.input.len() as u32,
 						outputs: tx.output.len() as u32,
 					})?;
@@ -181,7 +182,7 @@ impl ChainTrait for Bitcoin {
 							previous_output_tx_hash: txin
 								.previous_output
 								.txid
-								.as_hash()
+								.as_raw_hash()
 								.to_string(),
 							previous_output_vout: txin.previous_output.vout,
 						})?;
@@ -238,7 +239,8 @@ impl Bitcoin {
 			for txin in tx.input.iter() {
 				let (txid, vout) = (txin.previous_output.txid, txin.previous_output.vout);
 
-				if !txid.is_empty() && !tx.is_coin_base() {
+				// if !txid.is_empty() && !tx.is_coin_base() {
+				if !tx.is_coin_base() {
 					if let Some((a, v)) = self.get_utxo(txid, vout).await? {
 						ret.push((a, v))
 					}
@@ -271,7 +273,7 @@ impl Bitcoin {
 			if let Some(address) = self.get_address(tx, i as u32)? {
 				let cache_key = CacheKey::BitcoinTxIndex(
 					self.network.network_id as u64,
-					tx.txid().as_hash().to_string(),
+					tx.txid().as_raw_hash().to_string(),
 				);
 
 				self.cache.read().await.set::<u64>(cache_key, block_height).await?;
@@ -284,8 +286,10 @@ impl Bitcoin {
 	}
 
 	async fn get_utxo(&self, txid: Txid, vout: u32) -> Result<Option<(String, u64)>> {
-		let cache_key =
-			CacheKey::BitcoinTxIndex(self.network.network_id as u64, txid.as_hash().to_string());
+		let cache_key = CacheKey::BitcoinTxIndex(
+			self.network.network_id as u64,
+			txid.as_raw_hash().to_string(),
+		);
 
 		let mut block_hash = None;
 		if let Some(block_height) = self.cache.read().await.get::<u64>(cache_key.clone()).await? {
@@ -317,7 +321,7 @@ impl Bitcoin {
 			{
 				ret = Some(address.to_string());
 			} else {
-				ret = Some(format!("{}:{}", tx.txid().as_hash(), vout));
+				ret = Some(format!("{}:{}", tx.txid().as_raw_hash(), vout));
 			}
 		}
 

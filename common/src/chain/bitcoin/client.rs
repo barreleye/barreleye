@@ -95,7 +95,7 @@ impl Client {
 		txid: &Txid,
 		block_hash: Option<&BlockHash>,
 	) -> Result<Transaction> {
-		let mut params = vec![JsonValue::from(txid.as_hash().to_string()), false.into()];
+		let mut params = vec![JsonValue::from(txid.as_raw_hash().to_string()), false.into()];
 		if let Some(block_hash) = block_hash {
 			params.push(JsonValue::from(block_hash.to_string()));
 		}

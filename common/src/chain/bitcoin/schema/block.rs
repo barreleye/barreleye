@@ -1,4 +1,4 @@
-use bitcoin::{BlockHash, TxMerkleNode};
+use bitcoin::{hash_types::TxMerkleNode, BlockHash};
 use duckdb::{params, Connection};
 use eyre::Result;
 

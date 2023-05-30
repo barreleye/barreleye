@@ -42,7 +42,7 @@ impl BitcoinModuleTrait for BitcoinTransfer {
 			return Ok(ret);
 		}
 
-		let tx_hash = tx.txid().as_hash().to_string();
+		let tx_hash = tx.txid().as_raw_hash().to_string();
 		let input_amount_total: u64 = inputs.clone().into_values().sum();
 		let output_amount_total: u64 = outputs.clone().into_values().sum();
 		let batch_amount = U256::from_str_radix(&output_amount_total.to_string(), 10)?;

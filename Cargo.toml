@@ -18,14 +18,14 @@ path = "src/main.rs"
 members = [ "common", "indexer", "server" ]
 
 [dependencies]
-log = "0.4.17"
+log = "0.4.18"
 color-eyre = "0.6.2"
 eyre = "0.6.8"
 env_logger = "0.10.0"
 dotenv = "0.15.0"
-chrono = { version = "0.4.24", default-features = false, features = ["clock", "std"] }
-fern = { version = "0.6.1", features = ["colored"] }
-tokio = { version = "1.26.0", features = ["full"] }
+chrono = { version = "0.4.26", default-features = false, features = ["clock", "std"] }
+fern = { version = "0.6.2", features = ["colored"] }
+tokio = { version = "1.28.2", features = ["full"] }
 
 barreleye-common = { path = "./common", version = "0.0.1" }
 barreleye-indexer = { path = "./indexer", version = "0.0.1" }

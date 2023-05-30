@@ -14,14 +14,16 @@ unsound = "deny"
 yanked = "deny"
 notice = "warn"
 ignore = [
+    # @TODO mach is unmaintained
+    "RUSTSEC-2020-0168",
     # @TODO dotenv is Unmaintained
     "RUSTSEC-2021-0141",
     # @TODO On windows, `atty` dereferences a potentially unaligned pointer
     "RUSTSEC-2021-0145",
-    # @TODO mach is unmaintained
-    "RUSTSEC-2020-0168",
     # @TODO `libsqlite3-sys` via C SQLite CVE-2022-35737 (@TODO waiting for sqlx update)
-    "RUSTSEC-2022-0090"
+    "RUSTSEC-2022-0090",
+    # @TODO Affected versions of borsh cause undefined behavior when zero-sized-types (ZST) are parsed and the Copy/Clone traits are not implemented/derived.
+    "RUSTSEC-2023-0033"
 ]
 
 [licenses]
@@ -31,7 +33,7 @@ copyleft = "deny"
 default = "warn"
 unused-allowed-license = "deny"
 confidence-threshold = 0.95
-allow = ["MPL-2.0"]
+allow = ["MPL-2.0", "MITNFA"]
 exceptions = [
     { name = "barreleye", allow = ["AGPL-3.0"] },
     { name = "barreleye-common", allow = ["AGPL-3.0"] },
@@ -41,6 +43,13 @@ exceptions = [
 
 [[licenses.clarify]]
 name = "webpki"
+expression = "ISC"
+license-files = [
+    { path = "LICENSE", hash = 0x001c7e6c }
+]
+
+[[licenses.clarify]]
+name = "rustls-webpki"
 expression = "ISC"
 license-files = [
     { path = "LICENSE", hash = 0x001c7e6c }
