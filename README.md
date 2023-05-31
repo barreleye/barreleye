@@ -36,7 +36,7 @@ cd barreleye
 cargo build && cargo install
 ```
 
-## How Does It Work
+## How It Works
 
 1. Start the program
 1. Barreleye will start indexing blockchains
@@ -101,7 +101,7 @@ curl -X PUT \
   http://localhost:4000/v0/networks/net_ethereum
 ```
 
-## Add other networks
+## Add Custom Networks
 
 For now, Barreleye works with Bitcoin and EVM-compatible chains.
 
