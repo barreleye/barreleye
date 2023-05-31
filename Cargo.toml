@@ -17,6 +17,9 @@ path = "src/main.rs"
 [workspace]
 members = [ "common", "indexer", "server" ]
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["color-eyre", "fern"]
+
 [dependencies]
 log = "0.4.18"
 color-eyre = "0.6.2"
