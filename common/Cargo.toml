@@ -38,9 +38,9 @@ bitcoincore-rpc-json = "0.17.0"
 duckdb = { version = "0.8.0", features = ["bundled"] }
 reqwest = { version = "0.11.18", features = ["rustls-tls"] }
 tokio = { version = "1.28.2", features = ["full"] }
-ethers = { version = "2.0.6", features = ["rustls"] }
+ethers = { version = "2.0.7", features = ["rustls"] }
 clickhouse = { version = "0.11.4", features = ["uuid"] }
-clap = { version = "4.3.0", features = ["cargo", "derive", "env"] }
+clap = { version = "4.3.1", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.3.3", features = ["v4", "fast-rng"] }
 
 [dependencies.sea-orm]
