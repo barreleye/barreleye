@@ -23,7 +23,9 @@ ignore = [
     # @TODO `libsqlite3-sys` via C SQLite CVE-2022-35737 (@TODO waiting for sqlx update)
     "RUSTSEC-2022-0090",
     # @TODO Affected versions of borsh cause undefined behavior when zero-sized-types (ZST) are parsed and the Copy/Clone traits are not implemented/derived.
-    "RUSTSEC-2023-0033"
+    "RUSTSEC-2023-0033",
+    # @TODO Ouroboros is Unsound
+    "RUSTSEC-2023-0042"
 ]
 
 [licenses]
