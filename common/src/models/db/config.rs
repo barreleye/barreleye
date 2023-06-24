@@ -12,9 +12,8 @@ use crate::{models::PrimaryId, utils, BlockHeight};
 // Things to keep in mind when defining configs:
 // 0. stick to similar format: "title_a1_b2_c3"
 // 1. one letter per object: "network" => "n"
-// 2. no similar prefix (has to do with "LIKE" selection syntax in `adjust_filter()`)
-//    bad:  "title_a1_b2" & "title_a1_b2_c3"
-//    good: "title_a1_b2" & "diff_title_a1_b2_c3"
+// 2. no similar prefix (has to do with "LIKE" selection syntax in `adjust_filter()`) bad:
+//    "title_a1_b2" & "title_a1_b2_c3" good: "title_a1_b2" & "diff_title_a1_b2_c3"
 #[derive(Ord, PartialOrd, Display, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ConfigKey {
 	#[display(fmt = "primary")]

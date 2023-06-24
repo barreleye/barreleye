@@ -186,9 +186,9 @@ impl Model {
 		// 1. find all links where `to_address` is in (targets)
 		// 2. gather the last elements of those `transfer_uuids` into an array
 		// 3. delete all link records that contain those uuids in the middle of `transfer_uuids`
-		//    meaning not first, because it's ok if target is in the `from_address`
-		//    but also not last, because it's ok if target is in the `to_address`
-		//    (in the middle = labeled entity is in the middle of the links chain)
+		//    meaning not first, because it's ok if target is in the `from_address` but also not
+		//    last, because it's ok if target is in the `to_address` (in the middle = labeled entity
+		//    is in the middle of the links chain)
 
 		if !targets.is_empty() {
 			warehouse

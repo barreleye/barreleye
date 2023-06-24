@@ -30,7 +30,7 @@ rmp-serde = "1.1.1"
 regex = "1.8.4"
 governor = "0.5.1"
 base64 = "0.21.2"
-itertools = "0.10.5"
+itertools = "0.11.0"
 futures = "0.3.28"
 hex = "0.4.3"
 num_cpus = "1.15.0"
@@ -40,7 +40,7 @@ reqwest = { version = "0.11.18", features = ["rustls-tls"] }
 tokio = { version = "1.28.2", features = ["full"] }
 ethers = { version = "2.0.7", features = ["rustls"] }
 clickhouse = { version = "0.11.5", features = ["uuid"] }
-clap = { version = "4.3.4", features = ["cargo", "derive", "env"] }
+clap = { version = "4.3.5", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.3.4", features = ["v4", "fast-rng"] }
 
 [dependencies.sea-orm]
