@@ -2,7 +2,9 @@
 
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml?style=flat-square)](https://github.com/barreleye/barreleye/actions)
 [![Dependency Status](https://deps.rs/repo/github/barreleye/barreleye/status.svg?style=flat-square)](https://deps.rs/repo/github/barreleye/barreleye)
+[![License](https://img.shields.io/github/license/barreleye/barreleye?color=orange&style=flat-square)](/LICENSE)
 [![Downloads](https://img.shields.io/crates/d/barreleye?color=blue&style=flat-square)](https://crates.io/crates/barreleye)
+![Activity](https://img.shields.io/github/commit-activity/m/barreleye/barreleye?style=flat-square)
 [![Discord](https://img.shields.io/discord/1026664296861679646?style=flat-square&color=blue)](https://discord.gg/VX8PdWSwNZ)
 
 > ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
@@ -16,7 +18,7 @@ Features:
 1. **Simple.** Easy to get started with on a single machine.
 1. **Scalable.** Optimized for demanding business use-cases.
 1. **Extendable.** API-based interface so it can be integrated into other systems.
-1. **Multi-chain.** Supports Bitcoin and EVM-based networks.
+1. **Multi-chain.** Supports Bitcoin and EVM-based networks (with ability to add more).
 
 ## Download
 
@@ -187,4 +189,4 @@ To stay in touch with Barreleye:
 Source code for Barreleye is variously licensed under a number of different licenses. A copy of each license can be found in [each repository](https://github.com/barreleye).
 
 - Libraries and SDKs, each located in its own distinct repository, are released under either the [Apache License 2.0](https://opensource.org/licenses/Apache-2.0) or [MIT License](https://opensource.org/licenses/MIT).
-- Core code for Barreleye, located in [this repository](https://github.com/barreleye/barreleye), is released under the [Apache 2.0](/LICENSE).
+- Core code for Barreleye, located in [this repository](https://github.com/barreleye/barreleye), is released under the [GNU Affero General Public License 3.0](/LICENSE).
