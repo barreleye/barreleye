@@ -38,7 +38,9 @@ cd barreleye
 cargo build && cargo install
 ```
 
-## How It Works
+## Get Started
+
+How it works:
 
 1. Start the program
 1. Barreleye will start indexing blockchains
@@ -46,8 +48,6 @@ cargo build && cargo install
     - Manage risky entities & their addresses
     - Trace the flow & amount of funds to/from those risky addresses
     - Do risk management & compliance in a private manner
-
-## Get Started
 
 To run Barreleye locally:
 
