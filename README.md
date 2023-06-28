@@ -3,8 +3,6 @@
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml?style=flat-square)](https://github.com/barreleye/barreleye/actions)
 [![Dependency Status](https://deps.rs/repo/github/barreleye/barreleye/status.svg?style=flat-square)](https://deps.rs/repo/github/barreleye/barreleye)
 [![License](https://img.shields.io/github/license/barreleye/barreleye?color=orange&style=flat-square)](/LICENSE)
-<!-- [![Downloads](https://img.shields.io/crates/d/barreleye?color=blue&style=flat-square)](https://crates.io/crates/barreleye) -->
-<!-- ![Activity](https://img.shields.io/github/commit-activity/m/barreleye/barreleye?style=flat-square) -->
 [![Discord](https://img.shields.io/discord/1026664296861679646?style=flat-square&color=blue)](https://discord.gg/VX8PdWSwNZ)
 
 > ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
@@ -30,7 +28,7 @@ cargo install barreleye
 
 ### From source -->
 
-Requires Rust 1.65.0+:
+Requires Rust 1.70.0+:
 
 ```bash
 git clone https://github.com/barreleye/barreleye
