@@ -28,7 +28,7 @@ env_logger = "0.10.0"
 dotenv = "0.15.0"
 chrono = { version = "0.4.26", default-features = false, features = ["clock", "std"] }
 fern = { version = "0.6.2", features = ["colored"] }
-tokio = { version = "1.28.2", features = ["full"] }
+tokio = { version = "1.29.0", features = ["full"] }
 
 barreleye-common = { path = "./common", version = "0.0.1" }
 barreleye-indexer = { path = "./indexer", version = "0.0.1" }
