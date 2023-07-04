@@ -10,11 +10,11 @@ edition = "2021"
 workspace = ".."
 
 [dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.69"
 eyre = "0.6.8"
 sea-orm-migration = "0.11.3"
 nanoid = "0.4.0"
-serde = "1.0.164"
+serde = "1.0.166"
 log = "0.4.19"
 derive_more = "0.99.17"
 indicatif = "0.17.5"
@@ -33,14 +33,14 @@ base64 = "0.21.2"
 itertools = "0.11.0"
 futures = "0.3.28"
 hex = "0.4.3"
-num_cpus = "1.15.0"
+num_cpus = "1.16.0"
 bitcoincore-rpc-json = "0.17.0"
 duckdb = { version = "0.8.1", features = ["bundled"] }
 reqwest = { version = "0.11.18", features = ["rustls-tls"] }
-tokio = { version = "1.29.0", features = ["full"] }
+tokio = { version = "1.29.1", features = ["full"] }
 ethers = { version = "2.0.7", features = ["rustls"] }
 clickhouse = { version = "0.11.5", features = ["uuid"] }
-clap = { version = "4.3.9", features = ["cargo", "derive", "env"] }
+clap = { version = "4.3.10", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.4.0", features = ["v4", "fast-rng"] }
 
 [dependencies.sea-orm]

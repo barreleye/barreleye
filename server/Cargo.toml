@@ -10,13 +10,13 @@ edition = "2021"
 workspace = ".."
 
 [dependencies]
-tokio = { version = "1.29.0", features = ["full"] }
+tokio = { version = "1.29.1", features = ["full"] }
 log = "0.4.19"
 eyre = "0.6.8"
 axum = "0.6.18"
 axum-extra = { version = "0.7.4", features = ["query"] }
 derive_more = "0.99.17"
-serde = "1.0.164"
+serde = "1.0.166"
 console = "0.15.7"
 serde_json = "1.0.99"
 hyper = "0.14.27"
