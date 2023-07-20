@@ -71,7 +71,7 @@ impl Server {
 		req: Request<B>,
 		next: Next<B>,
 	) -> ServerResult<Response> {
-		for public_endpoint in vec!["/v0/info", "/v0/upstream"].iter() {
+		for public_endpoint in ["/v0/info", "/v0/upstream"].iter() {
 			if req.uri().to_string().starts_with(public_endpoint) {
 				return Ok(next.run(req).await);
 			}
