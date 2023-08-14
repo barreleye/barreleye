@@ -91,9 +91,9 @@ impl Indexer {
 					self.get_updated_block_height(nid, Some(last_copied_block)).await?;
 
 				// if first time, split up network into chunks for faster initial syncing
-				if last_copied_block == 0 &&
-					self.app.num_cpus > 0 &&
-					Config::get_many::<_, (BlockHeight, BlockHeight)>(
+				if last_copied_block == 0
+					&& self.app.num_cpus > 0
+					&& Config::get_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
 						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
 					)

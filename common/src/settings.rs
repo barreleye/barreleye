@@ -231,8 +231,8 @@ impl Settings {
 		}
 
 		// check if cache is cool with provided path
-		if fs::create_dir_all(&settings.indexer_cache_dir).is_err() ||
-			!Cache::is_path_valid(CacheDriver::RocksDB, &settings.indexer_cache_dir)?
+		if fs::create_dir_all(&settings.indexer_cache_dir).is_err()
+			|| !Cache::is_path_valid(CacheDriver::RocksDB, &settings.indexer_cache_dir)?
 		{
 			return Err(AppError::Config {
 				config: "indexer_cache_dir",
@@ -267,8 +267,8 @@ impl Settings {
 
 		// test storage
 		let folder_prefix = "file://";
-		if settings.storage.starts_with('/') ||
-			settings.storage.to_lowercase().starts_with(folder_prefix)
+		if settings.storage.starts_with('/')
+			|| settings.storage.to_lowercase().starts_with(folder_prefix)
 		{
 			let storage = if settings.storage.to_lowercase().starts_with(folder_prefix) {
 				settings.storage[folder_prefix.to_string().len()..].to_string()
@@ -277,8 +277,8 @@ impl Settings {
 			};
 
 			let path = Path::new(&storage);
-			if fs::create_dir_all(path).is_err() ||
-				PathBuf::from(path).into_os_string().into_string().is_err()
+			if fs::create_dir_all(path).is_err()
+				|| PathBuf::from(path).into_os_string().into_string().is_err()
 			{
 				return Err(AppError::Config {
 					config: "storage",

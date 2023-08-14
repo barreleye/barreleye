@@ -120,9 +120,9 @@ impl Indexer {
 					self.get_updated_block_height(nid, Some(last_processed_block)).await?;
 
 				// if first time, split up network into chunks for faster initial processing
-				if last_processed_block == 0 &&
-					self.app.num_cpus > 0 &&
-					Config::get_many::<_, (BlockHeight, BlockHeight)>(
+				if last_processed_block == 0
+					&& self.app.num_cpus > 0
+					&& Config::get_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
 						vec![ConfigKey::IndexerProcessChunkSync(nid, 0)],
 					)
@@ -283,8 +283,8 @@ impl Indexer {
 
 						let config_value = |block_height| match config_key {
 							ConfigKey::IndexerProcessTailSync(_) => json!(block_height),
-							ConfigKey::IndexerProcessChunkSync(_, _) |
-							ConfigKey::IndexerProcessModuleSync(_, _)
+							ConfigKey::IndexerProcessChunkSync(_, _)
+							| ConfigKey::IndexerProcessModuleSync(_, _)
 								if block_height_max.is_some() =>
 							{
 								json!((block_height, block_height_max.unwrap()))

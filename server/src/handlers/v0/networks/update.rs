@@ -37,8 +37,8 @@ pub async fn handler(
 
 	// check for duplicate name
 	if let Some(name) = payload.name.clone() {
-		if network_id != network.id &&
-			network.name.trim().to_lowercase() == name.trim().to_lowercase()
+		if network_id != network.id
+			&& network.name.trim().to_lowercase() == name.trim().to_lowercase()
 		{
 			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 		}
