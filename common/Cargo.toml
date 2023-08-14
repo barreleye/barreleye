@@ -12,7 +12,7 @@ workspace = ".."
 [dependencies]
 async-trait = "0.1.73"
 eyre = "0.6.8"
-sea-orm-migration = "0.11.3"
+sea-orm-migration = "0.12.2"
 nanoid = "0.4.0"
 serde = "1.0.183"
 log = "0.4.20"
@@ -44,7 +44,7 @@ clap = { version = "4.3.21", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
 
 [dependencies.sea-orm]
-version = "0.11.3"
+version = "0.12.2"
 features = [
   "sqlx-sqlite",
   "sqlx-postgres",

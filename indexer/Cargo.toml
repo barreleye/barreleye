@@ -31,7 +31,7 @@ num-format = { version = "0.4.4", features = ["with-system-locale"] }
 barreleye-common = { path = "../common", version = "0.0.1" }
 
 [dependencies.sea-orm]
-version = "0.11.3"
+version = "0.12.2"
 features = [
   "sqlx-sqlite",
   "sqlx-postgres",

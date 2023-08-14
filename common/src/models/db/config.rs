@@ -328,7 +328,7 @@ impl Model {
 		for key in keys.into_iter().map(|k| k.to_string()) {
 			let adjusted_key = r.replace(&key, "_$1%");
 			condition = condition.add(if adjusted_key.contains('%') {
-				Column::Key.like(&adjusted_key.clone())
+				Column::Key.like(adjusted_key.clone())
 			} else {
 				Column::Key.eq(&key)
 			});

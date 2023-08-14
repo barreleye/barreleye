@@ -143,6 +143,11 @@ impl Indexer {
 				}
 			}
 
+			if network_range_map.is_empty() {
+				sleep(Duration::from_secs(1)).await;
+				continue;
+			}
+
 			let (pipe_sender, mut pipe_receiver) = mpsc::channel(network_range_map.len());
 			let (abort_sender, _) = broadcast::channel(network_range_map.len());
 			let should_keep_going = Arc::new(AtomicBool::new(true));
