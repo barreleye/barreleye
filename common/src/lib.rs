@@ -50,9 +50,9 @@ pub mod warehouse;
 
 mod banner;
 
-static EMOJI_SETUP: Emoji<'_, '_> = Emoji("💾  ", "");
-static EMOJI_MIGRATIONS: Emoji<'_, '_> = Emoji("🚐  ", "");
-static EMOJI_NETWORKS: Emoji<'_, '_> = Emoji("📢  ", "");
+static EMOJI_SETUP: Emoji<'_, '_> = Emoji("📦  ", "");
+static EMOJI_MIGRATIONS: Emoji<'_, '_> = Emoji("🚢  ", "");
+static EMOJI_NETWORKS: Emoji<'_, '_> = Emoji("📡  ", "");
 static EMOJI_READY: Emoji<'_, '_> = Emoji("🟢  ", "");
 static EMOJI_QUIT: Emoji<'_, '_> = Emoji("🛑  ", "");
 
