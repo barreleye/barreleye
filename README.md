@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/github/license/barreleye/barreleye?color=orange&style=flat-square)](/LICENSE)
 [![Discord](https://img.shields.io/discord/1026664296861679646?style=flat-square&color=blue)](https://discord.gg/VX8PdWSwNZ)
 
+> **Note**
 > ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
 
 ## What is Barreleye?
@@ -93,9 +94,9 @@ Finally, to speed up indexing run your own Ethereum archive node with a higher r
 ```bash
 curl -X PUT \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <API_KEY>" \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
-    "rpcNode": "<YOUR_OWN_RPC_NODE_URL>",
+    "rpcEndpoint": "$YOUR_OWN_RPC_NODE_URL",
     "rps": 1500
   }' \
   http://localhost:4000/v0/networks/net_ethereum
@@ -186,5 +187,5 @@ To stay in touch with Barreleye:
 
 Source code for Barreleye is variously licensed under a number of different licenses. A copy of each license can be found in [each repository](https://github.com/barreleye).
 
-- Libraries and SDKs, each located in its own distinct repository, are released under either the [Apache License 2.0](https://opensource.org/licenses/Apache-2.0) or [MIT License](https://opensource.org/licenses/MIT).
 - Core code for Barreleye, located in [this repository](https://github.com/barreleye/barreleye), is released under the [GNU Affero General Public License 3.0](/LICENSE).
+- Libraries and SDKs, each located in its own distinct repository, are released under either the [Apache License 2.0](https://opensource.org/licenses/Apache-2.0) or [MIT License](https://opensource.org/licenses/MIT).
