@@ -99,7 +99,7 @@ curl -X PUT \
     "rpcEndpoint": "$YOUR_OWN_RPC_NODE_URL",
     "rps": 1500
   }' \
-  http://localhost:4000/v0/networks/net_ethereum
+  http://localhost:4000/v1/networks/net_ethereum
 ```
 
 ## Add Custom Networks
@@ -124,7 +124,7 @@ curl -X POST \
     "blockTime": 600000,
     "rpcEndpoint": "http://username:password@127.0.0.1:8332"
   }' \
-  http://localhost:4000/v0/networks
+  http://localhost:4000/v1/networks
 ```
 
 Add an EVM-based RPC node:
@@ -139,7 +139,7 @@ curl -X POST \
     "blockTime": 12000,
     "rpcEndpoint": "http://127.0.0.1:8545"
   }' \
-  http://localhost:4000/v0/networks
+  http://localhost:4000/v1/networks
 ```
 
 ⏳ Indexing will take a while. To monitor progress:
@@ -148,7 +148,7 @@ curl -X POST \
 curl -X GET \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $YOUR_API_KEY" \
-  http://localhost:4000/v0/stats
+  http://localhost:4000/v1/stats
 ```
 
 ## Analytics
@@ -158,7 +158,7 @@ To get networks, assets, labels, etc:
 ```bash
 curl -X GET \
   -H 'Content-Type: application/json' \
-  http://localhost:4000/v0/info?address=$BLOCKCHAIN_ADDRESS
+  http://localhost:4000/v1/info?address=$BLOCKCHAIN_ADDRESS
 ```
 
 To find connected labeled addresses that might have funded the requested address through multiple hops:
@@ -166,7 +166,7 @@ To find connected labeled addresses that might have funded the requested address
 ```bash
 curl -X GET \
   -H 'Content-Type: application/json' \
-  http://localhost:4000/v0/upstream?address=$BLOCKCHAIN_ADDRESS
+  http://localhost:4000/v1/upstream?address=$BLOCKCHAIN_ADDRESS
 ```
 
 ## Random Notes

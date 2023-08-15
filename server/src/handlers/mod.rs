@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use barreleye_common::App;
 
-mod v0;
+mod v1;
 
 pub fn get_routes() -> Router<Arc<App>> {
-	Router::new().nest("/v0", v0::get_routes())
+	Router::new().nest("/v1", v1::get_routes())
 }

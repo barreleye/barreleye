@@ -1,6 +1,6 @@
 [package]
 name = "barreleye-indexer"
-description = "Open-source blockchain analytics."
+description = "Open-source blockchain KYC."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.com"
@@ -21,12 +21,12 @@ base64 = "0.21.2"
 regex = "1.9.3"
 bitcoincore-rpc-json = "0.17.0"
 derive_more = "0.99.17"
-env_logger = "0.10.0"
 log = "0.4.20"
 tokio = { version = "1.31.0", features = ["full"] }
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
 reqwest = { version = "0.11.18", features = ["rustls-tls"] }
 num-format = { version = "0.4.4", features = ["with-system-locale"] }
+tracing = "0.1.37"
 
 barreleye-common = { path = "../common", version = "0.0.1" }
 

@@ -14,6 +14,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
+use tracing::debug;
 
 use crate::Indexer;
 use barreleye_common::{
@@ -240,7 +241,7 @@ impl Indexer {
 
 			if network_params_map.is_empty() {
 				if !blocked_and_notified {
-					debug!("No fully synced networks yet. Waiting…");
+					debug!("Waiting… (no fully synced networks yet)");
 					blocked_and_notified = true;
 				}
 				sleep(Duration::from_secs(10)).await;
@@ -255,7 +256,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, Sender<()>>::new();
 
 			let thread_count = network_params_map.len();
-			debug!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold());
+			debug!("Launching {} thread(s)…", style(self.format_number(thread_count)?).bold());
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_params_map.clone().into_iter() {

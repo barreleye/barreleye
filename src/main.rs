@@ -1,6 +1,6 @@
-extern crate dotenv;
+extern crate dotenvy;
 
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use eyre::Result;
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock, task::JoinSet};
@@ -11,13 +11,12 @@ use barreleye_common::{
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
 
-// mod log;
+mod log;
 
 #[tokio::main]
 async fn main() -> Result<()> {
 	dotenv().ok();
-	env_logger::init();
-	// log::setup()?;
+	log::setup()?;
 
 	let (raw_settings, mut warnings) = Settings::new().unwrap_or_else(|e| {
 		quit(match e.downcast_ref::<AppError>() {

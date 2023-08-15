@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::{
 	errors::ServerError,
-	handlers::v0::entities::{get_addresses_data, get_tags_data},
+	handlers::v1::entities::{get_addresses_data, get_tags_data},
 	ServerResult,
 };
 use barreleye_common::{

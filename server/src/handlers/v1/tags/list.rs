@@ -3,7 +3,7 @@ use axum_extra::extract::Query;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::{handlers::v0::tags::get_data_by_tag_ids, ServerResult};
+use crate::{handlers::v1::tags::get_data_by_tag_ids, ServerResult};
 use barreleye_common::{
 	models::{Address, BasicModel, Entity, Network, Tag},
 	App,

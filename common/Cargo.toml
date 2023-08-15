@@ -1,6 +1,6 @@
 [package]
 name = "barreleye-common"
-description = "Open-source blockchain analytics."
+description = "Open-source blockchain KYC."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.com"

@@ -11,6 +11,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
+use tracing::debug;
 
 use crate::Indexer;
 use barreleye_common::{
@@ -111,7 +112,7 @@ impl Indexer {
 			};
 			if block_height_map.is_empty() {
 				if !blocked_and_notified {
-					debug!("No fully processed networks yet. Waiting…");
+					debug!("Waiting… (no fully processed networks yet)");
 					blocked_and_notified = true;
 				}
 				sleep(Duration::from_secs(10)).await;

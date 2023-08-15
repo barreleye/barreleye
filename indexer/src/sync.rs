@@ -1,4 +1,3 @@
-use console::style;
 use eyre::{ErrReport, Result};
 use serde_json::{from_value as json_parse, json, Value as JsonValue};
 use std::{
@@ -14,6 +13,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
+use tracing::{debug, info};
 
 use crate::Indexer;
 use barreleye_common::{
@@ -63,7 +63,7 @@ impl Pipe {
 }
 
 impl Indexer {
-	pub async fn copy(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
+	pub async fn sync(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
 		'indexing: loop {
 			if !self.app.is_leading() {
 				sleep(Duration::from_secs(1)).await;
@@ -154,7 +154,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, mpsc::Sender<()>>::new();
 
 			let thread_count = network_range_map.len();
-			debug!("Launching {} thread(s)", style(self.format_number(thread_count)?).bold());
+			debug!("Launching {} thread(s)…", self.format_number(thread_count)?);
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_range_map.clone().into_iter() {
@@ -241,6 +241,12 @@ impl Indexer {
 			// drop the original non-cloned
 			drop(pipe_sender);
 
+			// periodically show progress
+			tokio::spawn({
+				let s = self.clone();
+				async move { s.show_sync_progress(5).await }
+			});
+
 			// process thread returns
 			let abort = || -> Result<()> {
 				should_keep_going.store(false, Ordering::SeqCst);
@@ -299,6 +305,56 @@ impl Indexer {
 						}
 					}
 				}
+			}
+		}
+	}
+
+	async fn show_sync_progress(&self, secs: u64) -> Result<()> {
+		loop {
+			sleep(Duration::from_secs(secs)).await;
+
+			for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
+				let nid = network_id;
+				let mut scores = vec![];
+
+				let block_height =
+					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
+						.await?
+						.map(|v| v.value)
+						.unwrap_or(0);
+
+				if block_height == 0 {
+					scores.push(0.0);
+				} else {
+					let tail_block = Config::get::<_, BlockHeight>(
+						self.app.db(),
+						ConfigKey::IndexerCopyTailSync(nid),
+					)
+					.await?
+					.map(|v| v.value)
+					.unwrap_or(0);
+
+					let mut done_blocks = tail_block;
+					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+					)
+					.await?
+					{
+						done_blocks -= block_range.value.1 - block_range.value.0;
+					}
+
+					scores.push(done_blocks as f64 / block_height as f64);
+				}
+
+				let progress = scores.iter().sum::<f64>() / scores.len() as f64;
+				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
+					.await?;
+
+				info!(
+					network = chain.get_network().name,
+					progress = (progress * 1000000.0).round() / 1000000.0
+				);
 			}
 		}
 	}

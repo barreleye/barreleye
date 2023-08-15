@@ -13,14 +13,7 @@ unmaintained = "warn"
 unsound = "deny"
 yanked = "deny"
 notice = "warn"
-ignore = [
-    # @TODO dotenv is Unmaintained
-    "RUSTSEC-2021-0141",
-    # @TODO `libsqlite3-sys` via C SQLite CVE-2022-35737 (@TODO waiting for sqlx update)
-    "RUSTSEC-2022-0090",
-    # @TODO Ouroboros is Unsound
-    "RUSTSEC-2023-0042"
-]
+ignore = []
 
 [licenses]
 unlicensed = "deny"

@@ -4,7 +4,7 @@ description = "Open-source blockchain KYC."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.com"
-version = "0.0.1"
+version = "0.1.0"
 license = "AGPL-3.0"
 edition = "2021"
 readme = "README.md"
@@ -18,17 +18,17 @@ path = "src/main.rs"
 members = [ "common", "indexer", "server" ]
 
 [package.metadata.cargo-udeps.ignore]
-normal = ["color-eyre", "fern"]
+normal = ["color-eyre"]
 
 [dependencies]
 log = "0.4.20"
 color-eyre = "0.6.2"
 eyre = "0.6.8"
-env_logger = "0.10.0"
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 chrono = { version = "0.4.26", default-features = false, features = ["clock", "std"] }
-fern = { version = "0.6.2", features = ["colored"] }
 tokio = { version = "1.31.0", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
 
 barreleye-common = { path = "./common", version = "0.0.1" }
 barreleye-indexer = { path = "./indexer", version = "0.0.1" }

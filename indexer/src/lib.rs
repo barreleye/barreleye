@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate log;
-
-use console::style;
 use eyre::Result;
 use num_format::{SystemLocale, ToFormattedString};
 use sea_orm::ColumnTrait;
@@ -16,6 +12,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
+use tracing::debug;
 use uuid::Uuid;
 
 use barreleye_common::{
@@ -27,9 +24,9 @@ use barreleye_common::{
 	INDEXER_HEARTBEAT, INDEXER_PROMOTION,
 };
 
-mod copy;
 mod link;
 mod process;
+mod sync;
 
 #[derive(Clone)]
 pub struct Indexer {
@@ -55,7 +52,7 @@ impl Indexer {
 			set.spawn({
 				let s = self.clone();
 				let r = rx.clone();
-				async move { s.copy(r).await }
+				async move { s.sync(r).await }
 			});
 
 			set.spawn({
@@ -166,51 +163,6 @@ impl Indexer {
 				debug!("No active networks. Standing by…");
 				sleep(Duration::from_secs(10)).await;
 				continue;
-			}
-
-			for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
-				let nid = network_id;
-				let mut scores = vec![];
-
-				let block_height =
-					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
-						.await?
-						.map(|v| v.value)
-						.unwrap_or(0);
-
-				if block_height == 0 {
-					scores.push(0.0);
-				} else {
-					let tail_block = Config::get::<_, BlockHeight>(
-						self.app.db(),
-						ConfigKey::IndexerCopyTailSync(nid),
-					)
-					.await?
-					.map(|v| v.value)
-					.unwrap_or(0);
-
-					let mut done_blocks = tail_block;
-					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
-						self.app.db(),
-						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
-					)
-					.await?
-					{
-						done_blocks -= block_range.value.1 - block_range.value.0;
-					}
-
-					scores.push(done_blocks as f64 / block_height as f64);
-				}
-
-				let progress = scores.iter().sum::<f64>() / scores.len() as f64;
-				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
-					.await?;
-
-				info!(
-					"{} ({:.4}% synced, 0% processed)", // @TODO
-					style(chain.get_network().name).bold(),
-					progress * 100.0
-				);
 			}
 
 			sleep(Duration::from_secs(5)).await;

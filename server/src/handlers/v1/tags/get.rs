@@ -5,7 +5,7 @@ use axum::{
 use serde::Serialize;
 use std::sync::Arc;
 
-use crate::{errors::ServerError, handlers::v0::tags::get_data_by_tag_ids, ServerResult};
+use crate::{errors::ServerError, handlers::v1::tags::get_data_by_tag_ids, ServerResult};
 use barreleye_common::{
 	models::{Address, BasicModel, Entity, Network, Tag},
 	App,
