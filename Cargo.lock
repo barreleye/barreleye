@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "barreleye-common"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "async-trait",
  "base64 0.21.2",
@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "barreleye-indexer"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "async-trait",
  "barreleye-common",
@@ -558,7 +558,7 @@ dependencies = [
 
 [[package]]
 name = "barreleye-server"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "axum",
  "axum-extra",

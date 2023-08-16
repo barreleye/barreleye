@@ -4,7 +4,7 @@ description = "Open-source blockchain KYC."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.com"
-version = "0.0.1"
+version = "0.1.0"
 license = "AGPL-3.0"
 edition = "2021"
 workspace = ".."
@@ -25,7 +25,7 @@ tower = { version = "0.4.13", features = ["timeout"] }
 tower-http = { version = "0.4.3", features = ["trace"] }
 tracing = "0.1.37"
 
-barreleye-common = { path = "../common", version = "0.0.1" }
+barreleye-common = { path = "../common", version = "0.1.0" }
 
 [dependencies.sea-orm]
 version = "0.12.2"
