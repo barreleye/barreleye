@@ -1,18 +1,23 @@
+use derive_more::Display;
 use eyre::{ErrReport, Result};
 use std::str::FromStr;
 use url::Url;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Display, Debug, Clone, Default, PartialEq, Eq)]
 pub enum Service {
 	#[default]
+	#[display(fmt = "Unknown")]
 	Unknown,
+	#[display(fmt = "S3")]
 	S3,
+	#[display(fmt = "S3-compatible")]
 	S3Compatible,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct S3 {
 	pub service: Service,
+	pub url: String,
 	pub region: Option<String>,
 	pub domain: Option<String>,
 	pub bucket: Option<String>,
@@ -25,6 +30,7 @@ impl FromStr for S3 {
 		let mut ret = S3 { ..Default::default() };
 
 		let parsed_url = Url::parse(s)?;
+		ret.url = parsed_url.to_string();
 		if let Some(domain) = parsed_url.domain() {
 			let parts: Vec<String> = domain.split('.').map(|v| v.to_string()).collect();
 			if parts.len() >= 3 && parts[parts.len() - 2] == "amazonaws" {

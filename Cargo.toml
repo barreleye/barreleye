@@ -29,6 +29,7 @@ chrono = { version = "0.4.26", default-features = false, features = ["clock", "s
 tokio = { version = "1.31.0", features = ["full"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
+console = "0.15.7"
 
 barreleye-common = { path = "./common", version = "0.1.0" }
 barreleye-indexer = { path = "./indexer", version = "0.1.0" }

@@ -33,9 +33,9 @@ impl Progress {
 		};
 
 		match step {
-			Step::Setup => out(1, EMOJI_SETUP, "Checking setup…"),
+			Step::Setup => out(1, EMOJI_SETUP, "Initializing…"),
 			Step::Migrations => out(2, EMOJI_MIGRATIONS, "Running migrations…"),
-			Step::Networks => out(3, EMOJI_NETWORKS, "Pinging networks…"),
+			Step::Networks => out(3, EMOJI_NETWORKS, "Connecting to networks…"),
 			Step::Ready(ready_type, warnings) => {
 				out(
 					total_steps,

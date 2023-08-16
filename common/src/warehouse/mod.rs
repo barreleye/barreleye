@@ -1,14 +1,16 @@
 use clickhouse::Client as ClickhouseClient;
+use derive_more::Display;
 use eyre::{Result, WrapErr};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{utils, Settings};
 
-#[derive(Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Display, Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Driver {
 	#[default]
 	#[serde(rename = "clickhouse")]
+	#[display(fmt = "Clickhouse")]
 	Clickhouse,
 }
 

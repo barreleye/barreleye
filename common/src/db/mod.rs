@@ -1,3 +1,4 @@
+use derive_more::Display;
 use eyre::{Result, WrapErr};
 use log::LevelFilter;
 use sea_orm::{
@@ -12,14 +13,17 @@ use migrations::{Migrator, MigratorTrait};
 
 mod migrations;
 
-#[derive(Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Display, Debug, Default, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Driver {
 	#[default]
 	#[serde(rename = "sqlite")]
+	#[display(fmt = "SQLite")]
 	SQLite,
 	#[serde(rename = "postgres")]
+	#[display(fmt = "PostgreSQL")]
 	PostgreSQL,
 	#[serde(rename = "mysql")]
+	#[display(fmt = "MySQL")]
 	MySQL,
 }
 

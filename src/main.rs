@@ -1,12 +1,13 @@
 extern crate dotenvy;
 
+use console::style;
 use dotenvy::dotenv;
 use eyre::Result;
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock, task::JoinSet};
 
 use barreleye_common::{
-	quit, App, AppError, Cache, Db, Progress, ProgressStep, Settings, Storage, Warehouse,
+	quit, utils, App, AppError, Cache, Db, Progress, ProgressStep, Settings, Storage, Warehouse,
 };
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
@@ -43,6 +44,39 @@ async fn main() -> Result<()> {
 	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
 		quit(AppError::DatabaseConnection { url: url.to_string() });
 	}));
+
+	// show connection settings
+	fn show_setting(driver: &str, url: &str, tag: &str) {
+		println!(
+			"          {} {} {} {}",
+			style("↳").bold().dim(),
+			style(format!("{driver}:")).bold(),
+			style(format!("[{tag}]")).bold().dim(),
+			style(url.to_string()).bold().dim(),
+		);
+	}
+	let storage_type;
+	let storage_path;
+	if let Some(path) = settings.storage_path.clone() {
+		storage_type = "DuckDB".to_string();
+		storage_path = path.display().to_string();
+	} else if let Some(s3) = settings.storage_url.clone() {
+		storage_type = s3.service.to_string();
+		storage_path = s3.url;
+	} else {
+		panic!("storage setting must be set");
+	}
+	show_setting(
+		&settings.database_driver.to_string(),
+		&utils::with_masked_auth(&settings.database),
+		"database",
+	);
+	show_setting(&storage_type, &storage_path, "storage");
+	show_setting(
+		&settings.warehouse_driver.to_string(),
+		&utils::with_masked_auth(&settings.warehouse),
+		"warehouse",
+	);
 
 	progress.show(ProgressStep::Migrations);
 	warehouse.run_migrations().await?;
