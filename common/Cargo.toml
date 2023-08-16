@@ -42,6 +42,7 @@ ethers = { version = "2.0.8", features = ["rustls"] }
 clickhouse = { version = "0.11.5", features = ["uuid"] }
 clap = { version = "4.3.21", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
+tracing = "0.1.37"
 
 [dependencies.sea-orm]
 version = "0.12.2"

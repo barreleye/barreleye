@@ -1,4 +1,5 @@
 use console::style;
+use tracing::warn;
 
 use crate::{Warnings, EMOJI_MIGRATIONS, EMOJI_NETWORKS, EMOJI_READY, EMOJI_SETUP};
 
@@ -37,26 +38,31 @@ impl Progress {
 			Step::Migrations => out(2, EMOJI_MIGRATIONS, "Running migrations…"),
 			Step::Networks => out(3, EMOJI_NETWORKS, "Connecting to networks…"),
 			Step::Ready(ready_type, warnings) => {
-				out(
-					total_steps,
-					EMOJI_READY,
-					&match ready_type {
-						ReadyType::All(addr) => format!("Indexing & listening on {addr}…\n"),
-						ReadyType::Server(addr) => format!("Listening on {addr}…\n"),
-						ReadyType::Indexer => "Indexing…\n".to_string(),
-					},
-				);
-
-				if !warnings.is_empty() {
+				out(total_steps, EMOJI_READY, "Starting up…");
+				fn show_status(status: &str) {
 					println!(
-						"{}\n{}\n",
-						style("Warnings:").yellow().bold(),
-						warnings
-							.iter()
-							.map(|v| format!("{} {v}", style("↳").dim().bold()))
-							.collect::<Warnings>()
-							.join("\n"),
+						"          {} {}",
+						style("↳").bold().dim(),
+						style(status).bold().dim(),
 					);
+				}
+				match ready_type {
+					ReadyType::All(addr) => {
+						show_status("Indexer enabled");
+						show_status(&format!("Listening on {addr}…\n"));
+					}
+					ReadyType::Server(addr) => {
+						show_status("Indexer disabled");
+						show_status(&format!("Listening on {addr}…\n"));
+					}
+					ReadyType::Indexer => {
+						show_status("Indexer enabled");
+						show_status("Server disabled\n");
+					}
+				};
+
+				for warning in warnings.into_iter() {
+					warn!(warning);
 				}
 			}
 		}

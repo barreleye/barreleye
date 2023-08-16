@@ -66,6 +66,7 @@ mod tests {
 				"http://s3.us-east-1.amazonaws.com/bucket_name/",
 				S3 {
 					service: Service::S3,
+					url: "http://s3.us-east-1.amazonaws.com/bucket_name/".to_string(),
 					region: Some("us-east-1".to_string()),
 					domain: None,
 					bucket: Some("bucket_name".to_string()),
@@ -75,6 +76,7 @@ mod tests {
 				"http://storage.googleapis.com/bucket_name/",
 				S3 {
 					service: Service::S3Compatible,
+					url: "http://storage.googleapis.com/bucket_name/".to_string(),
 					region: None,
 					domain: Some("storage.googleapis.com".to_string()),
 					bucket: Some("bucket_name".to_string()),
@@ -84,6 +86,7 @@ mod tests {
 				"http://example.com/bucket_name/",
 				S3 {
 					service: Service::S3Compatible,
+					url: "http://example.com/bucket_name/".to_string(),
 					region: None,
 					domain: Some("example.com".to_string()),
 					bucket: Some("bucket_name".to_string()),
@@ -93,6 +96,7 @@ mod tests {
 				"http://example.com/one/two/three",
 				S3 {
 					service: Service::S3Compatible,
+					url: "http://example.com/one/two/three".to_string(),
 					region: None,
 					domain: Some("example.com".to_string()),
 					bucket: Some("one".to_string()),
@@ -102,6 +106,7 @@ mod tests {
 				"http://s3.us-east-1.amazonaws.com/",
 				S3 {
 					service: Service::S3,
+					url: "http://s3.us-east-1.amazonaws.com/".to_string(),
 					region: Some("us-east-1".to_string()),
 					domain: None,
 					bucket: None,

@@ -229,7 +229,9 @@ impl App {
 
 		let networks = self.networks.read().await;
 		if networks.is_empty() {
-			warnings.push("No active networks found".to_string());
+			if self.settings.is_indexer {
+				warnings.push("No active networks found".to_string());
+			}
 		} else {
 			warnings.extend(
 				networks
