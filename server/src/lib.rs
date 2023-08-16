@@ -19,6 +19,10 @@ use std::{
 };
 use tokio::signal;
 use tower::ServiceBuilder;
+use tower_http::trace;
+use tower_http::trace::TraceLayer;
+use tower_http::LatencyUnit;
+use tracing::Level;
 use uuid::Uuid;
 
 use crate::errors::ServerError;
@@ -123,6 +127,16 @@ impl Server {
 				ServiceBuilder::new()
 					.layer(HandleErrorLayer::new(handle_timeout_error))
 					.timeout(Duration::from_secs(30)),
+			)
+			.layer(
+				TraceLayer::new_for_http()
+					.make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+					.on_request(())
+					.on_response(
+						trace::DefaultOnResponse::new()
+							.include_headers(true)
+							.latency_unit(LatencyUnit::Millis),
+					),
 			)
 			.with_state(self.app.clone());
 

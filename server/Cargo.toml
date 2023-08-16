@@ -18,10 +18,12 @@ axum-extra = { version = "0.7.7", features = ["query"] }
 derive_more = "0.99.17"
 serde = "1.0.183"
 console = "0.15.7"
-serde_json = "1.0.104"
+serde_json = "1.0.105"
 hyper = "0.14.27"
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
 tower = { version = "0.4.13", features = ["timeout"] }
+tower-http = { version = "0.4.3", features = ["trace"] }
+tracing = "0.1.37"
 
 barreleye-common = { path = "../common", version = "0.0.1" }
 

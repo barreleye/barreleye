@@ -9,7 +9,8 @@ pub fn setup() -> Result<()> {
 	let filter = EnvFilter::new("none")
 		.add_directive("barreleye_indexer=debug".parse()?)
 		.add_directive("barreleye_server=debug".parse()?)
-		.add_directive("barreleye=debug".parse()?);
+		.add_directive("barreleye=debug".parse()?)
+		.add_directive("tower_http::trace=debug".parse()?);
 
 	tracing_subscriber::registry().with(fmt::layer().compact()).with(filter).init();
 
