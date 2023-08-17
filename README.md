@@ -6,7 +6,7 @@
 [![Discord](https://img.shields.io/discord/1026664296861679646?style=flat-square&color=blue)](https://discord.gg/VX8PdWSwNZ)
 
 > **Note**
-> ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk ⚠️
+> ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk
 
 ## What is Barreleye?
 
@@ -31,7 +31,7 @@ cargo install
 ```
 
 > **Note**
-> [ClickHouse](https://github.com/ClickHouse/ClickHouse) is a requirement for Barreleye
+> ⚠️ [ClickHouse](https://github.com/ClickHouse/ClickHouse) is a requirement for Barreleye
 
 Run locally (pointing to your [ClickHouse](https://github.com/ClickHouse/ClickHouse) instance):
 
