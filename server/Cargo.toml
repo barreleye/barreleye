@@ -10,7 +10,7 @@ edition = "2021"
 workspace = ".."
 
 [dependencies]
-tokio = { version = "1.31.0", features = ["full"] }
+tokio = { version = "1.32.0", features = ["full"] }
 log = "0.4.20"
 eyre = "0.6.8"
 axum = "0.6.20"

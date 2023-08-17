@@ -78,13 +78,13 @@ impl Indexer {
 			{
 				let process_step_started = matches!(Config::get::<_, BlockHeight>(
                     self.app.db(),
-                    ConfigKey::IndexerProcessTailSync(network.network_id),
+                    ConfigKey::IndexerProcessTail(network.network_id),
                 ).await?, Some(hit) if hit.value > 0);
 				let process_step_synced = Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
 					vec![
-						ConfigKey::IndexerProcessChunkSync(network.network_id, 0),
-						ConfigKey::IndexerProcessModuleSync(network.network_id, 0),
+						ConfigKey::IndexerProcessChunk(network.network_id, 0),
+						ConfigKey::IndexerProcessModule(network.network_id, 0),
 					],
 				)
 				.await?
@@ -98,7 +98,7 @@ impl Indexer {
 			let block_height_map = {
 				let map = networks
 					.into_iter()
-					.map(|n| (ConfigKey::IndexerProcessTailSync(n.network_id), n.network_id))
+					.map(|n| (ConfigKey::IndexerProcessTail(n.network_id), n.network_id))
 					.collect::<HashMap<ConfigKey, PrimaryId>>();
 
 				Config::get_many::<_, BlockHeight>(self.app.db(), map.clone().into_keys().collect())
@@ -153,7 +153,7 @@ impl Indexer {
 				// 2. if cache is not set -> try reading from configs
 				// 3. if not in configs -> fast-forward to 1st interaction from warehouse
 				// 4. if not in warehouse -> no need to scan chain; set to chain height
-				let config_key = ConfigKey::IndexerUpstreamSync(network_id, address.address_id);
+				let config_key = ConfigKey::IndexerLink(network_id, address.address_id);
 				let block_height = match config_key_map.get(&config_key) {
 					Some(&block_height) => block_height,
 					_ => {

@@ -178,7 +178,7 @@ impl Indexer {
 				self.app.db(),
 				addresses
 					.iter()
-					.map(|a| ConfigKey::IndexerUpstreamSync(a.network_id, a.address_id))
+					.map(|a| ConfigKey::IndexerLink(a.network_id, a.address_id))
 					.collect(),
 			)
 			.await?;

@@ -79,13 +79,11 @@ impl Indexer {
 			for (network_id, _) in self.app.networks.read().await.iter() {
 				let nid = *network_id;
 
-				let mut last_copied_block = Config::get::<_, BlockHeight>(
-					self.app.db(),
-					ConfigKey::IndexerCopyTailSync(nid),
-				)
-				.await?
-				.map(|h| h.value)
-				.unwrap_or(0);
+				let mut last_copied_block =
+					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::IndexerSyncTail(nid))
+						.await?
+						.map(|h| h.value)
+						.unwrap_or(0);
 
 				let block_height =
 					self.get_updated_block_height(nid, Some(last_copied_block)).await?;
@@ -95,7 +93,7 @@ impl Indexer {
 					&& self.app.num_cpus > 0
 					&& Config::get_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
-						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+						vec![ConfigKey::IndexerSyncChunk(nid, 0)],
 					)
 					.await?
 					.is_empty()
@@ -103,7 +101,7 @@ impl Indexer {
 					let block_sync_ranges = self
 						.get_block_sync_ranges(block_height)?
 						.into_iter()
-						.map(|(min, max)| (ConfigKey::IndexerCopyChunkSync(nid, max), (min, max)))
+						.map(|(min, max)| (ConfigKey::IndexerSyncChunk(nid, max), (min, max)))
 						.collect::<HashMap<_, _>>();
 
 					// create chunk sync indexes
@@ -117,7 +115,7 @@ impl Indexer {
 					last_copied_block = block_height - 1;
 					Config::set::<_, BlockHeight>(
 						self.app.db(),
-						ConfigKey::IndexerCopyTailSync(nid),
+						ConfigKey::IndexerSyncTail(nid),
 						last_copied_block,
 					)
 					.await?;
@@ -125,14 +123,14 @@ impl Indexer {
 
 				// push tail index to process latest blocks
 				network_range_map.insert(
-					ConfigKey::IndexerCopyTailSync(nid),
+					ConfigKey::IndexerSyncTail(nid),
 					NetworkRange::new(nid, last_copied_block, None),
 				);
 
 				// push all fast-sync block ranges
 				for (config_key, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
-					vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+					vec![ConfigKey::IndexerSyncChunk(nid, 0)],
 				)
 				.await?
 				{
@@ -180,8 +178,8 @@ impl Indexer {
 						let block_height_max = network_params.range.1;
 
 						let config_value = |block_height| match config_key {
-							ConfigKey::IndexerCopyTailSync(_) => json!(block_height),
-							ConfigKey::IndexerCopyChunkSync(_, _) => {
+							ConfigKey::IndexerSyncTail(_) => json!(block_height),
+							ConfigKey::IndexerSyncChunk(_, _) => {
 								json!((block_height, block_height_max.unwrap()))
 							}
 							_ => panic!("no return value for {config_key}"),
@@ -244,7 +242,7 @@ impl Indexer {
 			// periodically show progress
 			tokio::spawn({
 				let s = self.clone();
-				async move { s.show_sync_progress(5).await }
+				async move { s.show_sync_progress(10).await }
 			});
 
 			// process thread returns
@@ -282,11 +280,11 @@ impl Indexer {
 
 						// save the new config value
 						match config_key {
-							ConfigKey::IndexerCopyTailSync(_) => {
+							ConfigKey::IndexerSyncTail(_) => {
 								let value = json_parse::<BlockHeight>(config_value)?;
 								Config::set::<_, BlockHeight>(self.app.db(), config_key, value).await?;
 							}
-							ConfigKey::IndexerCopyChunkSync(_, _) => {
+							ConfigKey::IndexerSyncChunk(_, _) => {
 								let (block_range_min, block_range_max) =
 									json_parse::<(BlockHeight, BlockHeight)>(config_value)?;
 
@@ -328,7 +326,7 @@ impl Indexer {
 				} else {
 					let tail_block = Config::get::<_, BlockHeight>(
 						self.app.db(),
-						ConfigKey::IndexerCopyTailSync(nid),
+						ConfigKey::IndexerSyncTail(nid),
 					)
 					.await?
 					.map(|v| v.value)
@@ -337,7 +335,7 @@ impl Indexer {
 					let mut done_blocks = tail_block;
 					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
-						vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+						vec![ConfigKey::IndexerSyncChunk(nid, 0)],
 					)
 					.await?
 					{
@@ -348,7 +346,7 @@ impl Indexer {
 				}
 
 				let progress = scores.iter().sum::<f64>() / scores.len() as f64;
-				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerProgress(nid), progress)
+				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerSyncProgress(nid), progress)
 					.await?;
 
 				info!(

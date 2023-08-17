@@ -14,7 +14,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
-use tracing::debug;
+use tracing::{debug, info, trace};
 
 use crate::Indexer;
 use barreleye_common::{
@@ -94,14 +94,14 @@ impl Indexer {
 			for (network_id, chain) in self.app.networks.read().await.iter() {
 				let nid = *network_id;
 
-				// skip if "copy" step is not done yet
+				// skip if "sync" step is not done yet
 				let copy_step_started = matches!(Config::get::<_, BlockHeight>(
                     self.app.db(),
-                    ConfigKey::IndexerCopyTailSync(nid),
+                    ConfigKey::IndexerSyncTail(nid),
                 ).await?, Some(hit) if hit.value > 0);
 				let copy_step_synced = Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
-					vec![ConfigKey::IndexerCopyChunkSync(nid, 0)],
+					vec![ConfigKey::IndexerSyncChunk(nid, 0)],
 				)
 				.await?
 				.is_empty();
@@ -111,7 +111,7 @@ impl Indexer {
 
 				let mut last_processed_block = Config::get::<_, BlockHeight>(
 					self.app.db(),
-					ConfigKey::IndexerProcessTailSync(nid),
+					ConfigKey::IndexerProcessTail(nid),
 				)
 				.await?
 				.map(|h| h.value)
@@ -125,7 +125,7 @@ impl Indexer {
 					&& self.app.num_cpus > 0
 					&& Config::get_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
-						vec![ConfigKey::IndexerProcessChunkSync(nid, 0)],
+						vec![ConfigKey::IndexerProcessChunk(nid, 0)],
 					)
 					.await?
 					.is_empty()
@@ -133,9 +133,7 @@ impl Indexer {
 					let block_sync_ranges = self
 						.get_block_sync_ranges(block_height)?
 						.into_iter()
-						.map(|(min, max)| {
-							(ConfigKey::IndexerProcessChunkSync(nid, max), (min, max))
-						})
+						.map(|(min, max)| (ConfigKey::IndexerProcessChunk(nid, max), (min, max)))
 						.collect::<HashMap<_, _>>();
 
 					// create chunk sync indexes
@@ -149,7 +147,7 @@ impl Indexer {
 					last_processed_block = block_height - 1;
 					Config::set::<_, BlockHeight>(
 						self.app.db(),
-						ConfigKey::IndexerProcessTailSync(nid),
+						ConfigKey::IndexerProcessTail(nid),
 						last_processed_block,
 					)
 					.await?;
@@ -162,7 +160,7 @@ impl Indexer {
 							.into_iter()
 							.map(|module_id| {
 								let mid = module_id as u16;
-								(ConfigKey::IndexerProcessModuleSynced(nid, mid), 1u8)
+								(ConfigKey::IndexerProcessModuleDone(nid, mid), 1u8)
 							})
 							.collect::<HashMap<_, _>>(),
 					)
@@ -171,14 +169,14 @@ impl Indexer {
 
 				// push tail index to process latest blocks (incl all modules)
 				network_params_map.insert(
-					ConfigKey::IndexerProcessTailSync(nid),
+					ConfigKey::IndexerProcessTail(nid),
 					NetworkRange::new(nid, last_processed_block, None, &chain.get_module_ids()),
 				);
 
 				// push all fast-sync block ranges
 				for (config_key, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
 					self.app.db(),
-					vec![ConfigKey::IndexerProcessChunkSync(nid, 0)],
+					vec![ConfigKey::IndexerProcessChunk(nid, 0)],
 				)
 				.await?
 				{
@@ -197,9 +195,9 @@ impl Indexer {
 				for module_id in chain.get_module_ids().into_iter() {
 					let mid = module_id as u16;
 
-					let ck_synced = ConfigKey::IndexerProcessModuleSynced(nid, mid);
+					let ck_synced = ConfigKey::IndexerProcessModuleDone(nid, mid);
 					if Config::get::<_, u8>(self.app.db(), ck_synced).await?.is_none() {
-						let ck_block_range = ConfigKey::IndexerProcessModuleSync(nid, mid);
+						let ck_block_range = ConfigKey::IndexerProcessModule(nid, mid);
 
 						let block_range = match Config::get::<_, (BlockHeight, BlockHeight)>(
 							self.app.db(),
@@ -283,9 +281,9 @@ impl Indexer {
 						let block_height_max = network_params.range.1;
 
 						let config_value = |block_height| match config_key {
-							ConfigKey::IndexerProcessTailSync(_) => json!(block_height),
-							ConfigKey::IndexerProcessChunkSync(_, _)
-							| ConfigKey::IndexerProcessModuleSync(_, _)
+							ConfigKey::IndexerProcessTail(_) => json!(block_height),
+							ConfigKey::IndexerProcessChunk(_, _)
+							| ConfigKey::IndexerProcessModule(_, _)
 								if block_height_max.is_some() =>
 							{
 								json!((block_height, block_height_max.unwrap()))
@@ -369,6 +367,12 @@ impl Indexer {
 			// drop the original non-cloned
 			drop(pipe_sender);
 
+			// periodically show progress
+			tokio::spawn({
+				let s = self.clone();
+				async move { s.show_process_progress(10).await }
+			});
+
 			// process thread returns + their outputs
 			let abort = || -> Result<()> {
 				should_keep_going.store(false, Ordering::SeqCst);
@@ -397,11 +401,7 @@ impl Indexer {
 							break;
 						}
 
-						debug!(
-							"Thread {} → {} record(s)",
-							style(config_key).bold(),
-							self.format_number(new_data.len())?,
-						);
+						trace!(thread=config_key.to_string(), records=new_data.len());
 
 						// update results
 						warehouse_data += new_data;
@@ -421,10 +421,7 @@ impl Indexer {
 						// but that's still ok because commits will happen either when
 						// buffer fills up or enough time has passed
 						if warehouse_data.should_commit(false) {
-							debug!(
-								"Pushing {} record(s) to warehouse",
-								style(self.format_number(warehouse_data.len())?).bold(),
-							);
+							trace!(warehouse="pushing data", records=warehouse_data.len());
 
 							// push to warehouse
 							warehouse_data.commit(self.app.warehouse.clone()).await?;
@@ -436,11 +433,11 @@ impl Indexer {
 								let value = config_value.clone();
 
 								match config_key {
-									ConfigKey::IndexerProcessTailSync(_) => {
+									ConfigKey::IndexerProcessTail(_) => {
 										let value = json_parse::<BlockHeight>(value)?;
 										Config::set::<_, BlockHeight>(db, key, value).await?;
 									}
-									ConfigKey::IndexerProcessChunkSync(_, _) => {
+									ConfigKey::IndexerProcessChunk(_, _) => {
 										let (block_range_min, block_range_max) =
 											json_parse::<(BlockHeight, BlockHeight)>(value)?;
 
@@ -455,7 +452,7 @@ impl Indexer {
 											Config::delete(db, key).await?;
 										}
 									}
-									ConfigKey::IndexerProcessModuleSync(nid, mid) => {
+									ConfigKey::IndexerProcessModule(nid, mid) => {
 										let value =
 											json_parse::<(BlockHeight, BlockHeight)>(value)?;
 										Config::set::<_, (BlockHeight, BlockHeight)>(db, key, value)
@@ -464,13 +461,13 @@ impl Indexer {
 										if value.0 >= value.1 {
 											Config::set::<_, u8>(
 												db,
-												ConfigKey::IndexerProcessModuleSynced(*nid, *mid),
+												ConfigKey::IndexerProcessModuleDone(*nid, *mid),
 												1,
 											)
 											.await?;
 										}
 									}
-									ConfigKey::IndexerProcessModuleSynced(_, _) => {
+									ConfigKey::IndexerProcessModuleDone(_, _) => {
 										let value = json_parse::<u8>(value)?;
 										Config::set::<_, u8>(db, key, value).await?;
 									}
@@ -482,8 +479,8 @@ impl Indexer {
 							// module has been fully synced, it's safe to delete config for its
 							// range markers
 							for (config_key, _) in config_key_map.iter() {
-								if let ConfigKey::IndexerProcessModuleSynced(nid, mid) = config_key {
-									let ck_block_range = ConfigKey::IndexerProcessModuleSync(*nid, *mid);
+								if let ConfigKey::IndexerProcessModuleDone(nid, mid) = config_key {
+									let ck_block_range = ConfigKey::IndexerProcessModule(*nid, *mid);
 									Config::delete(self.app.db(), ck_block_range).await?;
 								}
 							}
@@ -493,6 +490,60 @@ impl Indexer {
 						}
 					}
 				}
+			}
+		}
+	}
+
+	async fn show_process_progress(&self, secs: u64) -> Result<()> {
+		loop {
+			sleep(Duration::from_secs(secs)).await;
+
+			for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
+				let nid = network_id;
+				let mut scores = vec![];
+
+				let block_height =
+					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
+						.await?
+						.map(|v| v.value)
+						.unwrap_or(0);
+
+				if block_height == 0 {
+					scores.push(0.0);
+				} else {
+					let tail_block = Config::get::<_, BlockHeight>(
+						self.app.db(),
+						ConfigKey::IndexerSyncTail(nid),
+					)
+					.await?
+					.map(|v| v.value)
+					.unwrap_or(0);
+
+					let mut done_blocks = tail_block;
+					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerProcessChunk(nid, 0)],
+					)
+					.await?
+					{
+						done_blocks -= block_range.value.1 - block_range.value.0;
+					}
+
+					scores.push(done_blocks as f64 / block_height as f64);
+				}
+
+				let progress = scores.iter().sum::<f64>() / scores.len() as f64;
+				Config::set::<_, f64>(
+					self.app.db(),
+					ConfigKey::IndexerProcessProgress(nid),
+					progress,
+				)
+				.await?;
+
+				info!(
+					network = chain.get_network().name,
+					progress = (progress * 1000000.0).round() / 1000000.0
+				);
 			}
 		}
 	}

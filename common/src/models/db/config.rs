@@ -18,22 +18,24 @@ use crate::{models::PrimaryId, utils, BlockHeight};
 pub enum ConfigKey {
 	#[display(fmt = "primary")]
 	Primary,
-	#[display(fmt = "indexer_copy_tail_sync_n{_0}")]
-	IndexerCopyTailSync(PrimaryId),
-	#[display(fmt = "indexer_copy_chunk_sync_n{_0}_b{_1}")]
-	IndexerCopyChunkSync(PrimaryId, BlockHeight),
-	#[display(fmt = "indexer_process_tail_sync_n{_0}")]
-	IndexerProcessTailSync(PrimaryId),
-	#[display(fmt = "indexer_process_chunk_sync_n{_0}_b{_1}")]
-	IndexerProcessChunkSync(PrimaryId, BlockHeight),
-	#[display(fmt = "indexer_process_module_sync_n{_0}_m{_1}")]
-	IndexerProcessModuleSync(PrimaryId, u16),
-	#[display(fmt = "indexer_process_module_synced_n{_0}_m{_1}")]
-	IndexerProcessModuleSynced(PrimaryId, u16),
-	#[display(fmt = "indexer_upstream_sync_n{_0}_a{_1}")]
-	IndexerUpstreamSync(PrimaryId, PrimaryId),
-	#[display(fmt = "indexer_n{_0}_progress")]
-	IndexerProgress(PrimaryId),
+	#[display(fmt = "indexer_sync_tail_n{_0}")]
+	IndexerSyncTail(PrimaryId),
+	#[display(fmt = "indexer_sync_chunk_n{_0}_b{_1}")]
+	IndexerSyncChunk(PrimaryId, BlockHeight),
+	#[display(fmt = "indexer_sync_progress_n{_0}")]
+	IndexerSyncProgress(PrimaryId),
+	#[display(fmt = "indexer_process_tail_n{_0}")]
+	IndexerProcessTail(PrimaryId),
+	#[display(fmt = "indexer_process_chunk_n{_0}_b{_1}")]
+	IndexerProcessChunk(PrimaryId, BlockHeight),
+	#[display(fmt = "indexer_process_module_n{_0}_m{_1}")]
+	IndexerProcessModule(PrimaryId, u16),
+	#[display(fmt = "indexer_process_module_done_n{_0}_m{_1}")]
+	IndexerProcessModuleDone(PrimaryId, u16),
+	#[display(fmt = "indexer_process_progress_n{_0}")]
+	IndexerProcessProgress(PrimaryId),
+	#[display(fmt = "indexer_link_n{_0}_a{_1}")]
+	IndexerLink(PrimaryId, PrimaryId),
 	#[display(fmt = "block_height_n{_0}")]
 	BlockHeight(PrimaryId),
 	#[display(fmt = "networks_updated")]
@@ -51,24 +53,23 @@ impl From<String> for ConfigKey {
 
 		match template.to_string().as_str() {
 			"primary" => Self::Primary,
-			"indexer_copy_tail_sync_n{}" if n.len() == 1 => Self::IndexerCopyTailSync(n[0]),
-			"indexer_copy_chunk_sync_n{}_b{}" if n.len() == 2 => {
-				Self::IndexerCopyChunkSync(n[0], n[1] as BlockHeight)
+			"indexer_sync_tail_n{}" if n.len() == 1 => Self::IndexerSyncTail(n[0]),
+			"indexer_sync_chunk_n{}_b{}" if n.len() == 2 => {
+				Self::IndexerSyncChunk(n[0], n[1] as BlockHeight)
 			}
-			"indexer_process_tail_sync_n{}" if n.len() == 1 => Self::IndexerProcessTailSync(n[0]),
-			"indexer_process_chunk_sync_n{}_b{}" if n.len() == 2 => {
-				Self::IndexerProcessChunkSync(n[0], n[1] as BlockHeight)
+			"indexer_sync_progress_n{}" if n.len() == 1 => Self::IndexerSyncProgress(n[0]),
+			"indexer_process_tail_n{}" if n.len() == 1 => Self::IndexerProcessTail(n[0]),
+			"indexer_process_chunk_n{}_b{}" if n.len() == 2 => {
+				Self::IndexerProcessChunk(n[0], n[1] as BlockHeight)
 			}
-			"indexer_process_module_sync_n{}_m{}" if n.len() == 2 => {
-				Self::IndexerProcessModuleSync(n[0], n[1] as u16)
+			"indexer_process_module_n{}_m{}" if n.len() == 2 => {
+				Self::IndexerProcessModule(n[0], n[1] as u16)
 			}
-			"indexer_process_module_synced_n{}_m{}" if n.len() == 2 => {
-				Self::IndexerProcessModuleSynced(n[0], n[1] as u16)
+			"indexer_process_module_done_n{}_m{}" if n.len() == 2 => {
+				Self::IndexerProcessModuleDone(n[0], n[1] as u16)
 			}
-			"indexer_upstream_sync_n{}_a{}" if n.len() == 2 => {
-				Self::IndexerUpstreamSync(n[0], n[1])
-			}
-			"indexer_n{}_progress" if n.len() == 1 => Self::IndexerProgress(n[0]),
+			"indexer_process_progress_n{}" if n.len() == 1 => Self::IndexerProcessProgress(n[0]),
+			"indexer_link_n{}_a{}" if n.len() == 2 => Self::IndexerLink(n[0], n[1]),
 			"block_height_n{}" if n.len() == 1 => Self::BlockHeight(n[0]),
 			"networks_updated" => Self::NetworksUpdated,
 			"newly_added_address_n{}_a{}" if n.len() == 2 => Self::NewlyAddedAddress(n[0], n[1]),
@@ -85,20 +86,18 @@ mod tests {
 	fn test_config_key_str() {
 		let config_keys = HashMap::from([
 			(ConfigKey::Primary, "primary"),
-			(ConfigKey::IndexerCopyTailSync(123), "indexer_copy_tail_sync_n123"),
-			(ConfigKey::IndexerCopyChunkSync(123, 456), "indexer_copy_chunk_sync_n123_b456"),
-			(ConfigKey::IndexerProcessTailSync(123), "indexer_process_tail_sync_n123"),
-			(ConfigKey::IndexerProcessChunkSync(123, 456), "indexer_process_chunk_sync_n123_b456"),
+			(ConfigKey::IndexerSyncTail(123), "indexer_sync_tail_n123"),
+			(ConfigKey::IndexerSyncChunk(123, 456), "indexer_sync_chunk_n123_b456"),
+			(ConfigKey::IndexerSyncProgress(123), "indexer_sync_progress_n123"),
+			(ConfigKey::IndexerProcessTail(123), "indexer_process_tail_n123"),
+			(ConfigKey::IndexerProcessChunk(123, 456), "indexer_process_chunk_n123_b456"),
+			(ConfigKey::IndexerProcessModule(123, 456), "indexer_process_module_n123_m456"),
 			(
-				ConfigKey::IndexerProcessModuleSync(123, 456),
-				"indexer_process_module_sync_n123_m456",
+				ConfigKey::IndexerProcessModuleDone(123, 456),
+				"indexer_process_module_done_n123_m456",
 			),
-			(
-				ConfigKey::IndexerProcessModuleSynced(123, 456),
-				"indexer_process_module_synced_n123_m456",
-			),
-			(ConfigKey::IndexerUpstreamSync(123, 456), "indexer_upstream_sync_n123_a456"),
-			(ConfigKey::IndexerProgress(123), "indexer_n123_progress"),
+			(ConfigKey::IndexerProcessProgress(123), "indexer_process_progress_n123"),
+			(ConfigKey::IndexerLink(123, 456), "indexer_link_n123_a456"),
 			(ConfigKey::BlockHeight(123), "block_height_n123"),
 			(ConfigKey::NetworksUpdated, "networks_updated"),
 			(ConfigKey::NewlyAddedAddress(123, 456), "newly_added_address_n123_a456"),
