@@ -197,7 +197,7 @@ impl Settings {
 
 		// test warehouse database name
 		match settings.warehouse_driver {
-			WarehouseDriver::Clickhouse if !utils::has_pathname(&settings.warehouse) => {
+			WarehouseDriver::ClickHouse if !utils::has_pathname(&settings.warehouse) => {
 				return Err(AppError::Config {
 					config: "warehouse",
 					error: "missing database name in the URL",

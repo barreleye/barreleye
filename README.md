@@ -19,92 +19,55 @@ Features:
 1. **Extendable.** API-based interface so it can be integrated into other systems.
 1. **Multi-chain.** Supports Bitcoin and EVM-based networks (with ability to add more).
 
-## Download
+## Get Started
 
-<!-- ### Via package manager (not recommended right now; outdated)
-
-```bash
-cargo install barreleye
-```
-
-### From source -->
-
-Requires Rust 1.70.0+:
+Clone, build & install:
 
 ```bash
 git clone https://github.com/barreleye/barreleye
 cd barreleye
-cargo build && cargo install
+cargo build
+cargo install
 ```
 
-## Get Started
+> **Note**
+> [ClickHouse](https://github.com/ClickHouse/ClickHouse) is a requirement for Barreleye
 
-How it works:
-
-1. Start the program
-1. Barreleye will start indexing blockchains
-1. Once it's done, you're able to make API requests to:
-    - Manage risky entities & their addresses
-    - Trace the flow & amount of funds to/from those risky addresses
-    - Do risk management & compliance in a private manner
-
-To run Barreleye locally:
+Run locally (pointing to your [ClickHouse](https://github.com/ClickHouse/ClickHouse) instance):
 
 ```bash
-./barreleye
+barreleye \
+  --warehouse http://username:password@localhost:8123/database_name
 ```
 
 This will do the following:
 
-- Run migrations (including seeding with a random public Ethereum RPC node)
-- Start the server, which will handle admin & analytics API requests
+- Start the server, which will handle future API requests
 - Start the indexer, which will:
   - Store extracted blockchain data in Parquet files locally
-  - Store relational data in SQLite locally
-  - Store warehouse data in DuckDB locally
+  - Store relational data in [SQLite](https://www.sqlite.org/) locally
+  - Store warehouse data in [DuckDB](https://duckdb.org/) locally
 
-For production you'd probably want to store extracted blockchain data in anything S3-compatible (eg: R2, GCS, MinIO, etc):
+For production you'll probably want to store extracted blockchain data in the cloud (eg: Amazon S3, Cloudflare R2, etc), as opposed to your local files:
 
 ```bash
-./barreleye \
+barreleye \
+  --warehouse http://username:password@localhost:8123/database_name \
   --storage http://s3.us-east-1.amazonaws.com/bucket_name/
-# --storage http://storage.googleapis.com/bucket_name/
 ```
 
 You can also use a hosted RDBMS like PostgreSQL or MySQL instead of SQLite:
 
 ```bash
-./barreleye \
-  --storage http://s3.us-east-1.amazonaws.com/bucket/ \
+barreleye \
+  --warehouse http://username:password@localhost:8123/database_name \
+  --storage http://s3.us-east-1.amazonaws.com/bucket_name/ \
   --database postgres://username:password@postgres-host:5432/database_name
-# --database mysql://username:password@mysql-host:3306/database_name
-```
-
-And a hosted warehouse OLAP instead of DuckDB (currently only Clickhouse is supported):
-
-```bash
-./barreleye \
-  --storage http://s3.us-east-1.amazonaws.com/bucket/ \
-  --database postgres://username:password@localhost:5432/database_name \
-  --warehouse http://username:password@localhost:8123/database_name
-```
-
-Finally, to speed up indexing run your own Ethereum archive node with a higher rate-limit (rps = requests per second):
-
-```bash
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
-  -d '{
-    "rpcEndpoint": "$YOUR_OWN_RPC_NODE_URL",
-    "rps": 1500
-  }' \
-  http://localhost:4000/v1/networks/net_ethereum
 ```
 
 ## Add Custom Networks
 
-For now, Barreleye works with Bitcoin and EVM-compatible chains.
+You have to add network nodes in order for indexer to start processing data.
 
 A default API key is generated on the first run, so to get it - connect to your RDBMS and run:
 
@@ -112,7 +75,7 @@ A default API key is generated on the first run, so to get it - connect to your 
 select uuid from api_keys;
 ```
 
-Add a Bitcoin RPC node:
+Add a Bitcoin RPC node (`-txindex` is required):
 
 ```bash
 curl -X POST \
@@ -127,7 +90,7 @@ curl -X POST \
   http://localhost:4000/v1/networks
 ```
 
-Add an EVM-based RPC node:
+Add an EVM-based RPC node (archive node is required):
 
 ```bash
 curl -X POST \
@@ -172,7 +135,7 @@ curl -X GET \
 ## Random Notes
 
 - Be aware of your RPC node limits. Indexer makes a significant amount of RPC calls to index historical and new blocks.
-- For indexing, you might have to set Clickhouse's `max_server_memory_usage_to_ram_ratio` to `2` ([read more](https://github.com/ClickHouse/ClickHouse/issues/17631))
+- For indexing, you might have to set ClickHouse's `max_server_memory_usage_to_ram_ratio` to `2` ([read more](https://github.com/ClickHouse/ClickHouse/issues/17631))
 
 ## Get Involved
 

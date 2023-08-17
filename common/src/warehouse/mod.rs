@@ -1,4 +1,4 @@
-use clickhouse::Client as ClickhouseClient;
+use clickhouse::Client as ClickHouseClient;
 use derive_more::Display;
 use eyre::{Result, WrapErr};
 use serde::{Deserialize, Serialize};
@@ -10,18 +10,18 @@ use crate::{utils, Settings};
 pub enum Driver {
 	#[default]
 	#[serde(rename = "clickhouse")]
-	#[display(fmt = "Clickhouse")]
-	Clickhouse,
+	#[display(fmt = "ClickHouse")]
+	ClickHouse,
 }
 
-pub struct Clickhouse {
-	client: ClickhouseClient,
+pub struct ClickHouse {
+	client: ClickHouseClient,
 }
 
 pub struct Warehouse {
 	url_without_database: String,
 	db_name: String,
-	clickhouse: Clickhouse,
+	clickhouse: ClickHouse,
 }
 
 impl Warehouse {
@@ -29,7 +29,7 @@ impl Warehouse {
 		let (url_without_database, db_name) = utils::without_pathname(&settings.warehouse);
 
 		// create db if doesn't exist + check that connection is good
-		ClickhouseClient::default()
+		ClickHouseClient::default()
 			.with_url(url_without_database.clone())
 			.query(&format!("CREATE DATABASE IF NOT EXISTS {db_name};"))
 			.execute()
@@ -39,8 +39,8 @@ impl Warehouse {
 		Ok(Self {
 			url_without_database: url_without_database.clone(),
 			db_name: db_name.clone(),
-			clickhouse: Clickhouse {
-				client: ClickhouseClient::default()
+			clickhouse: ClickHouse {
+				client: ClickHouseClient::default()
 					.with_url(url_without_database)
 					.with_database(db_name),
 			},
@@ -212,7 +212,7 @@ impl Warehouse {
 		Ok(())
 	}
 
-	pub fn get(&self) -> &ClickhouseClient {
+	pub fn get(&self) -> &ClickHouseClient {
 		&self.clickhouse.client
 	}
 }
