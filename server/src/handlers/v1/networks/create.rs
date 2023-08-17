@@ -52,11 +52,10 @@ pub async fn handler(
 	}
 
 	// check rpc connection
-	let c = app.cache.clone();
 	let n = Network { rpc_endpoint: payload.rpc_endpoint.clone(), ..Default::default() };
 	let mut boxed_chain: Box<dyn ChainTrait> = match payload.architecture {
-		Architecture::Bitcoin => Box::new(Bitcoin::new(c, n)),
-		Architecture::Evm => Box::new(Evm::new(c, n)),
+		Architecture::Bitcoin => Box::new(Bitcoin::new(n)),
+		Architecture::Evm => Box::new(Evm::new(n)),
 	};
 	if !boxed_chain.connect().await? {
 		return Err(ServerError::InvalidService { name: boxed_chain.get_network().name });

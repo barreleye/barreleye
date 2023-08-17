@@ -8,13 +8,11 @@ use ethers::{
 };
 use eyre::Result;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 use crate::{
-	cache::CacheKey,
 	chain::{ChainTrait, ModuleId, ModuleTrait, WarehouseData},
 	models::Network,
-	utils, BlockHeight, Cache, RateLimiter, Storage,
+	utils, BlockHeight, RateLimiter, Storage,
 };
 use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
 use schema::{
@@ -35,7 +33,6 @@ pub enum EvmTopic {
 }
 
 pub struct Evm {
-	_cache: Arc<RwLock<Cache>>,
 	network: Network,
 	rpc: Option<String>,
 	provider: Option<Arc<Provider<RetryClient<Http>>>>,
@@ -44,12 +41,11 @@ pub struct Evm {
 }
 
 impl Evm {
-	pub fn new(cache: Arc<RwLock<Cache>>, network: Network) -> Self {
+	pub fn new(network: Network) -> Self {
 		let rps = network.rps as u32;
 		let network_id = network.network_id;
 
 		Self {
-			_cache: cache,
 			network,
 			rpc: None,
 			provider: None,
@@ -285,24 +281,6 @@ impl Evm {
 		}
 
 		Ok(ret)
-	}
-
-	async fn _is_smart_contract(&self, address: &H160) -> Result<bool> {
-		let cache_key = CacheKey::EvmSmartContract(
-			self.network.network_id as u64,
-			ethers::utils::to_checksum(address, None),
-		);
-
-		Ok(match self._cache.read().await.get::<bool>(cache_key.clone()).await? {
-			Some(v) => v,
-			_ => {
-				self.rate_limit().await;
-				let is_smart_contract =
-					!self.provider.as_ref().unwrap().get_code(*address, None).await?.is_empty();
-				self._cache.read().await.set::<bool>(cache_key, is_smart_contract).await?;
-				is_smart_contract
-			}
-		})
 	}
 
 	fn get_topic(&self, log: &Log) -> Result<EvmTopic> {

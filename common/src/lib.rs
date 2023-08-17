@@ -27,7 +27,6 @@ use crate::{
 	chain::{Bitcoin, BoxedChain, Evm},
 	models::{Config, ConfigKey, Network, PrimaryId},
 };
-pub use cache::Cache;
 pub use db::Db;
 pub use errors::AppError;
 pub use progress::{Progress, ReadyType as ProgressReadyType, Step as ProgressStep};
@@ -36,7 +35,6 @@ pub use settings::Settings;
 pub use storage::Storage;
 pub use warehouse::Warehouse;
 
-pub mod cache;
 pub mod chain;
 pub mod db;
 pub mod errors;
@@ -68,7 +66,6 @@ pub struct App {
 	pub uuid: Uuid,
 	pub networks: Arc<RwLock<HashMap<PrimaryId, Arc<BoxedChain>>>>,
 	pub settings: Arc<Settings>,
-	pub cache: Arc<RwLock<Cache>>,
 	pub storage: Arc<Storage>,
 	db: Arc<Db>,
 	pub warehouse: Arc<Warehouse>,
@@ -81,7 +78,6 @@ pub struct App {
 impl App {
 	pub async fn new(
 		settings: Arc<Settings>,
-		cache: Arc<RwLock<Cache>>,
 		storage: Arc<Storage>,
 		db: Arc<Db>,
 		warehouse: Arc<Warehouse>,
@@ -90,7 +86,6 @@ impl App {
 			uuid: utils::new_uuid(),
 			networks: Arc::new(RwLock::new(HashMap::new())),
 			settings,
-			cache,
 			storage,
 			db,
 			warehouse,
@@ -120,11 +115,10 @@ impl App {
 			Network::get_all_by_env(self.db(), self.settings.env, Some(false)).await?.into_iter()
 		{
 			let network_id = n.network_id;
-			let c = self.cache.clone();
 
 			let boxed_chain: BoxedChain = match n.architecture {
-				Architecture::Bitcoin => Box::new(Bitcoin::new(c, n)),
-				Architecture::Evm => Box::new(Evm::new(c, n)),
+				Architecture::Bitcoin => Box::new(Bitcoin::new(n)),
+				Architecture::Evm => Box::new(Evm::new(n)),
 			};
 
 			ret.insert(network_id, Arc::new(boxed_chain));
@@ -168,12 +162,10 @@ impl App {
 			pb.enable_steady_tick(Duration::from_millis(50));
 
 			threads.push({
-				let c = self.cache.clone();
-
 				tokio::spawn({
 					let mut boxed_chain: BoxedChain = match n.architecture {
-						Architecture::Bitcoin => Box::new(Bitcoin::new(c, n.clone())),
-						Architecture::Evm => Box::new(Evm::new(c, n.clone())),
+						Architecture::Bitcoin => Box::new(Bitcoin::new(n.clone())),
+						Architecture::Evm => Box::new(Evm::new(n.clone())),
 					};
 
 					async move {
@@ -271,7 +263,6 @@ impl App {
 
 	pub async fn set_is_primary(&self, is_primary: bool) -> Result<()> {
 		if is_primary != self.is_primary() {
-			self.cache.write().await.set_read_only(!is_primary).await?;
 			self.is_primary.store(is_primary, Ordering::SeqCst);
 		}
 

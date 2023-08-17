@@ -9,8 +9,8 @@ use std::{
 use url::Url;
 
 use crate::{
-	banner, cache::Driver as CacheDriver, db::Driver as DatabaseDriver, utils,
-	warehouse::Driver as WarehouseDriver, AppError, Cache, Env, S3Service, Warnings, S3,
+	banner, db::Driver as DatabaseDriver, utils, warehouse::Driver as WarehouseDriver, AppError,
+	Env, S3Service, Warnings, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -26,9 +26,8 @@ pub struct Settings {
 	pub env: Env,
 
 	/// Run only the indexer, without the server.
-	///
 	/// In a multi-indexer setup, only one node will run at a time.
-	/// The others will silently run in standby mode, ready to take over if the primary goes down.
+	/// The others will silently run in standby mode, ready to take over if the primary becomes unavailable.
 	#[arg(help_heading = "Runtime options", long, default_value_t = false)]
 	only_indexer: bool,
 	#[arg(skip)]
@@ -117,7 +116,7 @@ pub struct Settings {
 	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
-	/// Warehouse for big data. Currently only Clickhouse is supported.
+	/// Warehouse for big data.
 	///
 	/// Clickhouse eg: http://username:password@localhost:8123/database_name
 	#[arg(
@@ -132,21 +131,6 @@ pub struct Settings {
 	#[arg(skip)]
 	pub warehouse_driver: WarehouseDriver,
 
-	/// Directory for cached data.
-	/// In a multi-node setup, this should be shared file storage.
-	#[arg(
-        help_heading = "Indexer options",
-        long,
-		verbatim_doc_comment,
-        env = "BARRELEYE_INDEXER_CACHE_DIR",
-        default_value_os_t = utils::project_dir(Some("cache")),
-        value_hint = ValueHint::DirPath,
-        value_name = "PATH"
-    )]
-	pub indexer_cache_dir: PathBuf,
-	#[arg(skip)]
-	pub cache_driver: CacheDriver,
-
 	#[arg(
 		help_heading = "Server options",
 		long,
@@ -157,7 +141,7 @@ pub struct Settings {
 	#[arg(skip)]
 	pub ipv4: Option<IpAddr>,
 
-	/// Provide an empty string not to listen on IPv6.
+	/// Provide an empty string to disable IPv6.
 	#[arg(help_heading = "Server options", long, default_value = "", value_name = "IP_V6_ADDRESS")]
 	http_ipv6: String,
 	#[arg(skip)]
@@ -228,17 +212,6 @@ impl Settings {
 			return Err(
 				AppError::Config { config: "warehouse", error: "could not parse URL" }.into()
 			);
-		}
-
-		// check if cache is cool with provided path
-		if fs::create_dir_all(&settings.indexer_cache_dir).is_err()
-			|| !Cache::is_path_valid(CacheDriver::RocksDB, &settings.indexer_cache_dir)?
-		{
-			return Err(AppError::Config {
-				config: "indexer_cache_dir",
-				error: "invalid cache directory",
-			}
-			.into());
 		}
 
 		// parse ipv4

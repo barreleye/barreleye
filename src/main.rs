@@ -4,10 +4,10 @@ use console::style;
 use dotenvy::dotenv;
 use eyre::Result;
 use std::sync::Arc;
-use tokio::{signal, sync::RwLock, task::JoinSet};
+use tokio::{signal, task::JoinSet};
 
 use barreleye_common::{
-	quit, utils, App, AppError, Cache, Db, Progress, ProgressStep, Settings, Storage, Warehouse,
+	quit, utils, App, AppError, Db, Progress, ProgressStep, Settings, Storage, Warehouse,
 };
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
@@ -30,8 +30,6 @@ async fn main() -> Result<()> {
 
 	let progress = Progress::new(settings.is_indexer);
 	progress.show(ProgressStep::Setup);
-
-	let cache = Arc::new(RwLock::new(Cache::new(settings.clone()).await?));
 
 	let warehouse = Arc::new(Warehouse::new(settings.clone()).await.unwrap_or_else(|url| {
 		quit(AppError::WarehouseConnection { url: url.to_string() });
@@ -82,7 +80,7 @@ async fn main() -> Result<()> {
 	warehouse.run_migrations().await?;
 	db.run_migrations().await?;
 
-	let app = Arc::new(App::new(settings.clone(), cache, storage, db, warehouse).await?);
+	let app = Arc::new(App::new(settings.clone(), storage, db, warehouse).await?);
 	warnings.extend(app.get_warnings().await?);
 
 	let mut set = JoinSet::new();

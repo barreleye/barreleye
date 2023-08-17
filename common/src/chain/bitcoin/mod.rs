@@ -5,14 +5,12 @@ use bitcoin::{
 };
 use eyre::Result;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
-use tokio::sync::RwLock;
 use url::Url;
 
 use crate::{
-	cache::CacheKey,
 	chain::{ChainTrait, ModuleId, ModuleTrait, WarehouseData},
 	models::Network,
-	utils, BlockHeight, Cache, RateLimiter, Storage,
+	utils, BlockHeight, RateLimiter, Storage,
 };
 use client::{Auth, Client};
 use modules::{BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinTransfer};
@@ -26,7 +24,6 @@ mod modules;
 mod schema;
 
 pub struct Bitcoin {
-	cache: Arc<RwLock<Cache>>,
 	network: Network,
 	rpc: Option<String>,
 	client: Option<Arc<Client>>,
@@ -36,12 +33,11 @@ pub struct Bitcoin {
 }
 
 impl Bitcoin {
-	pub fn new(cache: Arc<RwLock<Cache>>, network: Network) -> Self {
+	pub fn new(network: Network) -> Self {
 		let rps = network.rps as u32;
 		let network_id = network.network_id;
 
 		Self {
-			cache,
 			network,
 			rpc: None,
 			client: None,
@@ -250,8 +246,7 @@ impl Bitcoin {
 			ret
 		});
 
-		let outputs =
-			get_unique_addresses(self.index_transaction_outputs(block_height, &tx).await?);
+		let outputs = get_unique_addresses(self.index_transaction_outputs(&tx).await?);
 
 		for module in self.modules.iter().filter(|m| module_ids.contains(&m.get_id())) {
 			ret += module
@@ -262,22 +257,11 @@ impl Bitcoin {
 		Ok(ret)
 	}
 
-	async fn index_transaction_outputs(
-		&self,
-		block_height: BlockHeight,
-		tx: &Transaction,
-	) -> Result<Vec<(String, u64)>> {
+	async fn index_transaction_outputs(&self, tx: &Transaction) -> Result<Vec<(String, u64)>> {
 		let mut ret = vec![];
 
 		for (i, txout) in tx.output.iter().enumerate() {
 			if let Some(address) = self.get_address(tx, i as u32)? {
-				let cache_key = CacheKey::BitcoinTxIndex(
-					self.network.network_id as u64,
-					tx.txid().as_raw_hash().to_string(),
-				);
-
-				self.cache.read().await.set::<u64>(cache_key, block_height).await?;
-
 				ret.push((address, txout.value));
 			}
 		}
@@ -286,24 +270,10 @@ impl Bitcoin {
 	}
 
 	async fn get_utxo(&self, txid: Txid, vout: u32) -> Result<Option<(String, u64)>> {
-		let cache_key = CacheKey::BitcoinTxIndex(
-			self.network.network_id as u64,
-			txid.as_raw_hash().to_string(),
-		);
-
-		let mut block_hash = None;
-		if let Some(block_height) = self.cache.read().await.get::<u64>(cache_key.clone()).await? {
-			self.rate_limit().await;
-			block_hash = Some(self.client.as_ref().unwrap().get_block_hash(block_height).await?);
-			// @NOTE do not delete the "used up" utxo here; modules are stateless and another one
-			// might need to use it
-		}
-
-		// `block_hash` will always be *some value* for those modules that have
-		// started indexing from block 1; for all others -txindex is needed
+		// "-txindex" is a requirement for bitcoin, because this project does not use caching
+		// and we therefore have to rely on bitcoin's internal indexing for "(network_id, txid) -> block_height"
 		self.rate_limit().await;
-		let tx =
-			self.client.as_ref().unwrap().get_raw_transaction(&txid, block_hash.as_ref()).await?;
+		let tx = self.client.as_ref().unwrap().get_raw_transaction(&txid, None).await?;
 		let ret = self.get_address(&tx, vout)?.map(|a| {
 			let v = tx.output[vout as usize].value;
 			(a, v)
