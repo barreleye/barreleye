@@ -26,11 +26,11 @@ impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash BLOB NOT NULL,
+                hash VARCHAR NOT NULL,
                 nonce VARCHAR NOT NULL,
                 transaction_index VARCHAR,
-                from_address BLOB NOT NULL,
-                to_address BLOB,
+                from_address VARCHAR NOT NULL,
+                to_address VARCHAR,
                 value VARCHAR NOT NULL,
                 gas_price VARCHAR,
                 gas VARCHAR NOT NULL,
@@ -65,11 +65,11 @@ impl StorageModelTrait for Transaction {
 				ParquetFile::Transactions
 			),
 			params![
-				self.hash.encode(),
+				self.hash.encode_hex(),
 				self.nonce.to_string(),
 				self.transaction_index,
-				self.from_address.encode(),
-				self.to_address.map(|v| v.encode()),
+				self.from_address.encode_hex(),
+				self.to_address.map(|v| v.encode_hex()),
 				self.value.to_string(),
 				self.gas_price.map(|v| v.to_string()),
 				self.gas.to_string(),

@@ -4,7 +4,7 @@ use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
-	chain::{Bitcoin, ModuleTrait, WarehouseData},
+	chain::{ModuleTrait, WarehouseData},
 	BlockHeight,
 };
 pub use balance::BitcoinBalance;
@@ -19,7 +19,6 @@ mod transfer;
 pub trait BitcoinModuleTrait: ModuleTrait + Send + Sync {
 	async fn run(
 		&self,
-		bitcoin: &Bitcoin,
 		block_height: BlockHeight,
 		block_time: u32,
 		tx: Transaction,

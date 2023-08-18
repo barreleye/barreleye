@@ -4,9 +4,7 @@ use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
-	chain::{
-		bitcoin::modules::BitcoinModuleTrait, Bitcoin, ModuleId, ModuleTrait, WarehouseData, U256,
-	},
+	chain::{bitcoin::modules::BitcoinModuleTrait, ModuleId, ModuleTrait, WarehouseData, U256},
 	models::{Amount, PrimaryId},
 	BlockHeight,
 };
@@ -29,7 +27,6 @@ impl ModuleTrait for BitcoinBalance {
 impl BitcoinModuleTrait for BitcoinBalance {
 	async fn run(
 		&self,
-		_bitcoin: &Bitcoin,
 		block_height: BlockHeight,
 		block_time: u32,
 		tx: Transaction,

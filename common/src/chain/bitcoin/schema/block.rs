@@ -20,10 +20,10 @@ impl StorageModelTrait for Block {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash BLOB NOT NULL,
+                hash VARCHAR NOT NULL,
                 version INT32 NOT NULL,
-                prev_blockhash BLOB NOT NULL,
-                merkle_root BLOB NOT NULL,
+                prev_blockhash VARCHAR NOT NULL,
+                merkle_root VARCHAR NOT NULL,
                 time UINT32 NOT NULL,
                 bits UINT32 NOT NULL,
                 nonce UINT32 NOT NULL
@@ -47,10 +47,10 @@ impl StorageModelTrait for Block {
 				ParquetFile::Block
 			),
 			params![
-				hex::decode(self.hash.to_string())?,
+				self.hash.to_string(),
 				self.version,
-				hex::decode(self.prev_blockhash.to_string())?,
-				hex::decode(self.merkle_root.to_string())?,
+				self.prev_blockhash.to_string(),
+				self.merkle_root.to_string(),
 				self.time,
 				self.bits,
 				self.nonce,

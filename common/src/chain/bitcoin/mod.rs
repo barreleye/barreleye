@@ -250,7 +250,7 @@ impl Bitcoin {
 
 		for module in self.modules.iter().filter(|m| module_ids.contains(&m.get_id())) {
 			ret += module
-				.run(self, block_height, block_time, tx.clone(), inputs.clone(), outputs.clone())
+				.run(block_height, block_time, tx.clone(), inputs.clone(), outputs.clone())
 				.await?;
 		}
 

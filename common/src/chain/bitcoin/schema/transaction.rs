@@ -18,7 +18,7 @@ impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash BLOB NOT NULL,
+                hash VARCHAR NOT NULL,
                 version INT32 NOT NULL,
                 lock_time UINT32 NOT NULL,
                 inputs UINT32 NOT NULL,
@@ -42,13 +42,7 @@ impl StorageModelTrait for Transaction {
                 );"#,
 				ParquetFile::Transactions
 			),
-			params![
-				hex::decode(self.hash.to_string())?,
-				self.version,
-				self.lock_time,
-				self.inputs,
-				self.outputs
-			],
+			params![self.hash.to_string(), self.version, self.lock_time, self.inputs, self.outputs],
 		)?;
 
 		Ok(())

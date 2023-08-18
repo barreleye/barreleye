@@ -26,10 +26,10 @@ impl StorageModelTrait for Log {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                address BLOB,
+                address VARCHAR,
                 topics VARCHAR,
-                data BLOB,
-                transaction_hash BLOB,
+                data VARCHAR,
+                transaction_hash VARCHAR,
                 transaction_index UINT64,
                 log_index VARCHAR,
                 transaction_log_index VARCHAR,
@@ -66,7 +66,7 @@ impl StorageModelTrait for Log {
 				self.address.encode(),
 				self.topics.iter().map(|v| v.encode_hex()).collect::<Vec<String>>().join(","),
 				self.data.to_vec(),
-				self.transaction_hash.map(|v| v.encode()),
+				self.transaction_hash.map(|v| v.encode_hex()),
 				self.transaction_index,
 				self.log_index.map(|v| v.to_string()),
 				self.transaction_log_index.map(|v| v.to_string()),
