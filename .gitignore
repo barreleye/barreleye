@@ -3,5 +3,5 @@ barreleye.toml
 .env*.local
 target
 docs
-storage
+parquet_files
 .env

@@ -271,13 +271,13 @@ impl Indexer {
 		Ok(ret)
 	}
 
-	fn get_block_sync_ranges(
+	fn get_block_chunk_ranges(
 		&self,
 		block_height: BlockHeight,
 	) -> Result<Vec<(BlockHeight, BlockHeight)>> {
 		let mut ret = vec![];
 
-		let chunks = self.app.cpu_count;
+		let chunks = self.app.cpu_count - 1; // always leave 1 for tail sync
 		let chunk_size = ((block_height - 1) as f64 / chunks as f64).floor() as u64;
 
 		let mut block_height_min = 0;

@@ -99,7 +99,7 @@ impl Indexer {
 					.is_empty()
 				{
 					let block_sync_ranges = self
-						.get_block_sync_ranges(block_height)?
+						.get_block_chunk_ranges(block_height)?
 						.into_iter()
 						.map(|(min, max)| (ConfigKey::IndexerSyncChunk(nid, max), (min, max)))
 						.collect::<HashMap<_, _>>();
