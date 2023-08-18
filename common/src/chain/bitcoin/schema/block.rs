@@ -22,7 +22,7 @@ impl Block {
 	pub fn get(storage_db: &StorageDb) -> Result<Option<Block>> {
 		let mut ret = None;
 
-		if let Some(path) = storage_db.get_path("block")? {
+		if let Some(path) = storage_db.get_path(&ParquetFile::Block.to_string())? {
 			let mut statement =
 				storage_db.db.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
 			let mut rows = statement.query([])?;
