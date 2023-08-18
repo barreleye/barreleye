@@ -401,7 +401,7 @@ impl Indexer {
 							break;
 						}
 
-						trace!(thread=config_key.to_string(), records=new_data.len());
+						trace!(thread = config_key.to_string(), records = new_data.len());
 
 						// update results
 						warehouse_data += new_data;
@@ -421,7 +421,7 @@ impl Indexer {
 						// but that's still ok because commits will happen either when
 						// buffer fills up or enough time has passed
 						if warehouse_data.should_commit(false) {
-							trace!(warehouse="pushing data", records=warehouse_data.len());
+							trace!(warehouse = "pushing data", records = warehouse_data.len());
 
 							// push to warehouse
 							warehouse_data.commit(self.app.warehouse.clone()).await?;

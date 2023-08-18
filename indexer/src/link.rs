@@ -1,4 +1,3 @@
-use console::style;
 use eyre::{ErrReport, Result};
 use sea_orm::{ColumnTrait, Condition};
 use std::{
@@ -11,7 +10,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
-use tracing::debug;
+use tracing::{debug, trace};
 
 use crate::Indexer;
 use barreleye_common::{
@@ -315,10 +314,7 @@ impl Indexer {
 
 			// commit if collected enough
 			if warehouse_data.should_commit(is_at_the_tip) && self.app.is_leading() {
-				debug!(
-					"Pushing {} record(s) to warehouse",
-					style(self.format_number(warehouse_data.len())?).bold(),
-				);
+				trace!(warehouse = "pushing data", records = warehouse_data.len());
 
 				// push to warehouse
 				warehouse_data.commit(self.app.warehouse.clone()).await?;

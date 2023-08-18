@@ -297,8 +297,4 @@ impl Bitcoin {
 
 		Ok(ret)
 	}
-
-	fn _is_valid_address(&self, address: &str) -> bool {
-		!address.contains(':')
-	}
 }
