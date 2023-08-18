@@ -72,7 +72,7 @@ pub struct App {
 	is_ready: Arc<AtomicBool>,
 	is_primary: Arc<AtomicBool>,
 	connected_at: Arc<RwLock<Option<NaiveDateTime>>>,
-	pub num_cpus: usize,
+	pub cpu_count: usize,
 }
 
 impl App {
@@ -92,7 +92,7 @@ impl App {
 			is_ready: Arc::new(AtomicBool::new(false)),
 			is_primary: Arc::new(AtomicBool::new(false)),
 			connected_at: Arc::new(RwLock::new(None)),
-			num_cpus: num_cpus::get(),
+			cpu_count: num_cpus::get(),
 		};
 
 		app.networks = Arc::new(RwLock::new(app.get_networks().await?));

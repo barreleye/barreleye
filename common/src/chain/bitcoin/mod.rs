@@ -169,8 +169,9 @@ impl ChainTrait for Bitcoin {
 						hash: *tx.txid().as_raw_hash(),
 						version: tx.version,
 						lock_time: tx.lock_time.to_consensus_u32(),
-						inputs: tx.input.len() as u32,
-						outputs: tx.output.len() as u32,
+						input_count: tx.input.len() as u32,
+						output_count: tx.output.len() as u32,
+						is_coin_base: tx.is_coin_base(),
 					})?;
 
 					for txin in tx.input.into_iter() {

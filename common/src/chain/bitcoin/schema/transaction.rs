@@ -10,8 +10,9 @@ pub struct Transaction {
 	pub hash: Hash,
 	pub version: i32,
 	pub lock_time: u32,
-	pub inputs: u32,  // count
-	pub outputs: u32, // count
+	pub input_count: u32,
+	pub output_count: u32,
+	pub is_coin_base: bool,
 }
 
 impl StorageModelTrait for Transaction {
@@ -21,8 +22,9 @@ impl StorageModelTrait for Transaction {
                 hash VARCHAR NOT NULL,
                 version INT32 NOT NULL,
                 lock_time UINT32 NOT NULL,
-                inputs UINT32 NOT NULL,
-                outputs UINT32 NOT NULL
+                input_count UINT32 NOT NULL,
+                output_count UINT32 NOT NULL,
+				is_coin_base BOOLEAN NOT NULL,
             );"#,
 			ParquetFile::Transactions
 		))?;
@@ -36,13 +38,20 @@ impl StorageModelTrait for Transaction {
 		db.execute(
 			&format!(
 				r#"INSERT INTO {} (
-                    hash, version, lock_time, inputs, outputs
+                    hash, version, lock_time, input_count, output_count, is_coin_base
                 ) VALUES (
-                    ?, ?, ?, ?, ?
+                    ?, ?, ?, ?, ?, ?
                 );"#,
 				ParquetFile::Transactions
 			),
-			params![self.hash.to_string(), self.version, self.lock_time, self.inputs, self.outputs],
+			params![
+				self.hash.to_string(),
+				self.version,
+				self.lock_time,
+				self.input_count,
+				self.output_count,
+				self.is_coin_base
+			],
 		)?;
 
 		Ok(())

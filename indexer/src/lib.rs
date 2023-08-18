@@ -277,7 +277,7 @@ impl Indexer {
 	) -> Result<Vec<(BlockHeight, BlockHeight)>> {
 		let mut ret = vec![];
 
-		let chunks = self.app.num_cpus;
+		let chunks = self.app.cpu_count;
 		let chunk_size = ((block_height - 1) as f64 / chunks as f64).floor() as u64;
 
 		let mut block_height_min = 0;
