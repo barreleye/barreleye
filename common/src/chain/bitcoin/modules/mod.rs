@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use bitcoin::blockdata::transaction::Transaction;
 use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
+	chain::bitcoin::schema::Transaction as ParquetTransaction,
 	chain::{ModuleTrait, WarehouseData},
 	BlockHeight,
 };
@@ -21,7 +21,7 @@ pub trait BitcoinModuleTrait: ModuleTrait + Send + Sync {
 		&self,
 		block_height: BlockHeight,
 		block_time: u32,
-		tx: Transaction,
+		tx: ParquetTransaction,
 		inputs: HashMap<String, u64>,
 		outputs: HashMap<String, u64>,
 	) -> Result<WarehouseData>;

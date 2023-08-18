@@ -1,11 +1,13 @@
+use bitcoin::hashes::sha256d::Hash;
 use bitcoin::{hash_types::TxMerkleNode, BlockHash};
 use duckdb::{params, Connection};
 use eyre::Result;
+use std::str::FromStr;
 
 use super::ParquetFile;
-use crate::storage::StorageModelTrait;
+use crate::storage::{StorageDb, StorageModelTrait};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
 	pub hash: BlockHash,
 	pub version: i32,
@@ -14,6 +16,36 @@ pub struct Block {
 	pub time: u32,
 	pub bits: u32,
 	pub nonce: u32,
+}
+
+impl Block {
+	pub fn get(storage_db: &StorageDb) -> Result<Option<Block>> {
+		let mut ret = None;
+
+		if let Some(path) = storage_db.get_path("block")? {
+			let mut statement =
+				storage_db.db.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
+			let mut rows = statement.query([])?;
+
+			if let Some(row) = rows.next()? {
+				let hash: String = row.get(0)?;
+				let prev_blockhash: String = row.get(2)?;
+				let merkle_root: String = row.get(3)?;
+
+				ret = Some(Block {
+					hash: BlockHash::from_str(&hash).unwrap(),
+					version: row.get(1)?,
+					prev_blockhash: BlockHash::from_str(&prev_blockhash).unwrap(),
+					merkle_root: TxMerkleNode::from_raw_hash(Hash::from_str(&merkle_root).unwrap()),
+					time: row.get(4)?,
+					bits: row.get(5)?,
+					nonce: row.get(6)?,
+				});
+			}
+		}
+
+		Ok(ret)
+	}
 }
 
 impl StorageModelTrait for Block {

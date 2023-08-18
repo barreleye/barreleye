@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use bitcoin::blockdata::transaction::Transaction;
 use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
+	chain::bitcoin::schema::Transaction as ParquetTransaction,
 	chain::{bitcoin::modules::BitcoinModuleTrait, ModuleId, ModuleTrait, WarehouseData, U256},
 	models::{PrimaryId, Transfer},
 	BlockHeight,
@@ -29,14 +29,14 @@ impl BitcoinModuleTrait for BitcoinCoinbase {
 		&self,
 		block_height: BlockHeight,
 		block_time: u32,
-		tx: Transaction,
+		tx: ParquetTransaction,
 		_inputs: HashMap<String, u64>,
 		outputs: HashMap<String, u64>,
 	) -> Result<WarehouseData> {
 		let mut ret = WarehouseData::new();
 
-		if tx.is_coin_base() {
-			let tx_hash = tx.txid().as_raw_hash().to_string();
+		if tx.is_coin_base {
+			let tx_hash = tx.hash.to_string();
 			let output_amount_total: u64 = outputs.clone().into_values().sum();
 			let batch_amount = U256::from_str_radix(&output_amount_total.to_string(), 10)?;
 

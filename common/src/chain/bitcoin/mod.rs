@@ -1,8 +1,6 @@
 use async_trait::async_trait;
-use bitcoin::{
-	address::Address, blockdata::transaction::Transaction, hash_types::Txid,
-	Network as BitcoinNetwork,
-};
+use bitcoin::blockdata::script::Script;
+use bitcoin::{address::Address, Network as BitcoinNetwork};
 use eyre::Result;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 use url::Url;
@@ -114,31 +112,42 @@ impl ChainTrait for Bitcoin {
 
 	async fn process_block(
 		&self,
+		storage: Arc<Storage>,
 		block_height: BlockHeight,
 		module_ids: Vec<ModuleId>,
 	) -> Result<Option<WarehouseData>> {
 		let mut ret = None;
 
-		self.rate_limit().await;
-		if let Ok(block_hash) = self.client.as_ref().unwrap().get_block_hash(block_height).await {
-			self.rate_limit().await;
-			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
-				let mut warehouse_data = WarehouseData::new();
+		let mut warehouse_data = WarehouseData::new();
+		let storage_db = storage.get(self.network.network_id, block_height)?;
 
-				for tx in block.txdata.into_iter() {
-					warehouse_data += self
-						.process_transaction(
-							block_height,
-							block.header.time,
-							tx,
-							module_ids.clone(),
-						)
-						.await?;
-				}
+		let block = match ParquetBlock::get(&storage_db)? {
+			Some(block) => block,
+			_ => return Ok(ret),
+		};
 
-				ret = Some(warehouse_data);
-			}
+		let all_txs = ParquetTransaction::get_all(&storage_db)?;
+		let all_tx_inputs = ParquetInput::get_all(&storage_db, None)?;
+		let all_tx_outputs = ParquetOutput::get_all(&storage_db, None)?;
+
+		for tx in all_txs.into_iter() {
+			warehouse_data += self
+				.process_transaction(
+					block_height,
+					block.time,
+					tx.clone(),
+					all_tx_inputs
+						.clone()
+						.into_iter()
+						.filter(|i| i.tx_hash == tx.clone().hash)
+						.collect(),
+					all_tx_outputs.clone().into_iter().filter(|o| o.tx_hash == tx.hash).collect(),
+					module_ids.clone(),
+				)
+				.await?;
 		}
+
+		ret = Some(warehouse_data);
 
 		Ok(ret)
 	}
@@ -174,19 +183,17 @@ impl ChainTrait for Bitcoin {
 						is_coin_base: tx.is_coin_base(),
 					})?;
 
-					for txin in tx.input.into_iter() {
+					for txin in tx.input.clone().into_iter() {
 						storage_db.insert(ParquetInput {
-							previous_output_tx_hash: txin
-								.previous_output
-								.txid
-								.as_raw_hash()
-								.to_string(),
+							tx_hash: *tx.txid().as_raw_hash(),
+							previous_output_tx_hash: *txin.previous_output.txid.as_raw_hash(),
 							previous_output_vout: txin.previous_output.vout,
 						})?;
 					}
 
-					for txout in tx.output.into_iter() {
+					for txout in tx.output.clone().into_iter() {
 						storage_db.insert(ParquetOutput {
+							tx_hash: *tx.txid().as_raw_hash(),
 							value: txout.value,
 							script_pubkey: txout.script_pubkey.to_string(),
 						})?;
@@ -211,7 +218,9 @@ impl Bitcoin {
 		&self,
 		block_height: BlockHeight,
 		block_time: u32,
-		tx: Transaction,
+		tx: ParquetTransaction,
+		tx_inputs: Vec<ParquetInput>,
+		tx_outputs: Vec<ParquetOutput>,
 		module_ids: Vec<ModuleId>,
 	) -> Result<WarehouseData> {
 		let mut ret = WarehouseData::new();
@@ -233,12 +242,11 @@ impl Bitcoin {
 		let inputs = get_unique_addresses({
 			let mut ret = vec![];
 
-			for txin in tx.input.iter() {
-				let (txid, vout) = (txin.previous_output.txid, txin.previous_output.vout);
-
-				// if !txid.is_empty() && !tx.is_coin_base() {
-				if !tx.is_coin_base() {
-					if let Some((a, v)) = self.get_utxo(txid, vout).await? {
+			for tx_input in tx_inputs.iter() {
+				if !tx.is_coin_base {
+					if let Some((a, v)) =
+						self.get_utxo(&tx, &tx_outputs, tx_input.previous_output_vout).await?
+					{
 						ret.push((a, v))
 					}
 				}
@@ -247,7 +255,7 @@ impl Bitcoin {
 			ret
 		});
 
-		let outputs = get_unique_addresses(self.index_transaction_outputs(&tx).await?);
+		let outputs = get_unique_addresses(self.index_transaction_outputs(&tx, &tx_outputs).await?);
 
 		for module in self.modules.iter().filter(|m| module_ids.contains(&m.get_id())) {
 			ret += module
@@ -258,11 +266,15 @@ impl Bitcoin {
 		Ok(ret)
 	}
 
-	async fn index_transaction_outputs(&self, tx: &Transaction) -> Result<Vec<(String, u64)>> {
+	async fn index_transaction_outputs(
+		&self,
+		tx: &ParquetTransaction,
+		tx_outputs: &Vec<ParquetOutput>,
+	) -> Result<Vec<(String, u64)>> {
 		let mut ret = vec![];
 
-		for (i, txout) in tx.output.iter().enumerate() {
-			if let Some(address) = self.get_address(tx, i as u32)? {
+		for (i, txout) in tx_outputs.iter().enumerate() {
+			if let Some(address) = self.get_address(tx, tx_outputs, i as u32)? {
 				ret.push((address, txout.value));
 			}
 		}
@@ -270,29 +282,32 @@ impl Bitcoin {
 		Ok(ret)
 	}
 
-	async fn get_utxo(&self, txid: Txid, vout: u32) -> Result<Option<(String, u64)>> {
-		// "-txindex" is a requirement for bitcoin, because this project does not use caching
-		// and we therefore have to rely on bitcoin's internal indexing for "(network_id, txid) -> block_height"
-		self.rate_limit().await;
-		let tx = self.client.as_ref().unwrap().get_raw_transaction(&txid, None).await?;
-		let ret = self.get_address(&tx, vout)?.map(|a| {
-			let v = tx.output[vout as usize].value;
-			(a, v)
-		});
-
-		Ok(ret)
+	async fn get_utxo(
+		&self,
+		tx: &ParquetTransaction,
+		tx_outputs: &Vec<ParquetOutput>,
+		vout: u32,
+	) -> Result<Option<(String, u64)>> {
+		Ok(self
+			.get_address(tx, tx_outputs, vout)?
+			.map(|address| (address, tx_outputs[vout as usize].value)))
 	}
 
-	fn get_address(&self, tx: &Transaction, vout: u32) -> Result<Option<String>> {
+	fn get_address(
+		&self,
+		tx: &ParquetTransaction,
+		tx_outputs: &Vec<ParquetOutput>,
+		vout: u32,
+	) -> Result<Option<String>> {
 		let mut ret = None;
 
-		if vout < tx.output.len() as u32 {
-			if let Ok(address) =
-				Address::from_script(&tx.output[vout as usize].script_pubkey, self.bitcoin_network)
-			{
+		if vout < tx_outputs.len() as u32 {
+			let script_pubkey =
+				Script::from_bytes(tx_outputs[vout as usize].script_pubkey.as_bytes());
+			if let Ok(address) = Address::from_script(script_pubkey, self.bitcoin_network) {
 				ret = Some(address.to_string());
 			} else {
-				ret = Some(format!("{}:{}", tx.txid().as_raw_hash(), vout));
+				ret = Some(format!("{}:{}", tx.hash, vout));
 			}
 		}
 

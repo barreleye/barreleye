@@ -23,7 +23,13 @@ impl Storage {
 	}
 
 	fn get_db(&self) -> Result<Connection> {
-		Ok(Connection::open_in_memory()?)
+		let db = Connection::open_in_memory()?;
+
+		if self.settings.storage_url.is_some() {
+			self.set_credentials(&db)?;
+		}
+
+		Ok(db)
 	}
 
 	fn set_credentials(&self, db: &Connection) -> Result<()> {
@@ -54,7 +60,7 @@ impl Storage {
 
 pub struct StorageDb {
 	settings: Arc<Settings>,
-	db: Connection,
+	pub db: Connection,
 	network_id: PrimaryId,
 	block_height: BlockHeight,
 }
@@ -80,29 +86,8 @@ impl StorageDb {
 		let mut commands = vec![];
 
 		for file in files.into_iter() {
-			if let Some(storage_path) = &self.settings.storage_path {
-				let absolute_path = storage_path
-					.join(format!("network_id={}", self.network_id))
-					.join(format!("block_height={}", self.block_height));
-
-				// duckdb does not automatically create full path if parts dont exist
-				fs::create_dir_all(&absolute_path)?;
-
-				commands.push(format!(
-					"COPY {file} TO '{}/{file}.parquet' (FORMAT PARQUET);",
-					absolute_path.into_os_string().into_string().unwrap()
-				));
-			} else if let Some(storage_url) = &self.settings.storage_url {
-				let s3_path = format!(
-					"{}/network_id={}/block_height={}",
-					storage_url.bucket.as_ref().unwrap(),
-					self.network_id,
-					self.block_height,
-				);
-
-				commands.push(format!(
-					"COPY {file} TO 's3://{s3_path}/{file}.parquet' (FORMAT PARQUET);"
-				));
+			if let Some(path) = self.get_path(&file)? {
+				commands.push(format!("COPY {file} TO '{}' (FORMAT PARQUET);", path,));
 			}
 		}
 
@@ -111,5 +96,34 @@ impl StorageDb {
 		}
 
 		Ok(())
+	}
+
+	pub fn get_path(&self, file: &str) -> Result<Option<String>> {
+		let mut ret = None;
+
+		if let Some(storage_path) = &self.settings.storage_path {
+			let absolute_path = storage_path
+				.join(format!("network_id={}", self.network_id))
+				.join(format!("block_height={}", self.block_height));
+
+			// duckdb does not automatically create full path if parts dont exist
+			fs::create_dir_all(&absolute_path)?;
+
+			ret = Some(format!(
+				"{}/{file}.parquet",
+				absolute_path.into_os_string().into_string().unwrap()
+			))
+		} else if let Some(storage_url) = &self.settings.storage_url {
+			let s3_path = format!(
+				"{}/network_id={}/block_height={}",
+				storage_url.bucket.as_ref().unwrap(),
+				self.network_id,
+				self.block_height,
+			);
+
+			ret = Some(format!("s3://{s3_path}/{file}.parquet"))
+		}
+
+		Ok(ret)
 	}
 }

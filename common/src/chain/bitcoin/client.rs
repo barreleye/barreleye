@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
-use bitcoin::{Block, BlockHash, Transaction, Txid};
+use bitcoin::{Block, BlockHash};
 use bitcoincore_rpc_json::{
 	bitcoin::{
 		consensus::{Decodable, ReadExt},
@@ -87,20 +87,6 @@ impl Client {
 	pub async fn get_block(&self, hash: &BlockHash) -> Result<Block> {
 		let result =
 			self.request("getblock", &[JsonValue::from(hash.to_string()), 0.into()]).await?;
-		deserialize_hex(result.as_str().unwrap())
-	}
-
-	pub async fn get_raw_transaction(
-		&self,
-		txid: &Txid,
-		block_hash: Option<&BlockHash>,
-	) -> Result<Transaction> {
-		let mut params = vec![JsonValue::from(txid.as_raw_hash().to_string()), false.into()];
-		if let Some(block_hash) = block_hash {
-			params.push(JsonValue::from(block_hash.to_string()));
-		}
-
-		let result = self.request("getrawtransaction", &params).await?;
 		deserialize_hex(result.as_str().unwrap())
 	}
 

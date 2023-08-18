@@ -1,11 +1,12 @@
 use bitcoin::hashes::sha256d::Hash;
 use duckdb::{params, Connection};
 use eyre::Result;
+use std::str::FromStr;
 
 use super::ParquetFile;
-use crate::storage::StorageModelTrait;
+use crate::storage::{StorageDb, StorageModelTrait};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transaction {
 	pub hash: Hash,
 	pub version: i32,
@@ -13,6 +14,33 @@ pub struct Transaction {
 	pub input_count: u32,
 	pub output_count: u32,
 	pub is_coin_base: bool,
+}
+
+impl Transaction {
+	pub fn get_all(storage_db: &StorageDb) -> Result<Vec<Transaction>> {
+		let mut ret = vec![];
+
+		if let Some(path) = storage_db.get_path("transactions")? {
+			let mut statement =
+				storage_db.db.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
+			let mut rows = statement.query([])?;
+
+			while let Some(row) = rows.next()? {
+				let hash: String = row.get(0)?;
+
+				ret.push(Transaction {
+					hash: Hash::from_str(&hash).unwrap(),
+					version: row.get(1)?,
+					lock_time: row.get(2)?,
+					input_count: row.get(3)?,
+					output_count: row.get(4)?,
+					is_coin_base: row.get(5)?,
+				});
+			}
+		}
+
+		Ok(ret)
+	}
 }
 
 impl StorageModelTrait for Transaction {

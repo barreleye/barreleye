@@ -1,4 +1,3 @@
-use console::style;
 use eyre::{ErrReport, Result};
 use serde_json::{from_value as json_parse, json, Value as JsonValue};
 use std::{
@@ -254,7 +253,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, Sender<()>>::new();
 
 			let thread_count = network_params_map.len();
-			debug!("Launching {} thread(s)…", style(self.format_number(thread_count)?).bold());
+			debug!("Launching {} thread(s)…", self.format_number(thread_count)?);
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_params_map.clone().into_iter() {
@@ -273,6 +272,7 @@ impl Indexer {
 						abort_sender.subscribe(),
 					);
 					let db = self.app.db().clone();
+					let storage = self.app.storage.clone();
 
 					async move {
 						let mut warehouse_data = WarehouseData::new();
@@ -305,28 +305,18 @@ impl Indexer {
 									break;
 								}
 								None => {
-									let config_key = ConfigKey::BlockHeight(nid);
-									let saved_block_height =
-										Config::get::<_, BlockHeight>(&db, config_key)
-											.await?
-											.map(|v| v.value)
-											.unwrap_or(0);
+									let last_synced_block_height = Config::get::<_, BlockHeight>(
+										&db,
+										ConfigKey::IndexerSyncTail(nid),
+									)
+									.await?
+									.map(|v| v.value)
+									.unwrap_or(0);
 
-									if block_height + 1 > saved_block_height {
-										let latest_block_height = chain.get_block_height().await?;
-
-										if latest_block_height > saved_block_height {
-											Config::set::<_, BlockHeight>(
-												&db,
-												config_key,
-												latest_block_height,
-											)
-											.await?;
-										} else {
-											let timeout = chain.get_network().block_time;
-											sleep(Duration::from_millis(timeout as u64)).await;
-											continue;
-										}
+									if block_height + 1 > last_synced_block_height {
+										let timeout = chain.get_network().block_time;
+										sleep(Duration::from_millis(timeout as u64)).await;
+										continue;
 									}
 								}
 								_ => {}
@@ -337,6 +327,7 @@ impl Indexer {
 							let is_done = tokio::select! {
 								_ = pipe.abort.recv() => true,
 								new_data = chain.process_block(
+									storage.clone(),
 									block_height,
 									network_params.modules.clone(),
 								) => match new_data? {
@@ -401,8 +392,6 @@ impl Indexer {
 							break;
 						}
 
-						trace!(thread = config_key.to_string(), records = new_data.len());
-
 						// update results
 						warehouse_data += new_data;
 						config_key_map.insert(config_key, config_value);
@@ -421,7 +410,7 @@ impl Indexer {
 						// but that's still ok because commits will happen either when
 						// buffer fills up or enough time has passed
 						if warehouse_data.should_commit(false) {
-							trace!(warehouse = "pushing data", records = warehouse_data.len());
+							trace!(warehouse = "pushing", records = warehouse_data.len());
 
 							// push to warehouse
 							warehouse_data.commit(self.app.warehouse.clone()).await?;

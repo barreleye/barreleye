@@ -116,6 +116,7 @@ impl ChainTrait for Evm {
 
 	async fn process_block(
 		&self,
+		_storage: Arc<Storage>,
 		block_height: BlockHeight,
 		module_ids: Vec<ModuleId>,
 	) -> Result<Option<WarehouseData>> {

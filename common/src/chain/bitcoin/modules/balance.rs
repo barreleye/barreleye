@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use bitcoin::blockdata::transaction::Transaction;
 use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
+	chain::bitcoin::schema::Transaction as ParquetTransaction,
 	chain::{bitcoin::modules::BitcoinModuleTrait, ModuleId, ModuleTrait, WarehouseData, U256},
 	models::{Amount, PrimaryId},
 	BlockHeight,
@@ -29,14 +29,14 @@ impl BitcoinModuleTrait for BitcoinBalance {
 		&self,
 		block_height: BlockHeight,
 		block_time: u32,
-		tx: Transaction,
+		tx: ParquetTransaction,
 		inputs: HashMap<String, u64>,
 		outputs: HashMap<String, u64>,
 	) -> Result<WarehouseData> {
 		let mut ret = WarehouseData::new();
 		let mut balance_map = HashMap::<String, (u64, u64)>::new();
 
-		if !tx.is_coin_base() {
+		if !tx.is_coin_base {
 			for (address, new_amount) in inputs.into_iter() {
 				if let Some(amounts) = balance_map.get_mut(&address) {
 					amounts.1 += new_amount;
@@ -54,7 +54,7 @@ impl BitcoinModuleTrait for BitcoinBalance {
 			}
 		}
 
-		let tx_hash = tx.txid().as_raw_hash().to_string();
+		let tx_hash = tx.hash.to_string();
 
 		for (address, (amount_in, amount_out)) in balance_map.into_iter() {
 			ret.amounts.insert(Amount::new(

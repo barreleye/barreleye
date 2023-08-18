@@ -46,6 +46,7 @@ pub trait ChainTrait: Send + Sync {
 
 	async fn process_block(
 		&self,
+		storage: Arc<Storage>,
 		block_height: BlockHeight,
 		modules: Vec<ModuleId>,
 	) -> Result<Option<WarehouseData>>;
