@@ -290,7 +290,7 @@ impl Indexer {
 
 			ret.push((block_height_min, block_height_max));
 
-			block_height_min = block_height_max + 1;
+			block_height_min = block_height_max;
 			block_height_max += chunk_size;
 		}
 

@@ -1,6 +1,7 @@
 use eyre::{ErrReport, Result};
 use serde_json::{from_value as json_parse, json, Value as JsonValue};
 use std::{
+	cmp,
 	collections::HashMap,
 	sync::{
 		atomic::{AtomicBool, Ordering},
@@ -42,7 +43,7 @@ impl NetworkRange {
 
 pub struct Pipe {
 	config_key: ConfigKey,
-	sender: mpsc::Sender<(ConfigKey, JsonValue, WarehouseData)>,
+	sender: mpsc::Sender<(ConfigKey, JsonValue, WarehouseData, bool)>,
 	receipt: mpsc::Receiver<()>,
 	pub abort: broadcast::Receiver<()>,
 }
@@ -50,7 +51,7 @@ pub struct Pipe {
 impl Pipe {
 	pub fn new(
 		config_key: ConfigKey,
-		sender: mpsc::Sender<(ConfigKey, JsonValue, WarehouseData)>,
+		sender: mpsc::Sender<(ConfigKey, JsonValue, WarehouseData, bool)>,
 		receipt: mpsc::Receiver<()>,
 		abort: broadcast::Receiver<()>,
 	) -> Self {
@@ -61,8 +62,9 @@ impl Pipe {
 		&mut self,
 		config_value: JsonValue,
 		warehouse_data: WarehouseData,
+		force_commit: bool,
 	) -> Result<()> {
-		self.sender.send((self.config_key, config_value, warehouse_data)).await?;
+		self.sender.send((self.config_key, config_value, warehouse_data, force_commit)).await?;
 
 		tokio::select! {
 			_ = self.receipt.recv() => {}
@@ -116,9 +118,6 @@ impl Indexer {
 				.map(|h| h.value)
 				.unwrap_or(0);
 
-				let block_height =
-					self.get_updated_block_height(nid, Some(last_processed_block)).await?;
-
 				// if first time, split up network into chunks for faster initial processing
 				if last_processed_block == 0
 					&& self.app.cpu_count > 0
@@ -129,8 +128,18 @@ impl Indexer {
 					.await?
 					.is_empty()
 				{
+					// tip should be at wherever sync step is (not network's block height)
+					let last_synced_block_height = Config::get::<_, BlockHeight>(
+						self.app.db(),
+						ConfigKey::IndexerSyncTail(nid),
+					)
+					.await?
+					.map(|h| h.value)
+					.unwrap_or(0);
+
+					// get initial chunk ranges
 					let block_sync_ranges = self
-						.get_block_chunk_ranges(block_height)?
+						.get_block_chunk_ranges(last_synced_block_height)?
 						.into_iter()
 						.map(|(min, max)| (ConfigKey::IndexerProcessChunk(nid, max), (min, max)))
 						.collect::<HashMap<_, _>>();
@@ -142,8 +151,8 @@ impl Indexer {
 					)
 					.await?;
 
-					// fast-forward last read block to almost block_height
-					last_processed_block = block_height - 1;
+					// fast-forward last read block to almost `last_synced_block_height`
+					last_processed_block = last_synced_block_height - 1;
 					Config::set::<_, BlockHeight>(
 						self.app.db(),
 						ConfigKey::IndexerProcessTail(nid),
@@ -294,13 +303,13 @@ impl Indexer {
 						while should_keep_going.load(Ordering::SeqCst) {
 							match block_height_max {
 								Some(block_height_max) if block_height + 1 > block_height_max => {
-									if !warehouse_data.is_empty() {
-										pipe.push(
-											config_value(block_height),
-											warehouse_data.clone(),
-										)
-										.await?;
-									}
+									// push no matter what (even if no warehouse data) so that config keys get updated
+									pipe.push(
+										config_value(block_height),
+										warehouse_data.clone(),
+										true,
+									)
+									.await?;
 
 									break;
 								}
@@ -314,7 +323,19 @@ impl Indexer {
 									.unwrap_or(0);
 
 									if block_height + 1 > last_synced_block_height {
-										let timeout = chain.get_network().block_time;
+										// push only if have some warehouse data, otherwise it's ok if config keys get updated later
+										if !warehouse_data.is_empty() {
+											pipe.push(
+												config_value(block_height),
+												warehouse_data.clone(),
+												true,
+											)
+											.await?;
+										}
+
+										// wait for at least 5 seconds
+										let timeout =
+											cmp::min(chain.get_network().block_time, 5_000);
 										sleep(Duration::from_millis(timeout as u64)).await;
 										continue;
 									}
@@ -340,8 +361,12 @@ impl Indexer {
 							};
 
 							if is_done || warehouse_data.len() > 100 {
-								pipe.push(config_value(block_height), warehouse_data.clone())
-									.await?;
+								pipe.push(
+									config_value(block_height),
+									warehouse_data.clone(),
+									false,
+								)
+								.await?;
 								warehouse_data.clear();
 							}
 
@@ -386,7 +411,7 @@ impl Indexer {
 							break;
 						}
 					}
-					Some((config_key, config_value, new_data)) = pipe_receiver.recv() => {
+					Some((config_key, config_value, new_data, force_commit)) = pipe_receiver.recv() => {
 						if !self.app.is_leading() {
 							abort()?;
 							break;
@@ -396,20 +421,8 @@ impl Indexer {
 						warehouse_data += new_data;
 						config_key_map.insert(config_key, config_value);
 
-						// release thread so it can keep going
-						if let Some(receipt) = receipts.get(&config_key) {
-							receipt.send(()).await.unwrap();
-						}
-
 						// batch save in warehouse
-						//
-						// @NOTE re: `(false)` param -> no manual commit because
-						// it's hard to figure out which blockchain is at the tip
-						// at this point in code
-						//
-						// but that's still ok because commits will happen either when
-						// buffer fills up or enough time has passed
-						if warehouse_data.should_commit(false) {
+						if warehouse_data.should_commit(force_commit) {
 							trace!(warehouse = "pushing", records = warehouse_data.len());
 
 							// push to warehouse
@@ -476,6 +489,11 @@ impl Indexer {
 
 							// reset config key markers
 							config_key_map.clear();
+						}
+
+						// release thread so it can keep going
+						if let Some(receipt) = receipts.get(&config_key) {
+							receipt.send(()).await.unwrap();
 						}
 					}
 				}
