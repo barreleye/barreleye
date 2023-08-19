@@ -333,9 +333,9 @@ impl Indexer {
 
 	async fn break_in_new_addresses(&self, network_ids: PrimaryIds) -> Result<()> {
 		// get all newly added addresses for the provided networks
-		let address_ids = Config::get_many_by_keywords::<_, PrimaryId>(
+		let address_ids = Config::get_many::<_, PrimaryId>(
 			self.app.db(),
-			vec![format!("added_address")],
+			vec![ConfigKey::NewlyAddedAddress(0, 0)],
 		)
 		.await?
 		.into_values()

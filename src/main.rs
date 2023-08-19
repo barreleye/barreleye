@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
 	let storage_path;
 	if let Some(path) = settings.storage_path.clone() {
 		storage_type = "DuckDB".to_string();
-		storage_path = path.display().to_string();
+		storage_path = format!("file://{}", path.display());
 	} else if let Some(s3) = settings.storage_url.clone() {
 		storage_type = s3.service.to_string();
 		storage_path = s3.url;

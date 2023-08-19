@@ -252,41 +252,6 @@ impl Model {
 			.collect())
 	}
 
-	// @TODO delete me
-	pub async fn get_many_by_keywords<C, T>(
-		c: &C,
-		keywords: Vec<String>,
-	) -> Result<HashMap<ConfigKey, Value<T>>>
-	where
-		C: ConnectionTrait,
-		T: for<'a> Deserialize<'a>,
-	{
-		Ok(Entity::find()
-			.filter(Self::get_keyword_conditions(keywords))
-			.all(c)
-			.await?
-			.into_iter()
-			.map(|m| {
-				(
-					m.key.into(),
-					Value {
-						value: serde_json::from_str(&m.value).unwrap(),
-						updated_at: m.updated_at,
-						created_at: m.created_at,
-					},
-				)
-			})
-			.collect())
-	}
-
-	// @TODO delete me
-	pub async fn exist_by_keywords<C>(c: &C, keywords: Vec<String>) -> Result<bool>
-	where
-		C: ConnectionTrait,
-	{
-		Ok(!Entity::find().filter(Self::get_keyword_conditions(keywords)).all(c).await?.is_empty())
-	}
-
 	pub async fn delete<C>(c: &C, key: ConfigKey) -> Result<()>
 	where
 		C: ConnectionTrait,
@@ -309,7 +274,6 @@ impl Model {
 		Ok(())
 	}
 
-	// @TODO delete me
 	pub async fn delete_all_by_keywords<C>(c: &C, keywords: Vec<String>) -> Result<()>
 	where
 		C: ConnectionTrait,
