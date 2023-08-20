@@ -138,8 +138,8 @@ impl Indexer {
 				continue;
 			}
 
-			// marker to test whether we're all caught up
-			let mut is_at_the_tip = true;
+			// marker to test whether link-step's block height has caught up to process-step's block height
+			let mut is_caught_up = true;
 
 			// process a chunk of blocks per address
 			let mut futures = JoinSet::new();
@@ -181,7 +181,7 @@ impl Indexer {
 						cmp::min(block_height + BLOCKS_PER_LOOP, latest_block_height);
 
 					if max_block_height != latest_block_height {
-						is_at_the_tip = false;
+						is_caught_up = false;
 					}
 
 					let network_entity_addresses =
@@ -313,20 +313,24 @@ impl Indexer {
 			}
 
 			// commit if collected enough
-			if warehouse_data.should_commit(is_at_the_tip) && self.app.is_leading() {
-				trace!(warehouse = "pushing", records = warehouse_data.len());
-
+			if self.app.is_leading() {
 				// push to warehouse
-				warehouse_data.commit(self.app.warehouse.clone()).await?;
+				if is_caught_up || warehouse_data.should_commit(false) {
+					trace!(warehouse = "pushing", records = warehouse_data.len());
+					warehouse_data.commit(self.app.warehouse.clone()).await?;
+				}
 
 				// commit config marker updates
-				Config::set_many::<_, BlockHeight>(self.app.db(), config_key_map.clone()).await?;
-				config_key_map.clear();
+				if is_caught_up {
+					Config::set_many::<_, BlockHeight>(self.app.db(), config_key_map.clone())
+						.await?;
+					config_key_map.clear();
+				}
 			}
 
-			// if no threads ever started, pause
-			if is_at_the_tip {
-				sleep(Duration::from_secs(1)).await;
+			// wait a bit
+			if is_caught_up {
+				sleep(Duration::from_secs(5)).await;
 			}
 		}
 	}
