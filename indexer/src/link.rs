@@ -315,7 +315,7 @@ impl Indexer {
 			// commit if collected enough
 			if self.app.is_leading() {
 				// push to warehouse
-				if is_caught_up || warehouse_data.should_commit(false) {
+				if warehouse_data.should_commit(is_caught_up) {
 					trace!(warehouse = "pushing", records = warehouse_data.len());
 					warehouse_data.commit(self.app.warehouse.clone()).await?;
 				}
