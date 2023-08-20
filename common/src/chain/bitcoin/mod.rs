@@ -195,7 +195,7 @@ impl ChainTrait for Bitcoin {
 						storage_db.insert(ParquetOutput {
 							tx_hash: *tx.txid().as_raw_hash(),
 							value: txout.value,
-							script_pubkey: txout.script_pubkey.to_string(),
+							script_pubkey: txout.script_pubkey.into_bytes(),
 						})?;
 					}
 				}
@@ -302,8 +302,7 @@ impl Bitcoin {
 		let mut ret = None;
 
 		if vout < tx_outputs.len() as u32 {
-			let script_pubkey =
-				Script::from_bytes(tx_outputs[vout as usize].script_pubkey.as_bytes());
+			let script_pubkey = Script::from_bytes(&tx_outputs[vout as usize].script_pubkey);
 			if let Ok(address) = Address::from_script(script_pubkey, self.bitcoin_network) {
 				ret = Some(address.to_string());
 			} else {

@@ -10,7 +10,7 @@ use crate::storage::{StorageDb, StorageModelTrait};
 pub struct Output {
 	pub tx_hash: Hash,
 	pub value: u64,
-	pub script_pubkey: String,
+	pub script_pubkey: Vec<u8>,
 }
 
 impl Output {
@@ -47,7 +47,7 @@ impl StorageModelTrait for Output {
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
                 tx_hash VARCHAR NOT NULL,
                 value UINT64 NOT NULL,
-                script_pubkey VARCHAR NOT NULL
+                script_pubkey BLOB NOT NULL
             );"#,
 			ParquetFile::Outputs
 		))?;
