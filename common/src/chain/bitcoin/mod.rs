@@ -34,12 +34,18 @@ impl Bitcoin {
 	pub fn new(network: Network) -> Self {
 		let rps = network.rps as u32;
 		let network_id = network.network_id;
+		let bitcoin_network = match network.chain_id {
+			1 => BitcoinNetwork::Testnet,
+			2 => BitcoinNetwork::Regtest,
+			3 => BitcoinNetwork::Signet,
+			_ => BitcoinNetwork::Bitcoin,
+		};
 
 		Self {
 			network,
 			rpc: None,
 			client: None,
-			bitcoin_network: BitcoinNetwork::Bitcoin,
+			bitcoin_network,
 			rate_limiter: utils::get_rate_limiter(rps),
 			modules: vec![
 				Box::new(BitcoinTransfer::new(network_id)),
