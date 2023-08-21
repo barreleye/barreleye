@@ -10,13 +10,14 @@ use std::sync::Arc;
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{optional_set, BasicModel, Tag, TagActiveModel},
-	App,
+	App, RiskLevel,
 };
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
 	name: Option<String>,
+	risk_level: Option<RiskLevel>,
 }
 
 pub async fn handler(
@@ -35,7 +36,11 @@ pub async fn handler(
 		}
 
 		// update
-		let update_data = TagActiveModel { name: optional_set(payload.name), ..Default::default() };
+		let update_data = TagActiveModel {
+			name: optional_set(payload.name),
+			risk_level: optional_set(payload.risk_level),
+			..Default::default()
+		};
 		if update_data.is_changed() {
 			Tag::update_by_id(app.db(), &tag_id, update_data).await?;
 		}

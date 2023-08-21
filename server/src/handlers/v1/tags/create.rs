@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{is_valid_id, BasicModel, Tag},
-	App, IdPrefix,
+	App, IdPrefix, RiskLevel,
 };
 
 #[derive(Deserialize)]
@@ -13,6 +13,7 @@ use barreleye_common::{
 pub struct Payload {
 	id: Option<String>,
 	name: String,
+	risk_level: RiskLevel,
 }
 
 pub async fn handler(
@@ -32,7 +33,9 @@ pub async fn handler(
 	}
 
 	// create new
-	let tag_id = Tag::create(app.db(), Tag::new_model(payload.id, &payload.name)).await?;
+	let tag_id =
+		Tag::create(app.db(), Tag::new_model(payload.id, &payload.name, payload.risk_level))
+			.await?;
 
 	// return newly created
 	Ok(Tag::get(app.db(), tag_id).await?.unwrap().into())

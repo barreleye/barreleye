@@ -21,6 +21,7 @@ impl MigrationTrait for Migration {
 					)
 					.col(ColumnDef::new(Tags::Id).unique_key().string().not_null())
 					.col(ColumnDef::new(Tags::Name).unique_key().string().not_null())
+					.col(ColumnDef::new(Tags::RiskLevel).small_integer().not_null())
 					.col(ColumnDef::new(Tags::UpdatedAt).date_time().null())
 					.col(
 						ColumnDef::new(Tags::CreatedAt)
@@ -45,6 +46,7 @@ enum Tags {
 	TagId,
 	Id,
 	Name,
+	RiskLevel,
 	UpdatedAt,
 	CreatedAt,
 }

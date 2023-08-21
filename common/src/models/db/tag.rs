@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	models::{db::entity_tag, BasicModel, EntityTagColumn, PrimaryId, PrimaryIds},
-	utils, IdPrefix,
+	utils, IdPrefix, RiskLevel,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
@@ -20,6 +20,7 @@ pub struct Model {
 	pub tag_id: PrimaryId,
 	pub id: String,
 	pub name: String,
+	pub risk_level: RiskLevel,
 	#[sea_orm(nullable)]
 	#[serde(skip_serializing)]
 	pub updated_at: Option<DateTime>,
@@ -46,6 +47,7 @@ pub struct JoinedModel {
 	pub tag_id: PrimaryId,
 	pub id: String,
 	pub name: String,
+	pub risk_level: RiskLevel,
 	pub updated_at: Option<DateTime>,
 	pub created_at: DateTime,
 	pub entity_id: PrimaryId,
@@ -68,6 +70,7 @@ impl From<JoinedModel> for Model {
 			tag_id: m.tag_id,
 			id: m.id,
 			name: m.name,
+			risk_level: m.risk_level,
 			updated_at: m.updated_at,
 			created_at: m.created_at,
 			entities: None,
@@ -80,11 +83,12 @@ impl From<JoinedModel> for Model {
 pub struct SanitizedTag {
 	pub id: String,
 	pub name: String,
+	pub risk_level: RiskLevel,
 }
 
 impl From<Model> for SanitizedTag {
 	fn from(m: Model) -> SanitizedTag {
-		SanitizedTag { id: m.id, name: m.name }
+		SanitizedTag { id: m.id, name: m.name, risk_level: m.risk_level }
 	}
 }
 
@@ -109,10 +113,11 @@ impl BasicModel for Model {
 }
 
 impl Model {
-	pub fn new_model(id: Option<String>, name: &str) -> ActiveModel {
+	pub fn new_model(id: Option<String>, name: &str, risk_level: RiskLevel) -> ActiveModel {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Tag))),
 			name: Set(name.to_string()),
+			risk_level: Set(risk_level),
 			..Default::default()
 		}
 	}

@@ -299,6 +299,20 @@ pub enum IdPrefix {
 	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
+pub enum RiskLevel {
+	#[default]
+	#[serde(rename = "low")]
+	Low = 1,
+	#[serde(rename = "high")]
+	High = 2,
+	#[serde(rename = "critical")]
+	Critical = 3,
+}
+
+#[derive(
+	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
+)]
+#[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
 pub enum Env {
 	#[serde(rename = "localhost")]
 	Localhost = 1,
