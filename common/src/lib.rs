@@ -296,7 +296,18 @@ pub enum IdPrefix {
 }
 
 #[derive(
-	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
+	Default,
+	Debug,
+	EnumIter,
+	DeriveActiveEnum,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
 pub enum RiskLevel {
