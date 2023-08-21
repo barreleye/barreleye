@@ -281,7 +281,7 @@ impl App {
 	}
 }
 
-#[derive(Display, Debug, Serialize, Deserialize)]
+#[derive(Display, Debug, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub enum IdPrefix {
 	#[display(fmt = "net")]
 	Network,

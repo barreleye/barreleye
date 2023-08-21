@@ -78,6 +78,7 @@ impl SoftDeleteModel for Model {
 
 impl Model {
 	pub fn new_model(
+		id: Option<String>,
 		name: &str,
 		env: Env,
 		architecture: Architecture,
@@ -87,7 +88,7 @@ impl Model {
 		rps: i32,
 	) -> ActiveModel {
 		ActiveModel {
-			id: Set(utils::new_unique_id(IdPrefix::Network)),
+			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Network))),
 			name: Set(name.to_string()),
 			env: Set(env),
 			architecture: Set(architecture),

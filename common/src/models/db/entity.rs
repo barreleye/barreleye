@@ -138,9 +138,14 @@ impl SoftDeleteModel for Model {
 }
 
 impl Model {
-	pub fn new_model(name: Option<String>, description: &str, url: &str) -> ActiveModel {
+	pub fn new_model(
+		id: Option<String>,
+		name: Option<String>,
+		description: &str,
+		url: &str,
+	) -> ActiveModel {
 		ActiveModel {
-			id: Set(utils::new_unique_id(IdPrefix::Entity)),
+			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Entity))),
 			name: Set(name),
 			description: Set(description.to_string()),
 			url: Set(url.to_string()),

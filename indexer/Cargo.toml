@@ -11,7 +11,7 @@ workspace = ".."
 
 [dependencies]
 eyre = "0.6.8"
-serde = "1.0.183"
+serde = "1.0.185"
 serde_json = "1.0.105"
 async-trait = "0.1.73"
 bitcoin = "0.30.1"

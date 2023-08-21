@@ -93,6 +93,7 @@ impl SoftDeleteModel for Model {
 
 impl Model {
 	pub fn new_model(
+		id: Option<String>,
 		entity_id: PrimaryId,
 		network_id: PrimaryId,
 		network: &str,
@@ -103,7 +104,7 @@ impl Model {
 			entity_id: Set(entity_id),
 			network_id: Set(network_id),
 			network: Set(network.to_string()),
-			id: Set(utils::new_unique_id(IdPrefix::Address)),
+			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Address))),
 			address: Set(address.to_string()),
 			description: Set(description.to_string()),
 			is_deleted: Set(false),

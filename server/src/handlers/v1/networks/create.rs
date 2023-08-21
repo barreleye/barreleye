@@ -5,13 +5,14 @@ use std::sync::Arc;
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	chain::{Bitcoin, ChainTrait, Evm},
-	models::{BasicModel, Config, ConfigKey, Network},
-	App, Architecture, Env,
+	models::{is_valid_id, BasicModel, Config, ConfigKey, Network},
+	App, Architecture, Env, IdPrefix,
 };
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
+	id: Option<String>,
 	name: String,
 	architecture: Architecture,
 	block_time: u64,
@@ -28,6 +29,15 @@ pub async fn handler(
 	let env = payload.env.unwrap_or_default();
 	let chain_id = payload.chain_id.unwrap_or_default();
 	let rps = payload.rps.unwrap_or(100);
+
+	// check that id is valid
+	if let Some(id) = payload.id.clone() {
+		if !is_valid_id(&id, IdPrefix::Network)
+			|| Network::get_by_id(app.db(), &id).await?.is_some()
+		{
+			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+		}
+	}
 
 	// check for duplicate name
 	if Network::get_by_name(app.db(), &payload.name, None).await?.is_some() {
@@ -65,6 +75,7 @@ pub async fn handler(
 	let network_id = Network::create(
 		app.db(),
 		Network::new_model(
+			payload.id,
 			&payload.name,
 			env,
 			payload.architecture,

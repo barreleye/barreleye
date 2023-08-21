@@ -109,9 +109,9 @@ impl BasicModel for Model {
 }
 
 impl Model {
-	pub fn new_model(name: &str) -> ActiveModel {
+	pub fn new_model(id: Option<String>, name: &str) -> ActiveModel {
 		ActiveModel {
-			id: Set(utils::new_unique_id(IdPrefix::Tag)),
+			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Tag))),
 			name: Set(name.to_string()),
 			..Default::default()
 		}

@@ -5,13 +5,14 @@ use std::sync::Arc;
 
 use crate::{errors::ServerError, utils::extract_primary_ids, ServerResult};
 use barreleye_common::{
-	models::{BasicModel, Entity, EntityTag, Tag, TagColumn},
-	App,
+	models::{is_valid_id, BasicModel, Entity, EntityTag, Tag, TagColumn},
+	App, IdPrefix,
 };
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
+	id: Option<String>,
 	name: Option<String>,
 	description: String,
 	url: String,
@@ -22,6 +23,14 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<Json<Entity>> {
+	// check that id is valid
+	if let Some(id) = payload.id.clone() {
+		if !is_valid_id(&id, IdPrefix::Entity) || Entity::get_by_id(app.db(), &id).await?.is_some()
+		{
+			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+		}
+	}
+
 	// get a list of tag primary ids, while checking for invalid payload ids
 	let tag_ids = {
 		let mut ret = vec![];
@@ -51,7 +60,7 @@ pub async fn handler(
 	// create new
 	let entity_id = Entity::create(
 		app.db(),
-		Entity::new_model(payload.name, &payload.description, &payload.url),
+		Entity::new_model(payload.id, payload.name, &payload.description, &payload.url),
 	)
 	.await?;
 

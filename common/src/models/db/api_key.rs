@@ -43,9 +43,9 @@ impl BasicModel for Model {
 }
 
 impl Model {
-	pub fn new_model() -> ActiveModel {
+	pub fn new_model(id: Option<String>) -> ActiveModel {
 		ActiveModel {
-			id: Set(utils::new_unique_id(IdPrefix::ApiKey)),
+			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::ApiKey))),
 			uuid: Set(utils::new_uuid()),
 			is_active: Set(true),
 			..Default::default()

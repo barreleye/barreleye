@@ -8,7 +8,7 @@ use sea_orm::{
 use sea_orm_migration::prelude::IntoCondition;
 use std::ops::{Deref, DerefMut};
 
-use crate::utils;
+use crate::{utils, IdPrefix};
 pub use db::*;
 pub use warehouse::*;
 
@@ -70,6 +70,26 @@ where
 		Some(v) => ActiveValue::set(v),
 		_ => ActiveValue::not_set(),
 	}
+}
+
+pub fn is_valid_id(id: &str, id_prefix: IdPrefix) -> bool {
+	// check prefix
+	if !id.starts_with(&format!("{}_", id_prefix)) {
+		return false;
+	}
+
+	// check min & max lengths
+	let contents = &id[id_prefix.to_string().len() + 1..];
+	if contents.is_empty() || contents.len() > 32 {
+		return false;
+	}
+
+	// check alphanumeric value
+	if !contents.chars().all(char::is_alphanumeric) {
+		return false;
+	}
+
+	true
 }
 
 #[async_trait]
@@ -301,5 +321,29 @@ pub trait SoftDeleteModel {
 			.await?;
 
 		Ok(res.rows_affected)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use std::collections::HashMap;
+
+	#[test]
+	fn test_is_valid_id() {
+		let data = HashMap::from([
+			(("net_abc", IdPrefix::Network), true),
+			(("net_a1b2c3", IdPrefix::Network), true),
+			(("net_a", IdPrefix::Network), true),
+			(("net_1", IdPrefix::Network), true),
+			(("net_", IdPrefix::Network), false),
+			(("net_?", IdPrefix::Network), false),
+			(("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", IdPrefix::Network), true),
+			(("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA", IdPrefix::Network), false),
+		]);
+
+		for (input, output) in data.into_iter() {
+			assert_eq!(is_valid_id(&input.0, input.1), output)
+		}
 	}
 }

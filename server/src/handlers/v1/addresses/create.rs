@@ -71,6 +71,7 @@ pub async fn handler(
 			.iter()
 			.map(|(address, description)| {
 				Address::new_model(
+					None,
 					entity.entity_id,
 					network.network_id,
 					&network.id,
