@@ -206,7 +206,7 @@ impl Indexer {
 		Entity::prune_all(self.app.db()).await?;
 
 		// prune all soft-deleted networks
-		let deleted_networks = Network::get_all_deleted(self.app.db()).await?;
+		let deleted_networks = Network::get_all_existing(self.app.db(), Some(true)).await?;
 		if !deleted_networks.is_empty() {
 			let network_ids: PrimaryIds = deleted_networks.clone().into();
 

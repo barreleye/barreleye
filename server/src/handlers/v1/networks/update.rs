@@ -12,14 +12,13 @@ use barreleye_common::{
 	models::{
 		optional_set, BasicModel, Config, ConfigKey, Network, NetworkActiveModel, SoftDeleteModel,
 	},
-	App, Architecture, Env,
+	App, Architecture,
 };
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
 	name: Option<String>,
-	env: Option<Env>,
 	architecture: Option<Architecture>,
 	chain_id: Option<u64>,
 	block_time: Option<u64>,
@@ -46,9 +45,8 @@ pub async fn handler(
 
 	// check for duplicate chain id
 	if let Some(chain_id) = payload.chain_id {
-		if Network::get_by_env_architecture_and_chain_id(
+		if Network::get_by_architecture_and_chain_id(
 			app.db(),
-			payload.env.unwrap_or(network.env),
 			payload.architecture.unwrap_or(network.architecture),
 			chain_id as i64,
 			None,
@@ -65,7 +63,6 @@ pub async fn handler(
 
 	let update_data = NetworkActiveModel {
 		name: optional_set(payload.name.clone()),
-		env: optional_set(payload.env),
 		architecture: optional_set(payload.architecture),
 		chain_id: optional_set(payload.chain_id.map(|v| v as i64)),
 		block_time: optional_set(payload.block_time.map(|v| v as i64)),

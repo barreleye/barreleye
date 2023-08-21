@@ -68,27 +68,6 @@ impl BasicModel for Model {
 #[async_trait]
 impl SoftDeleteModel for Model {
 	type ActiveModel = ActiveModel;
-
-	async fn get_all_deleted<C>(c: &C) -> Result<Vec<Self>>
-	where
-		C: ConnectionTrait,
-	{
-		Ok(Entity::find()
-			.filter(Column::IsDeleted.eq(true))
-			.filter(
-				Condition::any().add(
-					Column::EntityId.in_subquery(
-						Query::select()
-							.column(EntityColumn::EntityId)
-							.from(entity::Entity)
-							.and_where(EntityColumn::IsDeleted.eq(true))
-							.to_owned(),
-					),
-				),
-			)
-			.all(c)
-			.await?)
-	}
 }
 
 impl Model {
@@ -201,5 +180,26 @@ impl Model {
 		}
 
 		Ok(q.all(c).await?)
+	}
+
+	pub async fn get_all_deleted<C>(c: &C) -> Result<Vec<Self>>
+	where
+		C: ConnectionTrait,
+	{
+		Ok(Entity::find()
+			.filter(Column::IsDeleted.eq(true))
+			.filter(
+				Condition::any().add(
+					Column::EntityId.in_subquery(
+						Query::select()
+							.column(EntityColumn::EntityId)
+							.from(entity::Entity)
+							.and_where(EntityColumn::IsDeleted.eq(true))
+							.to_owned(),
+					),
+				),
+			)
+			.all(c)
+			.await?)
 	}
 }

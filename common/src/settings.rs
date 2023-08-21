@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::{
 	banner, db::Driver as DatabaseDriver, utils, warehouse::Driver as WarehouseDriver, AppError,
-	Env, S3Service, Warnings, S3,
+	S3Service, Warnings, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -21,10 +21,6 @@ use crate::{
 	long_about = None
 )]
 pub struct Settings {
-	/// Network environments to connect to.
-	#[arg(help_heading = "Runtime options", short, long, default_value = "mainnet")]
-	pub env: Env,
-
 	/// Run only the indexer, without the server.
 	/// In a multi-indexer setup, only one node will run at a time.
 	/// The others will silently run in standby mode, ready to take over if the primary becomes unavailable.
@@ -164,7 +160,7 @@ impl Settings {
 			};
 
 		// show banner
-		banner::show(settings.env, settings.is_indexer, settings.is_server)?;
+		banner::show(settings.is_indexer, settings.is_server)?;
 
 		// set driver for db
 		let test_scheme = settings.database.split(':').next().unwrap_or_default();

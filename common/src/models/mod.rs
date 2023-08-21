@@ -285,16 +285,20 @@ pub trait SoftDeleteModel {
 			.await?)
 	}
 
-	async fn get_all_deleted<C>(
+	async fn get_all_existing<C>(
 		c: &C,
+		is_deleted: Option<bool>,
 	) -> Result<Vec<<<Self::ActiveModel as ActiveModelTrait>::Entity as EntityTrait>::Model>>
 	where
 		C: ConnectionTrait,
 	{
-		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find()
-			.filter(Expr::col(Alias::new("is_deleted")).eq(true))
-			.all(c)
-			.await?)
+		let mut q = <Self::ActiveModel as ActiveModelTrait>::Entity::find();
+
+		if let Some(is_deleted) = is_deleted {
+			q = q.filter(Expr::col(Alias::new("is_deleted")).eq(is_deleted))
+		}
+
+		Ok(q.all(c).await?)
 	}
 
 	async fn prune_all<C>(c: &C) -> Result<u64>

@@ -2,8 +2,6 @@ use console::style;
 use eyre::Result;
 use std::{env, str};
 
-use crate::Env;
-
 static BANNER_ANSI: &[u8] = &[
 	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 59, 95, 63, 42, 63, 59, 32, 32, 32, 32,
 	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
@@ -758,7 +756,7 @@ static BANNER_TRUECOLOR: &[u8] = &[
 	91, 51, 56, 59, 50, 59, 48, 59, 48, 59, 48, 109, 32, 27, 91, 48, 109,
 ];
 
-pub fn show(env: Env, is_indexer: bool, is_server: bool) -> Result<()> {
+pub fn show(is_indexer: bool, is_server: bool) -> Result<()> {
 	let banner = format!(
 		"\n{}\n\n",
 		if env::var("COLORTERM").is_ok() {
@@ -773,11 +771,6 @@ pub fn show(env: Env, is_indexer: bool, is_server: bool) -> Result<()> {
 		let s = |s| style(s).bright().bold();
 
 		let mut t = vec![];
-		if env == Env::Localhost {
-			t.push(s("+Localhost").red().to_string())
-		} else if env == Env::Testnet {
-			t.push(s("+Testnet").red().to_string())
-		}
 		if is_indexer {
 			t.push(s("+Indexer").cyan().to_string())
 		}

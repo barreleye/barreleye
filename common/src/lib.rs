@@ -1,5 +1,4 @@
 use chrono::NaiveDateTime;
-use clap::{builder::PossibleValue, ValueEnum};
 use console::{style, Emoji};
 use derive_more::Display;
 use eyre::{bail, eyre, Result};
@@ -25,7 +24,7 @@ use tokio::{sync::RwLock, time::Duration};
 
 use crate::{
 	chain::{Bitcoin, BoxedChain, Evm},
-	models::{Config, ConfigKey, Network, PrimaryId},
+	models::{Config, ConfigKey, Network, PrimaryId, SoftDeleteModel},
 };
 pub use db::Db;
 pub use errors::AppError;
@@ -111,9 +110,7 @@ impl App {
 	pub async fn get_networks(&self) -> Result<HashMap<PrimaryId, Arc<BoxedChain>>> {
 		let mut ret = HashMap::new();
 
-		for n in
-			Network::get_all_by_env(self.db(), self.settings.env, Some(false)).await?.into_iter()
-		{
+		for n in Network::get_all_existing(self.db(), Some(false)).await?.into_iter() {
 			let network_id = n.network_id;
 
 			let boxed_chain: BoxedChain = match n.architecture {
@@ -153,9 +150,7 @@ impl App {
 		let m = MultiProgress::new();
 
 		let mut threads = vec![];
-		for n in
-			Network::get_all_by_env(self.db(), self.settings.env, Some(false)).await?.into_iter()
-		{
+		for n in Network::get_all_existing(self.db(), Some(false)).await?.into_iter() {
 			let pb = m.add(ProgressBar::new(1_000_000));
 			pb.set_style(spinner_style.clone());
 			pb.set_prefix(n.name.clone());
@@ -323,32 +318,6 @@ pub enum RiskLevel {
 pub enum RiskReason {
 	Entity,
 	Source,
-}
-
-#[derive(
-	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
-)]
-#[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
-#[serde(rename_all = "camelCase")]
-pub enum Env {
-	Localhost = 1,
-	Testnet = 2,
-	#[default]
-	Mainnet = 3,
-}
-
-impl ValueEnum for Env {
-	fn value_variants<'a>() -> &'a [Self] {
-		&[Self::Localhost, Self::Testnet, Self::Mainnet]
-	}
-
-	fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
-		match self {
-			Self::Localhost => Some(PossibleValue::new("localhost")),
-			Self::Testnet => Some(PossibleValue::new("testnet")),
-			Self::Mainnet => Some(PossibleValue::new("mainnet")),
-		}
-	}
 }
 
 #[derive(

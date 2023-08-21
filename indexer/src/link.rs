@@ -17,7 +17,7 @@ use barreleye_common::{
 	chain::WarehouseData,
 	models::{
 		Address, AddressColumn, BasicModel, Config, ConfigKey, Link, LinkUuid, Network, PrimaryId,
-		PrimaryIds, Transfer,
+		PrimaryIds, SoftDeleteModel, Transfer,
 	},
 	BlockHeight,
 };
@@ -70,10 +70,7 @@ impl Indexer {
 
 			// skip network if "process" step is not done yet
 			let mut networks = vec![];
-			for network in
-				Network::get_all_by_env(self.app.db(), self.app.settings.env, Some(false))
-					.await?
-					.into_iter()
+			for network in Network::get_all_existing(self.app.db(), Some(false)).await?.into_iter()
 			{
 				let process_step_started = matches!(Config::get::<_, BlockHeight>(
                     self.app.db(),

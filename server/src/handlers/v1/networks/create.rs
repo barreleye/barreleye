@@ -6,7 +6,7 @@ use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	chain::{Bitcoin, ChainTrait, Evm},
 	models::{is_valid_id, BasicModel, Config, ConfigKey, Network},
-	App, Architecture, Env, IdPrefix,
+	App, Architecture, IdPrefix,
 };
 
 #[derive(Deserialize)]
@@ -17,7 +17,6 @@ pub struct Payload {
 	architecture: Architecture,
 	block_time: u64,
 	rpc_endpoint: String,
-	env: Option<Env>,
 	chain_id: Option<u64>,
 	rps: Option<u32>,
 }
@@ -26,7 +25,6 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<Json<Network>> {
-	let env = payload.env.unwrap_or_default();
 	let chain_id = payload.chain_id.unwrap_or_default();
 	let rps = payload.rps.unwrap_or(100);
 
@@ -45,9 +43,8 @@ pub async fn handler(
 	}
 
 	// check for duplicate chain id
-	if Network::get_by_env_architecture_and_chain_id(
+	if Network::get_by_architecture_and_chain_id(
 		app.db(),
-		env,
 		payload.architecture,
 		chain_id as i64,
 		None,
@@ -77,7 +74,6 @@ pub async fn handler(
 		Network::new_model(
 			payload.id,
 			&payload.name,
-			env,
 			payload.architecture,
 			chain_id as i64,
 			payload.block_time as i64,

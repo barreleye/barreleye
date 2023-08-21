@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	models::{BasicModel, PrimaryId, PrimaryIds, SoftDeleteModel},
-	utils, Architecture, Env, IdPrefix,
+	utils, Architecture, IdPrefix,
 };
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
@@ -20,7 +20,6 @@ pub struct Model {
 	pub network_id: PrimaryId,
 	pub id: String,
 	pub name: String,
-	pub env: Env,
 	pub architecture: Architecture,
 	pub chain_id: i64,
 	pub block_time: i64,
@@ -50,13 +49,12 @@ impl From<Vec<Model>> for PrimaryIds {
 pub struct SanitizedNetwork {
 	pub id: String,
 	pub name: String,
-	pub env: Env,
 	pub chain_id: i64,
 }
 
 impl From<Model> for SanitizedNetwork {
 	fn from(m: Model) -> SanitizedNetwork {
-		SanitizedNetwork { id: m.id, name: m.name, env: m.env, chain_id: m.chain_id }
+		SanitizedNetwork { id: m.id, name: m.name, chain_id: m.chain_id }
 	}
 }
 
@@ -80,7 +78,6 @@ impl Model {
 	pub fn new_model(
 		id: Option<String>,
 		name: &str,
-		env: Env,
 		architecture: Architecture,
 		chain_id: i64,
 		block_time: i64,
@@ -90,7 +87,6 @@ impl Model {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Network))),
 			name: Set(name.to_string()),
-			env: Set(env),
 			architecture: Set(architecture),
 			chain_id: Set(chain_id),
 			block_time: Set(block_time),
@@ -99,19 +95,6 @@ impl Model {
 			rps: Set(rps),
 			..Default::default()
 		}
-	}
-
-	pub async fn get_all_by_env<C>(c: &C, env: Env, is_deleted: Option<bool>) -> Result<Vec<Self>>
-	where
-		C: ConnectionTrait,
-	{
-		let mut q = Entity::find().filter(Column::Env.eq(env));
-
-		if let Some(is_deleted) = is_deleted {
-			q = q.filter(Column::IsDeleted.eq(is_deleted))
-		}
-
-		Ok(q.all(c).await?)
 	}
 
 	pub async fn get_all_by_network_ids<C>(
@@ -147,9 +130,8 @@ impl Model {
 		Ok(q.one(c).await?)
 	}
 
-	pub async fn get_by_env_architecture_and_chain_id<C>(
+	pub async fn get_by_architecture_and_chain_id<C>(
 		c: &C,
-		env: Env,
 		architecture: Architecture,
 		chain_id: i64,
 		is_deleted: Option<bool>,
@@ -158,7 +140,6 @@ impl Model {
 		C: ConnectionTrait,
 	{
 		let mut q = Entity::find()
-			.filter(Column::Env.eq(env))
 			.filter(Column::Architecture.eq(architecture))
 			.filter(Column::ChainId.eq(chain_id));
 
