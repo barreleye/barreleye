@@ -1,7 +1,6 @@
 use axum::{extract::State, Json};
 use axum_extra::extract::Query;
 use eyre::Result;
-use sea_orm::ColumnTrait;
 use serde::{Deserialize, Serialize};
 use std::{
 	collections::{HashMap, HashSet},
@@ -11,19 +10,23 @@ use std::{
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{
-		Address, Amount, Balance, BasicModel, Entity, EntityColumn, Link, Network, PrimaryId,
-		PrimaryIds, SanitizedEntity, SanitizedNetwork, SanitizedTag, Tag,
+		Address, Amount, Balance, BasicModel, Entity, Link, Network, PrimaryId, SanitizedEntity,
+		SanitizedNetwork, SanitizedTag, Tag,
 	},
-	App, RiskLevel,
+	App, RiskLevel, RiskReason,
 };
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
-	#[serde(default, rename = "address")]
-	addresses: Vec<String>,
-	#[serde(default, rename = "entity")]
-	entities: Vec<String>,
+	q: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponseRisk {
+	level: RiskLevel,
+	reasons: HashSet<RiskReason>,
 }
 
 #[derive(Serialize)]
@@ -39,14 +42,16 @@ pub struct ResponseAsset {
 pub struct ResponseSource {
 	network: String,
 	entity: String,
-	address: String,
+	from: String,
+	to: String,
 	hops: u64,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Response {
-	risk_level: RiskLevel,
+	addresses: Vec<String>,
+	risk: ResponseRisk,
 	assets: Vec<ResponseAsset>,
 	sources: Vec<ResponseSource>,
 	networks: Vec<SanitizedNetwork>,
@@ -61,49 +66,20 @@ pub async fn handler(
 	let addresses = {
 		let mut ret = HashSet::new();
 
-		let addresses = HashSet::<String>::from_iter(payload.addresses.iter().cloned());
-		let entities = HashSet::<String>::from_iter(payload.entities.iter().cloned());
-		let max_limit = 100;
-
-		if addresses.len() > max_limit {
-			return Err(ServerError::ExceededLimit {
-				field: "address".to_string(),
-				limit: max_limit,
-			});
-		}
-		if entities.len() > max_limit {
-			return Err(ServerError::ExceededLimit {
-				field: "entity".to_string(),
-				limit: max_limit,
-			});
-		}
-
-		for address in addresses.into_iter() {
-			if !address.is_empty() {
-				let formatted_address = app.format_address(&address).await?;
-				ret.insert(formatted_address);
-			}
-		}
-
-		if !entities.is_empty() {
-			let entity_ids: PrimaryIds = Entity::get_all_where(
-				app.db(),
-				EntityColumn::Id.is_in(entities.into_iter().collect::<Vec<String>>()),
-			)
-			.await?
-			.into();
-
-			if !entity_ids.is_empty() {
-				for address in
-					Address::get_all_by_entity_ids(app.db(), entity_ids, Some(false)).await?
-				{
-					ret.insert(address.address);
-				}
-			}
-		}
-
-		if ret.is_empty() {
+		let q = payload.q.trim();
+		if q.is_empty() {
 			return Err(ServerError::MissingInputParams);
+		}
+
+		if let Some(entity) = Entity::get_by_id(app.db(), q).await? {
+			for address in
+				Address::get_all_by_entity_ids(app.db(), vec![entity.entity_id].into(), Some(false))
+					.await?
+			{
+				ret.insert(address.address);
+			}
+		} else {
+			ret.insert(q.to_string());
 		}
 
 		ret.into_iter().collect::<Vec<String>>()
@@ -221,13 +197,14 @@ pub async fn handler(
 		get_assets(app.clone(), addresses.clone()),
 		get_networks(app.clone(), addresses.clone()),
 		get_entities_data(app.clone(), {
-			let mut from_addresses =
-				links.iter().map(|l| l.from_address.clone()).collect::<Vec<String>>();
+			let mut entity_addresses =
+				links.iter().map(|l| l.from_address.clone()).collect::<HashSet<String>>();
 
-			from_addresses.sort_unstable();
-			from_addresses.dedup();
+			for address in addresses.clone() {
+				entity_addresses.insert(address);
+			}
 
-			from_addresses
+			entity_addresses.into_iter().collect::<Vec<_>>()
 		}),
 	);
 
@@ -245,7 +222,8 @@ pub async fn handler(
 				if let Some(entity) = entities_map.get(&entity_id) {
 					sources.push(ResponseSource {
 						network: network.id,
-						address: link.from_address,
+						from: link.from_address,
+						to: link.to_address,
 						entity: entity.id.clone(),
 						hops: link.transfer_uuids.len() as u64,
 					});
@@ -254,8 +232,20 @@ pub async fn handler(
 		}
 	}
 
+	let mut risk_reasons = HashSet::new();
+	for (_, network_address) in address_map.keys() {
+		if addresses.contains(network_address) {
+			risk_reasons.insert(RiskReason::Entity);
+			break;
+		}
+	}
+	if !sources.is_empty() {
+		risk_reasons.insert(RiskReason::Source);
+	}
+
 	Ok(Response {
-		risk_level,
+		addresses,
+		risk: ResponseRisk { level: risk_level, reasons: risk_reasons },
 		assets: assets?,
 		sources,
 		networks: networks?.into_iter().map(|n| n.into()).collect(),

@@ -310,26 +310,29 @@ pub enum IdPrefix {
 	Deserialize,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
+#[serde(rename_all = "camelCase")]
 pub enum RiskLevel {
 	#[default]
-	#[serde(rename = "low")]
 	Low = 1,
-	#[serde(rename = "high")]
 	High = 2,
-	#[serde(rename = "critical")]
 	Critical = 3,
+}
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum RiskReason {
+	Entity,
+	Source,
 }
 
 #[derive(
 	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
+#[serde(rename_all = "camelCase")]
 pub enum Env {
-	#[serde(rename = "localhost")]
 	Localhost = 1,
-	#[serde(rename = "testnet")]
 	Testnet = 2,
-	#[serde(rename = "mainnet")]
 	#[default]
 	Mainnet = 3,
 }
@@ -352,11 +355,10 @@ impl ValueEnum for Env {
 	Default, Debug, EnumIter, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
+#[serde(rename_all = "camelCase")]
 pub enum Architecture {
-	#[serde(rename = "bitcoin")]
 	#[default]
 	Bitcoin = 1,
-	#[serde(rename = "evm")]
 	Evm = 2,
 }
 

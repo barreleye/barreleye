@@ -27,7 +27,7 @@ pub struct Model {
 	pub created_at: DateTime,
 
 	#[sea_orm(ignore)]
-	pub key: String, // abbreviated `uuid` used in responses
+	pub last4: String, // abbreviated `uuid` used in responses
 }
 
 pub use ActiveModel as ApiKeyActiveModel;
@@ -60,6 +60,7 @@ impl Model {
 	}
 
 	pub fn format(&self) -> Self {
-		Self { key: self.uuid.to_string()[..4].to_string(), ..self.clone() }
+		let uuid = self.uuid.to_string();
+		Self { last4: uuid[uuid.len() - 4..].to_string(), ..self.clone() }
 	}
 }
