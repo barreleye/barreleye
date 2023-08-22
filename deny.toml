@@ -13,7 +13,10 @@ unmaintained = "warn"
 unsound = "deny"
 yanked = "deny"
 notice = "warn"
-ignore = []
+ignore = [
+    # @TODO webpki: CPU denial of service in certificate path building
+    "RUSTSEC-2023-0052"
+]
 
 [licenses]
 unlicensed = "deny"
