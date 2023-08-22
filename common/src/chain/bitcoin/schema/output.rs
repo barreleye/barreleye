@@ -1,7 +1,9 @@
-use bitcoin::hashes::sha256d::Hash;
+use bitcoin::{
+	blockdata::script::ScriptBuf,
+	hashes::{self, sha256d::Hash},
+};
 use duckdb::{params, Connection};
 use eyre::Result;
-use std::str::FromStr;
 
 use super::ParquetFile;
 use crate::storage::{StorageDb, StorageModelTrait};
@@ -10,7 +12,7 @@ use crate::storage::{StorageDb, StorageModelTrait};
 pub struct Output {
 	pub tx_hash: Hash,
 	pub value: u64,
-	pub script_pubkey: Vec<u8>,
+	pub script_pubkey: ScriptBuf,
 }
 
 impl Output {
@@ -27,12 +29,13 @@ impl Output {
 			let mut rows = statement.query([])?;
 
 			while let Some(row) = rows.next()? {
-				let tx_hash: String = row.get(0)?;
+				let tx_hash: Vec<u8> = row.get(0)?;
+				let script_pubkey: Vec<u8> = row.get(2)?;
 
 				ret.push(Output {
-					tx_hash: Hash::from_str(&tx_hash).unwrap(),
+					tx_hash: hashes::Hash::from_slice(&tx_hash)?,
 					value: row.get(1)?,
-					script_pubkey: row.get(2)?,
+					script_pubkey: ScriptBuf::from_bytes(script_pubkey),
 				});
 			}
 		}
@@ -45,7 +48,7 @@ impl StorageModelTrait for Output {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                tx_hash VARCHAR NOT NULL,
+                tx_hash BLOB NOT NULL,
                 value UINT64 NOT NULL,
                 script_pubkey BLOB NOT NULL
             );"#,
@@ -67,7 +70,11 @@ impl StorageModelTrait for Output {
                 );"#,
 				ParquetFile::Outputs
 			),
-			params![self.tx_hash.to_string(), self.value, self.script_pubkey],
+			params![
+				<Hash as AsRef<[u8]>>::as_ref(&self.tx_hash),
+				self.value,
+				self.script_pubkey.clone().into_bytes(),
+			],
 		)?;
 
 		Ok(())

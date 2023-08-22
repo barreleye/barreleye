@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use bitcoin::blockdata::script::Script;
 use bitcoin::{address::Address, Network as BitcoinNetwork};
 use eyre::Result;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
@@ -171,19 +170,19 @@ impl ChainTrait for Bitcoin {
 			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
 				storage_db.insert(ParquetBlock {
 					hash: block_hash,
-					version: block.header.version.to_consensus(),
+					version: block.header.version,
 					prev_blockhash: block.header.prev_blockhash,
 					merkle_root: block.header.merkle_root,
 					time: block.header.time,
-					bits: block.header.bits.to_consensus(),
+					bits: block.header.bits,
 					nonce: block.header.nonce,
 				})?;
 
 				for tx in block.txdata.into_iter() {
 					storage_db.insert(ParquetTransaction {
-						hash: *tx.txid().as_raw_hash(),
+						hash: tx.txid().to_raw_hash(),
 						version: tx.version,
-						lock_time: tx.lock_time.to_consensus_u32(),
+						lock_time: tx.lock_time,
 						input_count: tx.input.len() as u32,
 						output_count: tx.output.len() as u32,
 						is_coin_base: tx.is_coin_base(),
@@ -191,17 +190,17 @@ impl ChainTrait for Bitcoin {
 
 					for txin in tx.input.clone().into_iter() {
 						storage_db.insert(ParquetInput {
-							tx_hash: *tx.txid().as_raw_hash(),
-							previous_output_tx_hash: *txin.previous_output.txid.as_raw_hash(),
+							tx_hash: tx.txid().to_raw_hash(),
+							previous_output_tx_hash: txin.previous_output.txid.to_raw_hash(),
 							previous_output_vout: txin.previous_output.vout,
 						})?;
 					}
 
 					for txout in tx.output.clone().into_iter() {
 						storage_db.insert(ParquetOutput {
-							tx_hash: *tx.txid().as_raw_hash(),
+							tx_hash: tx.txid().to_raw_hash(),
 							value: txout.value,
-							script_pubkey: txout.script_pubkey.into_bytes(),
+							script_pubkey: txout.script_pubkey,
 						})?;
 					}
 				}
@@ -209,7 +208,7 @@ impl ChainTrait for Bitcoin {
 		}
 
 		storage_db.commit(vec![
-			ParquetFile::Block.to_string(),
+			ParquetFile::Blocks.to_string(),
 			ParquetFile::Transactions.to_string(),
 			ParquetFile::Inputs.to_string(),
 			ParquetFile::Outputs.to_string(),
@@ -308,8 +307,9 @@ impl Bitcoin {
 		let mut ret = None;
 
 		if vout < tx_outputs.len() as u32 {
-			let script_pubkey = Script::from_bytes(&tx_outputs[vout as usize].script_pubkey);
-			if let Ok(address) = Address::from_script(script_pubkey, self.bitcoin_network) {
+			if let Ok(address) =
+				Address::from_script(&tx_outputs[vout as usize].script_pubkey, self.bitcoin_network)
+			{
 				ret = Some(address.to_string());
 			} else {
 				ret = Some(format!("{}:{}", tx.hash, vout));

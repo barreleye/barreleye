@@ -1,7 +1,9 @@
-use bitcoin::hashes::sha256d::Hash;
+use bitcoin::{
+	blockdata::locktime::absolute::LockTime,
+	hashes::{self, sha256d::Hash},
+};
 use duckdb::{params, Connection};
 use eyre::Result;
-use std::str::FromStr;
 
 use super::ParquetFile;
 use crate::storage::{StorageDb, StorageModelTrait};
@@ -10,7 +12,7 @@ use crate::storage::{StorageDb, StorageModelTrait};
 pub struct Transaction {
 	pub hash: Hash,
 	pub version: i32,
-	pub lock_time: u32,
+	pub lock_time: LockTime,
 	pub input_count: u32,
 	pub output_count: u32,
 	pub is_coin_base: bool,
@@ -26,12 +28,12 @@ impl Transaction {
 			let mut rows = statement.query([])?;
 
 			while let Some(row) = rows.next()? {
-				let hash: String = row.get(0)?;
+				let hash: Vec<u8> = row.get(0)?;
 
 				ret.push(Transaction {
-					hash: Hash::from_str(&hash).unwrap(),
+					hash: hashes::Hash::from_slice(&hash)?,
 					version: row.get(1)?,
-					lock_time: row.get(2)?,
+					lock_time: LockTime::from_consensus(row.get(2)?),
 					input_count: row.get(3)?,
 					output_count: row.get(4)?,
 					is_coin_base: row.get(5)?,
@@ -47,7 +49,7 @@ impl StorageModelTrait for Transaction {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                hash VARCHAR NOT NULL,
+                hash BLOB NOT NULL,
                 version INT32 NOT NULL,
                 lock_time UINT32 NOT NULL,
                 input_count UINT32 NOT NULL,
@@ -73,9 +75,9 @@ impl StorageModelTrait for Transaction {
 				ParquetFile::Transactions
 			),
 			params![
-				self.hash.to_string(),
+				<Hash as AsRef<[u8]>>::as_ref(&self.hash),
 				self.version,
-				self.lock_time,
+				self.lock_time.to_consensus_u32(),
 				self.input_count,
 				self.output_count,
 				self.is_coin_base

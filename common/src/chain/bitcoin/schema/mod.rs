@@ -7,8 +7,8 @@ pub use transaction::Transaction;
 
 #[derive(Display, Debug)]
 pub enum ParquetFile {
-	#[display(fmt = "block")]
-	Block,
+	#[display(fmt = "blocks")]
+	Blocks,
 	#[display(fmt = "transactions")]
 	Transactions,
 	#[display(fmt = "inputs")]

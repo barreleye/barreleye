@@ -275,7 +275,7 @@ impl Indexer {
 
 						// release thread so it can keep going
 						if let Some(receipt) = receipts.get(&config_key) {
-							receipt.send(()).await.unwrap();
+							receipt.send(()).await?;
 						}
 
 						// save the new config value

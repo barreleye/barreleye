@@ -39,7 +39,7 @@ impl StorageModelTrait for Block {
                 total_difficulty VARCHAR,
                 base_fee_per_gas VARCHAR
             );"#,
-			ParquetFile::Block
+			ParquetFile::Blocks
 		))?;
 
 		Ok(())
@@ -65,7 +65,7 @@ impl StorageModelTrait for Block {
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 );"#,
-				ParquetFile::Block
+				ParquetFile::Blocks
 			),
 			params![
 				self.hash.map(|v| v.encode_hex()),

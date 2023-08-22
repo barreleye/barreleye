@@ -256,7 +256,7 @@ impl ChainTrait for Evm {
 		};
 
 		storage_db.commit(vec![
-			ParquetFile::Block.to_string(),
+			ParquetFile::Blocks.to_string(),
 			ParquetFile::Transactions.to_string(),
 			ParquetFile::Receipts.to_string(),
 			ParquetFile::Logs.to_string(),

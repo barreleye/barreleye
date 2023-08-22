@@ -1,7 +1,6 @@
-use bitcoin::hashes::sha256d::Hash;
+use bitcoin::hashes::{self, sha256d::Hash};
 use duckdb::{params, Connection};
 use eyre::Result;
-use std::str::FromStr;
 
 use super::ParquetFile;
 use crate::storage::{StorageDb, StorageModelTrait};
@@ -27,12 +26,12 @@ impl Input {
 			let mut rows = statement.query([])?;
 
 			while let Some(row) = rows.next()? {
-				let tx_hash: String = row.get(0)?;
-				let previous_output_tx_hash: String = row.get(1)?;
+				let tx_hash: Vec<u8> = row.get(0)?;
+				let previous_output_tx_hash: Vec<u8> = row.get(1)?;
 
 				ret.push(Input {
-					tx_hash: Hash::from_str(&tx_hash).unwrap(),
-					previous_output_tx_hash: Hash::from_str(&previous_output_tx_hash).unwrap(),
+					tx_hash: hashes::Hash::from_slice(&tx_hash)?,
+					previous_output_tx_hash: hashes::Hash::from_slice(&previous_output_tx_hash)?,
 					previous_output_vout: row.get(2)?,
 				});
 			}
@@ -46,8 +45,8 @@ impl StorageModelTrait for Input {
 	fn create_table(&self, db: &Connection) -> Result<()> {
 		db.execute_batch(&format!(
 			r#"CREATE TEMP TABLE IF NOT EXISTS {} (
-                tx_hash VARCHAR NOT NULL,
-                previous_output_tx_hash VARCHAR NOT NULL,
+                tx_hash BLOB NOT NULL,
+                previous_output_tx_hash BLOB NOT NULL,
                 previous_output_vout UINT32 NOT NULL
             );"#,
 			ParquetFile::Inputs
@@ -69,8 +68,8 @@ impl StorageModelTrait for Input {
 				ParquetFile::Inputs
 			),
 			params![
-				self.tx_hash.to_string(),
-				self.previous_output_tx_hash.to_string(),
+				<Hash as AsRef<[u8]>>::as_ref(&self.tx_hash),
+				<Hash as AsRef<[u8]>>::as_ref(&self.previous_output_tx_hash),
 				self.previous_output_vout
 			],
 		)?;
