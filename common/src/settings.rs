@@ -112,9 +112,9 @@ pub struct Settings {
 	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
-	/// Warehouse for big data.
+	/// Warehouse for big data. Supports ClickHouse.
 	///
-	/// Clickhouse eg: http://username:password@localhost:8123/database_name
+	/// ClickHouse eg: http://username:password@localhost:8123/database_name
 	#[arg(
 		help_heading = "Warehouse options",
 		short,
