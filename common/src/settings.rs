@@ -56,7 +56,9 @@ pub struct Settings {
 		value_name = "URL"
 	)]
 	storage: String,
+	#[arg(skip)]
 	pub storage_path: Option<PathBuf>,
+	#[arg(skip)]
 	pub storage_url: Option<S3>,
 
 	#[arg(
