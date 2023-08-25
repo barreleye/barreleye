@@ -262,7 +262,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, Sender<()>>::new();
 
 			let thread_count = network_params_map.len();
-			debug!("Launching {} thread(s)…", self.format_number(thread_count)?);
+			debug!("Launching {thread_count} thread(s)…");
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_params_map.clone().into_iter() {

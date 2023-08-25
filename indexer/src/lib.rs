@@ -1,5 +1,4 @@
 use eyre::Result;
-use num_format::{SystemLocale, ToFormattedString};
 use sea_orm::ColumnTrait;
 use std::{
 	collections::{HashMap, HashSet},
@@ -21,11 +20,12 @@ use barreleye_common::{
 		NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
 	},
 	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Warnings,
-	INDEXER_HEARTBEAT, INDEXER_PROMOTION,
+	INDEXER_HEARTBEAT_INTERVAL, INDEXER_PROMOTION_TIMEOUT, INDEXER_SANCTIONS_INTERVAL,
 };
 
 mod link;
 mod process;
+mod sanctions;
 mod sync;
 
 #[derive(Clone)]
@@ -71,6 +71,7 @@ impl Indexer {
 				_ = signal::ctrl_c() => break Ok(()),
 				v = self.primary_check() => v,
 				v = self.networks_check(tx) => v,
+				v = self.sanctions_check() => v,
 				v = self.show_progress() => v,
 				v = async {
 					while let Some(res) = set.join_next().await {
@@ -92,7 +93,7 @@ impl Indexer {
 		let uuid = self.app.uuid;
 
 		loop {
-			let cool_down_period = utils::ago_in_seconds(INDEXER_PROMOTION / 2);
+			let cool_down_period = utils::ago_in_seconds(INDEXER_PROMOTION_TIMEOUT / 2);
 
 			let last_primary = Config::get::<_, Uuid>(db, ConfigKey::Primary).await?;
 			match last_primary {
@@ -106,7 +107,7 @@ impl Indexer {
 						self.app.set_is_primary(true).await?;
 					}
 				}
-				Some(hit) if utils::ago_in_seconds(INDEXER_PROMOTION) > hit.updated_at => {
+				Some(hit) if utils::ago_in_seconds(INDEXER_PROMOTION_TIMEOUT) > hit.updated_at => {
 					// attempt to upgrade to primary (set is_primary on the next iteration)
 					Config::set_where::<_, Uuid>(db, ConfigKey::Primary, uuid, hit).await?;
 				}
@@ -116,7 +117,7 @@ impl Indexer {
 				}
 			}
 
-			sleep(Duration::from_secs(INDEXER_HEARTBEAT)).await
+			sleep(Duration::from_secs(INDEXER_HEARTBEAT_INTERVAL)).await
 		}
 	}
 
@@ -137,6 +138,18 @@ impl Indexer {
 			}
 
 			sleep(Duration::from_secs(1)).await;
+		}
+	}
+
+	async fn sanctions_check(&self) -> Result<()> {
+		loop {
+			if !self.app.is_leading() {
+				sleep(Duration::from_secs(1)).await;
+				continue;
+			}
+
+			self.check_sanction_lists().await?;
+			sleep(Duration::from_secs(INDEXER_SANCTIONS_INTERVAL)).await;
 		}
 	}
 
@@ -240,11 +253,6 @@ impl Indexer {
 		}
 
 		Ok(())
-	}
-
-	fn format_number(&self, n: usize) -> Result<String> {
-		let locale = SystemLocale::default()?;
-		Ok(n.to_formatted_string(&locale))
 	}
 
 	async fn get_updated_block_height(

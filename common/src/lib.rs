@@ -54,8 +54,9 @@ static EMOJI_NETWORKS: Emoji<'_, '_> = Emoji("📡  ", "");
 static EMOJI_READY: Emoji<'_, '_> = Emoji("🟢  ", "");
 static EMOJI_QUIT: Emoji<'_, '_> = Emoji("🛑  ", "");
 
-pub const INDEXER_PROMOTION: u64 = 20;
-pub const INDEXER_HEARTBEAT: u64 = 2;
+pub const INDEXER_PROMOTION_TIMEOUT: u64 = 20;
+pub const INDEXER_HEARTBEAT_INTERVAL: u64 = 2;
+pub const INDEXER_SANCTIONS_INTERVAL: u64 = 60 * 60;
 
 pub type Warnings = Vec<String>;
 pub type BlockHeight = u64;
@@ -352,7 +353,7 @@ impl ValueEnum for Mode {
 	}
 }
 
-#[derive(Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum Sanctions {
 	Ofac,

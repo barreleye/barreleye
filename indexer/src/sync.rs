@@ -152,7 +152,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, mpsc::Sender<()>>::new();
 
 			let thread_count = network_range_map.len();
-			debug!("Launching {} thread(s)…", self.format_number(thread_count)?);
+			debug!("Launching {thread_count} thread(s)…");
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_range_map.clone().into_iter() {
