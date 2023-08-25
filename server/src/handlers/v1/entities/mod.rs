@@ -22,7 +22,7 @@ pub fn get_routes() -> Router<Arc<App>> {
 		.route("/", get(list::handler))
 		.route("/:id", get(get::handler))
 		.route("/:id", put(update::handler))
-		.route("/:id", delete(delete::handler))
+		.route("/", delete(delete::handler))
 }
 
 pub async fn get_tags_data(

@@ -265,6 +265,19 @@ pub trait BasicModel {
 
 		Ok(res.rows_affected == 1)
 	}
+
+	async fn delete_all_where<C, F>(c: &C, filter: F) -> Result<u64>
+	where
+		C: ConnectionTrait,
+		F: IntoCondition + Send,
+	{
+		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
+			.filter(filter)
+			.exec(c)
+			.await?;
+
+		Ok(res.rows_affected)
+	}
 }
 
 #[async_trait]

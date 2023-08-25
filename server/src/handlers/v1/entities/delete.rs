@@ -1,47 +1,69 @@
-use axum::{
-	extract::{Path, State},
-	http::StatusCode,
-};
-use std::sync::Arc;
+use axum::{extract::State, http::StatusCode, Json};
+use sea_orm::ColumnTrait;
+use serde::Deserialize;
+use std::{collections::HashSet, sync::Arc};
 
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{
 		set, Address, AddressActiveModel, AddressColumn, BasicModel, Entity, EntityActiveModel,
-		SoftDeleteModel,
+		EntityColumn, PrimaryId,
 	},
 	App,
 };
-use sea_orm::ColumnTrait;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Payload {
+	entities: HashSet<String>,
+}
 
 pub async fn handler(
 	State(app): State<Arc<App>>,
-	Path(entity_id): Path<String>,
+	Json(payload): Json<Payload>,
 ) -> ServerResult<StatusCode> {
-	if let Some(entity) = Entity::get_existing_by_id(app.db(), &entity_id).await? {
-		// if locked (@TODO and "sanctions" mode is on), don't allow deleting
-		if entity.is_locked {
-			return Err(ServerError::BadRequest { reason: "object is locked".to_string() });
-		}
-
-		// soft-delete all associated addresses
-		Address::update_all_where(
-			app.db(),
-			AddressColumn::EntityId.eq(entity.entity_id),
-			AddressActiveModel { is_deleted: set(true), ..Default::default() },
-		)
-		.await?;
-
-		// soft-delete entity
-		Entity::update_by_id(
-			app.db(),
-			&entity_id,
-			EntityActiveModel { is_deleted: set(true), ..Default::default() },
-		)
-		.await?;
-
-		Ok(StatusCode::NO_CONTENT)
-	} else {
-		Err(ServerError::NotFound)
+	// exit if no input
+	if payload.entities.is_empty() {
+		return Ok(StatusCode::NO_CONTENT);
 	}
+
+	// get all entities
+	let all_entities =
+		Entity::get_all_where(app.db(), EntityColumn::Id.is_in(payload.entities)).await?;
+
+	// proceed only when there's something to delete
+	if all_entities.is_empty() {
+		return Ok(StatusCode::NO_CONTENT);
+	}
+
+	// make sure none of the entities are locked (@TODO when "sanctions" mode is on)
+	let invalid_ids = all_entities
+		.iter()
+		.filter_map(|e| if e.is_locked { Some(e.id.clone()) } else { None })
+		.collect::<Vec<String>>();
+	if !invalid_ids.is_empty() {
+		return Err(ServerError::InvalidValues {
+			field: "entities".to_string(),
+			values: invalid_ids.join(", "),
+		});
+	}
+
+	// soft-delete all associated addresses
+	let all_entity_ids = all_entities.iter().map(|e| e.entity_id).collect::<Vec<PrimaryId>>();
+	Address::update_all_where(
+		app.db(),
+		AddressColumn::EntityId.is_in(all_entity_ids.clone()),
+		AddressActiveModel { is_deleted: set(true), ..Default::default() },
+	)
+	.await?;
+
+	// soft-delete all entities
+	Entity::update_all_where(
+		app.db(),
+		EntityColumn::EntityId.is_in(all_entity_ids),
+		EntityActiveModel { is_deleted: set(true), ..Default::default() },
+	)
+	.await?;
+
+	Ok(StatusCode::NO_CONTENT)
 }
