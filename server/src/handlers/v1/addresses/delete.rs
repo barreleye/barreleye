@@ -14,7 +14,12 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(address_id): Path<String>,
 ) -> ServerResult<StatusCode> {
-	if Address::get_existing_by_id(app.db(), &address_id).await?.is_some() {
+	if let Some(address) = Address::get_existing_by_id(app.db(), &address_id).await? {
+		// if locked (@TODO and "sanctions" mode is on), don't allow deleting
+		if address.is_locked {
+			return Err(ServerError::BadRequest { reason: "object is locked".to_string() });
+		}
+
 		// soft-delete address
 		Address::update_by_id(
 			app.db(),

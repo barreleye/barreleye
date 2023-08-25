@@ -6,6 +6,7 @@ use sea_orm::{
 };
 use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use crate::{
 	models::{db::entity, BasicModel, EntityColumn, PrimaryId, PrimaryIds, SoftDeleteModel},
@@ -27,6 +28,9 @@ pub struct Model {
 	pub id: String,
 	pub address: String,
 	pub description: String,
+	pub data: Json,
+	#[serde(skip_serializing)]
+	pub is_locked: bool,
 	#[serde(skip_serializing)]
 	pub is_deleted: bool,
 	#[sea_orm(nullable)]
@@ -78,6 +82,8 @@ impl Model {
 		network: &str,
 		address: &str,
 		description: &str,
+		data: Option<Json>,
+		is_locked: bool,
 	) -> ActiveModel {
 		ActiveModel {
 			entity_id: Set(entity_id),
@@ -86,6 +92,8 @@ impl Model {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Address))),
 			address: Set(address.to_string()),
 			description: Set(description.to_string()),
+			data: Set(data.unwrap_or(json!({}))),
+			is_locked: Set(is_locked),
 			is_deleted: Set(false),
 			..Default::default()
 		}
@@ -159,8 +167,9 @@ impl Model {
 		Ok(q.all(c).await?)
 	}
 
-	pub async fn get_all_by_network_id_and_addresses<C>(
+	pub async fn get_all_by_entity_id_network_id_and_addresses<C>(
 		c: &C,
+		entity_id: PrimaryId,
 		network_id: PrimaryId,
 		mut addresses: Vec<String>,
 		is_deleted: Option<bool>,
@@ -172,6 +181,7 @@ impl Model {
 		addresses.dedup();
 
 		let mut q = Entity::find()
+			.filter(Column::EntityId.eq(entity_id))
 			.filter(Column::NetworkId.eq(network_id))
 			.filter(Column::Address.is_in(addresses));
 

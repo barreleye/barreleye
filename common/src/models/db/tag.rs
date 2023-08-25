@@ -21,6 +21,8 @@ pub struct Model {
 	pub id: String,
 	pub name: String,
 	pub risk_level: RiskLevel,
+	#[serde(skip_serializing)]
+	pub is_locked: bool,
 	#[sea_orm(nullable)]
 	#[serde(skip_serializing)]
 	pub updated_at: Option<DateTime>,
@@ -48,6 +50,7 @@ pub struct JoinedModel {
 	pub id: String,
 	pub name: String,
 	pub risk_level: RiskLevel,
+	pub is_locked: bool,
 	pub updated_at: Option<DateTime>,
 	pub created_at: DateTime,
 	pub entity_id: PrimaryId,
@@ -71,6 +74,7 @@ impl From<JoinedModel> for Model {
 			id: m.id,
 			name: m.name,
 			risk_level: m.risk_level,
+			is_locked: m.is_locked,
 			updated_at: m.updated_at,
 			created_at: m.created_at,
 			entities: None,
@@ -113,11 +117,17 @@ impl BasicModel for Model {
 }
 
 impl Model {
-	pub fn new_model(id: Option<String>, name: &str, risk_level: RiskLevel) -> ActiveModel {
+	pub fn new_model(
+		id: Option<String>,
+		name: &str,
+		risk_level: RiskLevel,
+		is_locked: bool,
+	) -> ActiveModel {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Tag))),
 			name: Set(name.to_string()),
 			risk_level: Set(risk_level),
+			is_locked: Set(is_locked),
 			..Default::default()
 		}
 	}

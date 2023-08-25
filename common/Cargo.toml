@@ -48,5 +48,6 @@ features = [
   "sqlx-sqlite",
   "sqlx-postgres",
   "sqlx-mysql",
-  "runtime-tokio-rustls"
+  "runtime-tokio-rustls",
+  "with-json"
 ]

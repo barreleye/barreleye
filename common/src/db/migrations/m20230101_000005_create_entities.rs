@@ -22,7 +22,8 @@ impl MigrationTrait for Migration {
 					.col(ColumnDef::new(Entities::Id).unique_key().string().not_null())
 					.col(ColumnDef::new(Entities::Name).unique_key().string().null())
 					.col(ColumnDef::new(Entities::Description).string().not_null())
-					.col(ColumnDef::new(Entities::Url).string().not_null())
+					.col(ColumnDef::new(Entities::Data).json().not_null())
+					.col(ColumnDef::new(Entities::IsLocked).boolean().not_null())
 					.col(ColumnDef::new(Entities::IsDeleted).boolean().not_null())
 					.col(ColumnDef::new(Entities::UpdatedAt).date_time().null())
 					.col(
@@ -60,7 +61,8 @@ enum Entities {
 	Id,
 	Name,
 	Description,
-	Url,
+	Data,
+	IsLocked,
 	IsDeleted,
 	UpdatedAt,
 	CreatedAt,

@@ -19,6 +19,11 @@ pub async fn handler(
 	Path(entity_id): Path<String>,
 ) -> ServerResult<StatusCode> {
 	if let Some(entity) = Entity::get_existing_by_id(app.db(), &entity_id).await? {
+		// if locked (@TODO and "sanctions" mode is on), don't allow deleting
+		if entity.is_locked {
+			return Err(ServerError::BadRequest { reason: "object is locked".to_string() });
+		}
+
 		// soft-delete all associated addresses
 		Address::update_all_where(
 			app.db(),

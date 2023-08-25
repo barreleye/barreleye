@@ -25,6 +25,8 @@ impl MigrationTrait for Migration {
 					.col(ColumnDef::new(Addresses::Id).unique_key().string().not_null())
 					.col(ColumnDef::new(Addresses::Address).string().not_null())
 					.col(ColumnDef::new(Addresses::Description).string().not_null())
+					.col(ColumnDef::new(Addresses::Data).json().not_null())
+					.col(ColumnDef::new(Addresses::IsLocked).boolean().not_null())
 					.col(ColumnDef::new(Addresses::IsDeleted).boolean().not_null())
 					.col(ColumnDef::new(Addresses::UpdatedAt).date_time().null())
 					.col(
@@ -65,9 +67,10 @@ impl MigrationTrait for Migration {
 			.create_index(
 				Index::create()
 					.if_not_exists()
-					.name("ux_addresses_network_id_address")
+					.name("ux_addresses_entity_id_network_id_address")
 					.table(Addresses::Table)
 					.unique()
+					.col(Addresses::EntityId)
 					.col(Addresses::NetworkId)
 					.col(Addresses::Address)
 					.to_owned(),
@@ -102,6 +105,8 @@ enum Addresses {
 	Id,
 	Address,
 	Description,
+	Data,
+	IsLocked,
 	IsDeleted,
 	UpdatedAt,
 	CreatedAt,

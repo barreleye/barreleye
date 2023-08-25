@@ -1,6 +1,10 @@
 use axum::{extract::State, Json};
+use sea_orm::prelude::Json as JsonData;
 use serde::Deserialize;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+	collections::{HashMap, HashSet},
+	sync::Arc,
+};
 
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
@@ -8,18 +12,36 @@ use barreleye_common::{
 	App,
 };
 
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayloadAddress {
+	address: String,
+	description: String,
+	data: Option<JsonData>,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Payload {
 	entity: String,
 	network: String,
-	addresses: HashMap<String, String>, // address -> description
+	addresses: Vec<PayloadAddress>,
 }
 
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<Json<Vec<Address>>> {
+	// ensure addresses are unique
+	let unique_addresses: HashSet<String> =
+		HashSet::from_iter(payload.addresses.iter().map(|a| a.address.clone()));
+	if unique_addresses.len() < payload.addresses.len() {
+		return Err(ServerError::BadRequest {
+			reason: "request contains duplicate addresses".to_string(),
+		});
+	}
+
+	// fetch entity
 	let entity = Entity::get_existing_by_id(app.db(), &payload.entity)
 		.await?
 		.ok_or(ServerError::InvalidParam { field: "entity".to_string(), value: payload.entity })?;
@@ -31,10 +53,11 @@ pub async fn handler(
 		})?;
 
 	// check for soft-deleted records
-	let addresses = Address::get_all_by_network_id_and_addresses(
+	let addresses = Address::get_all_by_entity_id_network_id_and_addresses(
 		app.db(),
+		entity.entity_id,
 		network.network_id,
-		payload.addresses.clone().into_keys().collect(),
+		unique_addresses.clone().into_iter().collect::<Vec<String>>(),
 		Some(true),
 	)
 	.await?;
@@ -48,10 +71,11 @@ pub async fn handler(
 	}
 
 	// check for duplicates
-	let addresses = Address::get_all_by_network_id_and_addresses(
+	let addresses = Address::get_all_by_entity_id_network_id_and_addresses(
 		app.db(),
+		entity.entity_id,
 		network.network_id,
-		payload.addresses.clone().into_keys().collect(),
+		unique_addresses.clone().into_iter().collect::<Vec<String>>(),
 		Some(false),
 	)
 	.await?;
@@ -69,14 +93,16 @@ pub async fn handler(
 			.addresses
 			.clone()
 			.iter()
-			.map(|(address, description)| {
+			.map(|address| {
 				Address::new_model(
 					None,
 					entity.entity_id,
 					network.network_id,
 					&network.id,
-					address,
-					description,
+					&address.address,
+					&address.description,
+					address.data.clone(),
+					false,
 				)
 			})
 			.collect(),
@@ -86,10 +112,11 @@ pub async fn handler(
 	// tell upstream indexer about newly created addresses
 	Config::set_many::<_, PrimaryId>(
 		app.db(),
-		Address::get_all_by_network_id_and_addresses(
+		Address::get_all_by_entity_id_network_id_and_addresses(
 			app.db(),
+			entity.entity_id,
 			network.network_id,
-			payload.addresses.clone().into_keys().collect(),
+			unique_addresses.clone().into_iter().collect::<Vec<String>>(),
 			Some(false),
 		)
 		.await?
@@ -100,10 +127,11 @@ pub async fn handler(
 	.await?;
 
 	// return newly created
-	Ok(Address::get_all_by_network_id_and_addresses(
+	Ok(Address::get_all_by_entity_id_network_id_and_addresses(
 		app.db(),
+		entity.entity_id,
 		network.network_id,
-		payload.addresses.into_keys().collect(),
+		unique_addresses.clone().into_iter().collect::<Vec<String>>(),
 		Some(false),
 	)
 	.await?

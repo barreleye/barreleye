@@ -1,5 +1,5 @@
 use axum::{extract::State, Json};
-use sea_orm::ColumnTrait;
+use sea_orm::{prelude::Json as JsonData, ColumnTrait};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ pub struct Payload {
 	id: Option<String>,
 	name: Option<String>,
 	description: String,
-	url: String,
+	data: Option<JsonData>,
 	tags: Option<Vec<String>>,
 }
 
@@ -60,7 +60,7 @@ pub async fn handler(
 	// create new
 	let entity_id = Entity::create(
 		app.db(),
-		Entity::new_model(payload.id, payload.name, &payload.description, &payload.url),
+		Entity::new_model(payload.id, payload.name, &payload.description, payload.data, false),
 	)
 	.await?;
 

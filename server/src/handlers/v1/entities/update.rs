@@ -3,7 +3,7 @@ use axum::{
 	http::StatusCode,
 	Json,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait};
+use sea_orm::{prelude::Json as JsonData, ActiveModelTrait, ColumnTrait};
 use serde::Deserialize;
 use std::sync::Arc;
 
@@ -21,7 +21,7 @@ use barreleye_common::{
 pub struct Payload {
 	name: Option<Option<String>>,
 	description: Option<String>,
-	url: Option<String>,
+	data: Option<JsonData>,
 	tags: Option<Vec<String>>,
 }
 
@@ -58,7 +58,7 @@ pub async fn handler(
 		let update_data = EntityActiveModel {
 			name: optional_set(payload.name),
 			description: optional_set(payload.description),
-			url: optional_set(payload.url),
+			data: optional_set(payload.data),
 			..Default::default()
 		};
 		if update_data.is_changed() {

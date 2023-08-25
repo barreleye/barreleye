@@ -6,6 +6,7 @@ use sea_orm::{
 };
 use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use crate::{
 	models::{db::entity_tag, BasicModel, EntityTagColumn, PrimaryId, PrimaryIds, SoftDeleteModel},
@@ -23,7 +24,9 @@ pub struct Model {
 	#[sea_orm(nullable)]
 	pub name: Option<String>,
 	pub description: String,
-	pub url: String,
+	pub data: Json,
+	#[serde(skip_serializing)]
+	pub is_locked: bool,
 	#[serde(skip_serializing)]
 	pub is_deleted: bool,
 	#[sea_orm(nullable)]
@@ -56,7 +59,8 @@ pub struct JoinedModel {
 	pub id: String,
 	pub name: Option<String>,
 	pub description: String,
-	pub url: String,
+	pub data: Json,
+	pub is_locked: bool,
 	pub is_deleted: bool,
 	pub updated_at: Option<DateTime>,
 	pub created_at: DateTime,
@@ -70,7 +74,8 @@ impl From<JoinedModel> for Model {
 			id: m.id,
 			name: m.name,
 			description: m.description,
-			url: m.url,
+			data: m.data,
+			is_locked: m.is_locked,
 			is_deleted: m.is_deleted,
 			updated_at: m.updated_at,
 			created_at: m.created_at,
@@ -97,7 +102,7 @@ pub struct SanitizedEntity {
 	pub id: String,
 	pub name: Option<String>,
 	pub description: String,
-	pub url: String,
+	pub data: Json,
 	pub tags: Option<Vec<String>>,
 }
 
@@ -107,7 +112,7 @@ impl From<Model> for SanitizedEntity {
 			id: m.id,
 			name: m.name,
 			description: m.description,
-			url: m.url,
+			data: m.data,
 			tags: m.tags,
 		}
 	}
@@ -142,13 +147,15 @@ impl Model {
 		id: Option<String>,
 		name: Option<String>,
 		description: &str,
-		url: &str,
+		data: Option<Json>,
+		is_locked: bool,
 	) -> ActiveModel {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Entity))),
 			name: Set(name),
 			description: Set(description.to_string()),
-			url: Set(url.to_string()),
+			data: Set(data.unwrap_or(json!({}))),
+			is_locked: Set(is_locked),
 			is_deleted: Set(false),
 			..Default::default()
 		}
