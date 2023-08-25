@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::{
 	banner, db::Driver as DatabaseDriver, utils, warehouse::Driver as WarehouseDriver, AppError,
-	S3Service, Warnings, S3,
+	Mode, S3Service, Sanctions, Warnings, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -21,19 +21,17 @@ use crate::{
 	long_about = None
 )]
 pub struct Settings {
-	/// Run only the indexer, without the server.
-	/// In a multi-indexer setup, only one node will run at a time.
-	/// The others will silently run in standby mode, ready to take over if the primary becomes unavailable.
-	#[arg(help_heading = "Runtime options", long, default_value_t = false)]
-	only_indexer: bool,
+	/// Mode can be used to run either the server or the indexer. By default both are run in parallel.
+	#[arg(help_heading = "Runtime options", long, num_args = 1.., value_delimiter = ',')]
+	mode: Vec<Mode>,
 	#[arg(skip)]
 	pub is_indexer: bool,
-
-	/// Run only the HTTP server, without the indexer.
-	#[arg(help_heading = "Runtime options", long, default_value_t = false)]
-	only_http: bool,
 	#[arg(skip)]
 	pub is_server: bool,
+
+	/// Sanctions monitoring can automatically watch government sanction lists and manage those addresses internally.
+	#[arg(help_heading = "Runtime options", long, num_args = 1.., value_delimiter = ',')]
+	sanctions: Vec<Sanctions>,
 
 	/// Where to store extracted blockchain data.
 	/// Can be either a folder or S3-compatible storage.
@@ -155,11 +153,17 @@ impl Settings {
 		let warnings = Warnings::new();
 
 		// set is_indexer and is_server
-		(settings.is_indexer, settings.is_server) =
-			match (settings.only_indexer, settings.only_http) {
-				(false, false) => (true, true),
-				(i, s) => (i, s),
-			};
+		for mode in settings.mode.iter() {
+			if *mode == Mode::Indexer {
+				settings.is_indexer = true;
+			} else if *mode == Mode::Http {
+				settings.is_server = true;
+			}
+		}
+		if !settings.is_indexer && !settings.is_server {
+			settings.is_indexer = true;
+			settings.is_server = true;
+		}
 
 		// show banner
 		banner::show(settings.is_indexer, settings.is_server)?;

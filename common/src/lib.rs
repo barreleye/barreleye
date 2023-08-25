@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use clap::{builder::PossibleValue, ValueEnum};
 use console::{style, Emoji};
 use derive_more::Display;
 use eyre::{bail, eyre, Result};
@@ -329,6 +330,46 @@ pub enum Architecture {
 	#[default]
 	Bitcoin = 1,
 	Evm = 2,
+}
+
+#[derive(Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Mode {
+	Indexer,
+	Http,
+}
+
+impl ValueEnum for Mode {
+	fn value_variants<'a>() -> &'a [Self] {
+		&[Self::Indexer, Self::Http]
+	}
+
+	fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+		match self {
+			Self::Indexer => Some(PossibleValue::new("indexer")),
+			Self::Http => Some(PossibleValue::new("http")),
+		}
+	}
+}
+
+#[derive(Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Sanctions {
+	Ofac,
+	Ofsi,
+}
+
+impl ValueEnum for Sanctions {
+	fn value_variants<'a>() -> &'a [Self] {
+		&[Self::Ofac, Self::Ofsi]
+	}
+
+	fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+		match self {
+			Self::Ofac => Some(PossibleValue::new("ofac")),
+			Self::Ofsi => Some(PossibleValue::new("ofsi")),
+		}
+	}
 }
 
 pub fn quit(app_error: AppError) -> ! {
