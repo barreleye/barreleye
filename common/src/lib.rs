@@ -278,7 +278,7 @@ impl App {
 	}
 }
 
-#[derive(Display, Debug, Serialize, Deserialize, Hash, Eq, PartialEq)]
+#[derive(Clone, Display, Debug, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub enum IdPrefix {
 	#[display(fmt = "net")]
 	Network,
@@ -353,10 +353,12 @@ impl ValueEnum for Mode {
 	}
 }
 
-#[derive(Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Display, Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum Sanctions {
+	#[display(fmt = "ofac")]
 	Ofac,
+	#[display(fmt = "ofsi")]
 	Ofsi,
 }
 

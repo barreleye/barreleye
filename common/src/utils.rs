@@ -6,7 +6,7 @@ use std::{num::NonZeroU32, path::PathBuf, sync::Arc};
 use url::Url;
 use uuid::Uuid;
 
-use crate::{GovernorRateLimiter, IdPrefix, RateLimiter};
+use crate::{GovernorRateLimiter, IdPrefix, RateLimiter, Sanctions};
 
 pub fn project_dir(folder: Option<&str>) -> PathBuf {
 	// @TODO will panic on systems with no home directory
@@ -101,6 +101,10 @@ pub fn has_pathname(url: &str) -> bool {
 	}
 }
 
+pub fn get_sanctions_tag_id(sanctions: &Sanctions) -> String {
+	format!("{}_{sanctions}", IdPrefix::Tag)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -148,6 +152,15 @@ mod tests {
 
 		for (from, path) in data.into_iter() {
 			assert_eq!(get_db_path(&from), path.to_string())
+		}
+	}
+
+	#[test]
+	fn test_get_sanctions_tag_id() {
+		let data = HashMap::from([(Sanctions::Ofac, "tag_ofac"), (Sanctions::Ofsi, "tag_ofsi")]);
+
+		for (sanctions, id) in data.into_iter() {
+			assert_eq!(get_sanctions_tag_id(&sanctions), id)
 		}
 	}
 }

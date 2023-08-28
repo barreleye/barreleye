@@ -31,30 +31,26 @@ pub async fn handler(
 		}
 	}
 
-	// get a list of tag primary ids, while checking for invalid payload ids
-	let tag_ids = {
-		let mut ret = vec![];
-
-		if let Some(tags) = payload.tags {
-			ret = extract_primary_ids(
-				"tags",
-				tags.clone(),
-				Tag::get_all_where(app.db(), TagColumn::Id.is_in(tags))
-					.await?
-					.into_iter()
-					.map(|t| (t.id, t.tag_id))
-					.collect(),
-			)?;
-		}
-
-		ret
-	};
-
 	// check for duplicate name
 	if let Some(name) = payload.name.clone() {
 		if Entity::get_by_name(app.db(), &name, None).await?.is_some() {
 			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 		}
+	}
+
+	// check for invalid tags
+	let mut tag_ids = vec![];
+	if let Some(tags) = payload.tags {
+		tag_ids = extract_primary_ids(
+			"tags",
+			tags.clone(),
+			IdPrefix::Tag,
+			Tag::get_all_where(app.db(), TagColumn::Id.is_in(tags))
+				.await?
+				.into_iter()
+				.map(|t| (t.id, t.tag_id))
+				.collect(),
+		)?;
 	}
 
 	// create new

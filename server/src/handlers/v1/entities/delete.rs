@@ -36,16 +36,13 @@ pub async fn handler(
 		return Ok(StatusCode::NO_CONTENT);
 	}
 
-	// make sure none of the entities are locked (@TODO when "sanctions" mode is on)
-	let invalid_ids = all_entities
-		.iter()
-		.filter_map(|e| if e.is_locked { Some(e.id.clone()) } else { None })
-		.collect::<Vec<String>>();
-	if !invalid_ids.is_empty() {
-		return Err(ServerError::InvalidValues {
-			field: "entities".to_string(),
-			values: invalid_ids.join(", "),
-		});
+	// make sure none of the entities are locked if sanctions mode is active
+	if !app.settings.sanction_lists.is_empty() {
+		let invalid_entities =
+			all_entities.iter().filter(|e| e.is_locked).collect::<Vec<&Entity>>();
+		if !invalid_entities.is_empty() {
+			return Err(ServerError::Locked);
+		}
 	}
 
 	// soft-delete all associated addresses

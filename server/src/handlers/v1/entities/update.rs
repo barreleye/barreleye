@@ -13,7 +13,7 @@ use barreleye_common::{
 		optional_set, BasicModel, Entity, EntityActiveModel, EntityTag, SoftDeleteModel, Tag,
 		TagColumn,
 	},
-	App,
+	App, IdPrefix,
 };
 
 #[derive(Deserialize)]
@@ -46,6 +46,7 @@ pub async fn handler(
 			tag_ids = extract_primary_ids(
 				"tags",
 				tags.clone(),
+				IdPrefix::Tag,
 				Tag::get_all_where(app.db(), TagColumn::Id.is_in(tags))
 					.await?
 					.into_iter()

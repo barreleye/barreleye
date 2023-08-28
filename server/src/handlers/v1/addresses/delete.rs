@@ -33,16 +33,13 @@ pub async fn handler(
 		return Ok(StatusCode::NO_CONTENT);
 	}
 
-	// make sure none of the addresses are locked (@TODO when "sanctions" mode is on)
-	let invalid_ids = all_addresses
-		.iter()
-		.filter_map(|a| if a.is_locked { Some(a.id.clone()) } else { None })
-		.collect::<Vec<String>>();
-	if !invalid_ids.is_empty() {
-		return Err(ServerError::InvalidValues {
-			field: "addresses".to_string(),
-			values: invalid_ids.join(", "),
-		});
+	// make sure none of the addresses are locked if sanctions mode is active
+	if !app.settings.sanction_lists.is_empty() {
+		let invalid_addresses =
+			all_addresses.iter().filter(|a| a.is_locked).collect::<Vec<&Address>>();
+		if !invalid_addresses.is_empty() {
+			return Err(ServerError::Locked);
+		}
 	}
 
 	// soft-delete all associated addresses

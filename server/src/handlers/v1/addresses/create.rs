@@ -32,6 +32,16 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<Json<Vec<Address>>> {
+	// fetch entity
+	let entity = Entity::get_existing_by_id(app.db(), &payload.entity)
+		.await?
+		.ok_or(ServerError::InvalidParam { field: "entity".to_string(), value: payload.entity })?;
+
+	// if sanctions mode is on, don't allow address-editing of a locked entity
+	if !app.settings.sanction_lists.is_empty() && entity.is_locked {
+		return Err(ServerError::Locked);
+	}
+
 	// ensure addresses are unique
 	let unique_addresses: HashSet<String> =
 		HashSet::from_iter(payload.addresses.iter().map(|a| a.address.clone()));
@@ -40,11 +50,6 @@ pub async fn handler(
 			reason: "request contains duplicate addresses".to_string(),
 		});
 	}
-
-	// fetch entity
-	let entity = Entity::get_existing_by_id(app.db(), &payload.entity)
-		.await?
-		.ok_or(ServerError::InvalidParam { field: "entity".to_string(), value: payload.entity })?;
 
 	let network =
 		Network::get_by_id(app.db(), &payload.network).await?.ok_or(ServerError::InvalidParam {

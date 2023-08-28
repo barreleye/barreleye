@@ -26,6 +26,11 @@ pub async fn handler(
 	Json(payload): Json<Payload>,
 ) -> ServerResult<StatusCode> {
 	if let Some(tag) = Tag::get_by_id(app.db(), &tag_id).await? {
+		// if sanctions mode is on, don't allow editing a locked tag
+		if !app.settings.sanction_lists.is_empty() && tag.is_locked {
+			return Err(ServerError::Locked);
+		}
+
 		// check for duplicate name
 		if let Some(name) = payload.name.clone() {
 			if let Some(other_tag) = Tag::get_by_name(app.db(), &name).await? {

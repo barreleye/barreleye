@@ -32,16 +32,12 @@ pub async fn handler(
 		return Ok(StatusCode::NO_CONTENT);
 	}
 
-	// make sure none of the tags are locked (@TODO when "sanctions" mode is on)
-	let invalid_ids = all_tags
-		.iter()
-		.filter_map(|t| if t.is_locked { Some(t.id.clone()) } else { None })
-		.collect::<Vec<String>>();
-	if !invalid_ids.is_empty() {
-		return Err(ServerError::InvalidValues {
-			field: "tags".to_string(),
-			values: invalid_ids.join(", "),
-		});
+	// make sure none of the tags are locked if sanctions mode is active
+	if !app.settings.sanction_lists.is_empty() {
+		let invalid_tags = all_tags.iter().filter(|t| t.is_locked).collect::<Vec<&Tag>>();
+		if !invalid_tags.is_empty() {
+			return Err(ServerError::Locked);
+		}
 	}
 
 	// soft-delete all associated tags
