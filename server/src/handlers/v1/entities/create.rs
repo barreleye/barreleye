@@ -56,7 +56,7 @@ pub async fn handler(
 	// create new
 	let entity_id = Entity::create(
 		app.db(),
-		Entity::new_model(payload.id, payload.name, &payload.description, payload.data, false),
+		Entity::new_model(payload.id, payload.name, &payload.description, payload.data),
 	)
 	.await?;
 

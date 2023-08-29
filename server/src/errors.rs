@@ -13,9 +13,6 @@ pub enum ServerError {
 	#[display(fmt = "unauthorized")]
 	Unauthorized,
 
-	#[display(fmt = "locked")]
-	Locked,
-
 	#[display(fmt = "validation error @ `{field}`")]
 	Validation { field: String },
 
@@ -58,7 +55,6 @@ impl IntoResponse for ServerError {
 		let http_code = match self {
 			ServerError::NotFound => StatusCode::NOT_FOUND,
 			ServerError::Unauthorized => StatusCode::UNAUTHORIZED,
-			ServerError::Locked => StatusCode::LOCKED,
 			ServerError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
 			_ => StatusCode::BAD_REQUEST,
 		};

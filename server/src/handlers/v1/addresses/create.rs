@@ -37,11 +37,6 @@ pub async fn handler(
 		.await?
 		.ok_or(ServerError::InvalidParam { field: "entity".to_string(), value: payload.entity })?;
 
-	// if sanctions mode is on, don't allow address-editing of a locked entity
-	if !app.settings.sanction_lists.is_empty() && entity.is_locked {
-		return Err(ServerError::Locked);
-	}
-
 	// ensure addresses are unique
 	let unique_addresses: HashSet<String> =
 		HashSet::from_iter(payload.addresses.iter().map(|a| a.address.clone()));
@@ -107,7 +102,6 @@ pub async fn handler(
 					&address.address,
 					&address.description,
 					address.data.clone(),
-					false,
 				)
 			})
 			.collect(),

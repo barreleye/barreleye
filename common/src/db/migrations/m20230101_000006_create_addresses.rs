@@ -26,7 +26,6 @@ impl MigrationTrait for Migration {
 					.col(ColumnDef::new(Addresses::Address).string().not_null())
 					.col(ColumnDef::new(Addresses::Description).string().not_null())
 					.col(ColumnDef::new(Addresses::Data).json().not_null())
-					.col(ColumnDef::new(Addresses::IsLocked).boolean().not_null())
 					.col(ColumnDef::new(Addresses::IsDeleted).boolean().not_null())
 					.col(ColumnDef::new(Addresses::UpdatedAt).date_time().null())
 					.col(
@@ -106,7 +105,6 @@ enum Addresses {
 	Address,
 	Description,
 	Data,
-	IsLocked,
 	IsDeleted,
 	UpdatedAt,
 	CreatedAt,

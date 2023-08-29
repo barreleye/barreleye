@@ -30,8 +30,6 @@ pub struct Model {
 	pub description: String,
 	pub data: Json,
 	#[serde(skip_serializing)]
-	pub is_locked: bool,
-	#[serde(skip_serializing)]
 	pub is_deleted: bool,
 	#[sea_orm(nullable)]
 	#[serde(skip_serializing)]
@@ -83,7 +81,6 @@ impl Model {
 		address: &str,
 		description: &str,
 		data: Option<Json>,
-		is_locked: bool,
 	) -> ActiveModel {
 		ActiveModel {
 			entity_id: Set(entity_id),
@@ -93,7 +90,6 @@ impl Model {
 			address: Set(address.to_string()),
 			description: Set(description.to_string()),
 			data: Set(data.unwrap_or(json!({}))),
-			is_locked: Set(is_locked),
 			is_deleted: Set(false),
 			..Default::default()
 		}

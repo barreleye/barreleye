@@ -20,12 +20,11 @@ use barreleye_common::{
 		NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
 	},
 	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Warnings,
-	INDEXER_HEARTBEAT_INTERVAL, INDEXER_PROMOTION_TIMEOUT, INDEXER_SANCTIONS_INTERVAL,
+	INDEXER_HEARTBEAT_INTERVAL, INDEXER_PROMOTION_TIMEOUT,
 };
 
 mod link;
 mod process;
-mod sanctions;
 mod sync;
 
 #[derive(Clone)]
@@ -71,7 +70,6 @@ impl Indexer {
 				_ = signal::ctrl_c() => break Ok(()),
 				v = self.primary_check() => v,
 				v = self.networks_check(tx) => v,
-				v = self.sanctions_check() => v,
 				v = self.show_progress() => v,
 				v = async {
 					while let Some(res) = set.join_next().await {
@@ -138,18 +136,6 @@ impl Indexer {
 			}
 
 			sleep(Duration::from_secs(1)).await;
-		}
-	}
-
-	async fn sanctions_check(&self) -> Result<()> {
-		loop {
-			if !self.app.is_leading() {
-				sleep(Duration::from_secs(1)).await;
-				continue;
-			}
-
-			self.check_sanction_lists().await?;
-			sleep(Duration::from_secs(INDEXER_SANCTIONS_INTERVAL)).await;
 		}
 	}
 

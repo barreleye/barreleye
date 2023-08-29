@@ -26,7 +26,7 @@ Features:
 1. Individual blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
 > **Note**
-> ⚠️ EVM-based chains are not yet supported (this is a work-in-progress)
+> ⚠️ EVM-based chains are not yet supported (this is a work-in-progress).
 
 ## 👩‍💻 Get Started
 

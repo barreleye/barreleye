@@ -42,8 +42,6 @@ pub enum ConfigKey {
 	NetworksUpdated,
 	#[display(fmt = "newly_added_address_n{_0}_a{_1}")]
 	NewlyAddedAddress(PrimaryId, PrimaryId),
-	#[display(fmt = "sanctions_checksum_ofac")]
-	SanctionsChecksumOfac,
 }
 
 impl From<String> for ConfigKey {
@@ -75,7 +73,6 @@ impl From<String> for ConfigKey {
 			"block_height_n{}" if n.len() == 1 => Self::BlockHeight(n[0]),
 			"networks_updated" => Self::NetworksUpdated,
 			"newly_added_address_n{}_a{}" if n.len() == 2 => Self::NewlyAddedAddress(n[0], n[1]),
-			"sanctions_checksum_ofac" => Self::SanctionsChecksumOfac,
 			_ => panic!("no match in From<String> for ConfigKey: {s:?}"),
 		}
 	}
@@ -104,7 +101,6 @@ mod tests {
 			(ConfigKey::BlockHeight(123), "block_height_n123"),
 			(ConfigKey::NetworksUpdated, "networks_updated"),
 			(ConfigKey::NewlyAddedAddress(123, 456), "newly_added_address_n123_a456"),
-			(ConfigKey::SanctionsChecksumOfac, "sanctions_checksum_ofac"),
 		]);
 
 		for (config_key, config_key_str) in config_keys.into_iter() {

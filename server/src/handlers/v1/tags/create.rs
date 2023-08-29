@@ -34,7 +34,7 @@ pub async fn handler(
 
 	// create new
 	let tag_id =
-		Tag::create(app.db(), Tag::new_model(payload.id, &payload.name, payload.risk_level, false))
+		Tag::create(app.db(), Tag::new_model(payload.id, &payload.name, payload.risk_level))
 			.await?;
 
 	// return newly created

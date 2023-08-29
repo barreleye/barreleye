@@ -1,7 +1,6 @@
 use clap::{Parser, ValueHint};
 use eyre::Result;
 use std::{
-	collections::HashSet,
 	fs,
 	net::IpAddr,
 	path::{Path, PathBuf},
@@ -11,7 +10,7 @@ use url::Url;
 
 use crate::{
 	banner, db::Driver as DatabaseDriver, utils, warehouse::Driver as WarehouseDriver, AppError,
-	Mode, S3Service, Sanctions, Warnings, S3,
+	Mode, S3Service, Warnings, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -29,13 +28,6 @@ pub struct Settings {
 	pub is_indexer: bool,
 	#[arg(skip)]
 	pub is_server: bool,
-
-	/// Sanctions monitoring can automatically watch government sanction lists and manage those addresses internally.
-	/// Requires indexer to be running.
-	#[arg(help_heading = "Runtime options", long, num_args = 1.., value_delimiter = ',')]
-	sanctions: Vec<Sanctions>,
-	#[arg(skip)]
-	pub sanction_lists: HashSet<Sanctions>,
 
 	/// Where to store extracted blockchain data.
 	/// Can be either a folder or S3-compatible storage.
@@ -154,7 +146,7 @@ pub struct Settings {
 impl Settings {
 	pub fn new() -> Result<(Self, Warnings)> {
 		let mut settings = Self::parse();
-		let mut warnings = Warnings::new();
+		let warnings = Warnings::new();
 
 		// set is_indexer and is_server
 		for mode in settings.mode.iter() {
@@ -167,18 +159,6 @@ impl Settings {
 		if !settings.is_indexer && !settings.is_server {
 			settings.is_indexer = true;
 			settings.is_server = true;
-		}
-
-		// handle sanctions
-		for sanction_list in settings.sanctions.iter() {
-			if *sanction_list == Sanctions::Ofac {
-				settings.sanction_lists.insert(Sanctions::Ofac);
-			} else if *sanction_list == Sanctions::Ofsi {
-				settings.sanction_lists.insert(Sanctions::Ofsi);
-			}
-		}
-		if !settings.is_indexer && !settings.sanction_lists.is_empty() {
-			warnings.push("Sanctions monitoring requires indexer mode".to_string());
 		}
 
 		// show banner

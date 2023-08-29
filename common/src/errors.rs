@@ -23,9 +23,6 @@ pub enum AppError<'a> {
 	#[display(fmt = "Could not complete network setup:\n{error}")]
 	Network { error: String },
 
-	#[display(fmt = "Could not check sanctions list:\n{error}")]
-	SanctionsList { error: String },
-
 	#[display(fmt = "Indexing failed: {error}")]
 	Indexing { error: String },
 

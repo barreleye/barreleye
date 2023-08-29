@@ -6,12 +6,9 @@ use sea_orm::{
 	ActiveValue, QuerySelect,
 };
 use sea_orm_migration::prelude::IntoCondition;
-use std::{
-	collections::HashSet,
-	ops::{Deref, DerefMut},
-};
+use std::ops::{Deref, DerefMut};
 
-use crate::{utils, IdPrefix, Sanctions};
+use crate::{utils, IdPrefix};
 pub use db::*;
 pub use warehouse::*;
 
@@ -76,15 +73,6 @@ where
 }
 
 pub fn is_valid_id(id: &str, id_prefix: IdPrefix) -> bool {
-	// check reserved words
-	let reserved = HashSet::from([
-		utils::get_sanctions_tag_id(&Sanctions::Ofac),
-		utils::get_sanctions_tag_id(&Sanctions::Ofsi),
-	]);
-	if reserved.contains(id) {
-		return false;
-	}
-
 	// check prefix
 	if !id.starts_with(&format!("{}_", id_prefix)) {
 		return false;
@@ -360,9 +348,6 @@ mod tests {
 
 	#[test]
 	fn test_is_valid_id() {
-		let ofac = utils::get_sanctions_tag_id(&Sanctions::Ofac);
-		let ofsi = utils::get_sanctions_tag_id(&Sanctions::Ofsi);
-
 		let data = HashMap::from([
 			(("net_abc", IdPrefix::Network), true),
 			(("net_a1b2c3", IdPrefix::Network), true),
@@ -372,8 +357,6 @@ mod tests {
 			(("net_?", IdPrefix::Network), false),
 			(("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", IdPrefix::Network), true),
 			(("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA", IdPrefix::Network), false),
-			((&ofac, IdPrefix::Tag), false),
-			((&ofsi, IdPrefix::Tag), false),
 		]);
 
 		for (input, output) in data.into_iter() {

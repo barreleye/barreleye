@@ -3,7 +3,7 @@ use sea_orm::ColumnTrait;
 use serde::Deserialize;
 use std::{collections::HashSet, sync::Arc};
 
-use crate::{errors::ServerError, ServerResult};
+use crate::ServerResult;
 use barreleye_common::{
 	models::{set, Address, AddressActiveModel, AddressColumn, BasicModel, PrimaryId},
 	App,
@@ -31,15 +31,6 @@ pub async fn handler(
 	// proceed only when there's something to delete
 	if all_addresses.is_empty() {
 		return Ok(StatusCode::NO_CONTENT);
-	}
-
-	// make sure none of the addresses are locked if sanctions mode is active
-	if !app.settings.sanction_lists.is_empty() {
-		let invalid_addresses =
-			all_addresses.iter().filter(|a| a.is_locked).collect::<Vec<&Address>>();
-		if !invalid_addresses.is_empty() {
-			return Err(ServerError::Locked);
-		}
 	}
 
 	// soft-delete all associated addresses

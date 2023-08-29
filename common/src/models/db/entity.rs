@@ -26,8 +26,6 @@ pub struct Model {
 	pub description: String,
 	pub data: Json,
 	#[serde(skip_serializing)]
-	pub is_locked: bool,
-	#[serde(skip_serializing)]
 	pub is_deleted: bool,
 	#[sea_orm(nullable)]
 	#[serde(skip_serializing)]
@@ -60,7 +58,6 @@ pub struct JoinedModel {
 	pub name: Option<String>,
 	pub description: String,
 	pub data: Json,
-	pub is_locked: bool,
 	pub is_deleted: bool,
 	pub updated_at: Option<DateTime>,
 	pub created_at: DateTime,
@@ -75,7 +72,6 @@ impl From<JoinedModel> for Model {
 			name: m.name,
 			description: m.description,
 			data: m.data,
-			is_locked: m.is_locked,
 			is_deleted: m.is_deleted,
 			updated_at: m.updated_at,
 			created_at: m.created_at,
@@ -148,14 +144,12 @@ impl Model {
 		name: Option<String>,
 		description: &str,
 		data: Option<Json>,
-		is_locked: bool,
 	) -> ActiveModel {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Entity))),
 			name: Set(name),
 			description: Set(description.to_string()),
 			data: Set(data.unwrap_or(json!({}))),
-			is_locked: Set(is_locked),
 			is_deleted: Set(false),
 			..Default::default()
 		}
