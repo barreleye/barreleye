@@ -198,7 +198,8 @@ curl -X POST \
   -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "id": "tag_exchange",
-    "name": "Exchange"
+    "name": "Exchange",
+    "riskLevel": "low"
   }' \
   http://localhost:4000/v1/tags
 ```
