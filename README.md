@@ -1,4 +1,4 @@
-# Barreleye
+# [Barreleye](https://barreleye.com/)
 
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml?style=flat-square)](https://github.com/barreleye/barreleye/actions)
 [![Dependency Status](https://deps.rs/repo/github/barreleye/barreleye/status.svg?style=flat-square)](https://deps.rs/repo/github/barreleye/barreleye)
@@ -6,20 +6,29 @@
 [![Discord](https://img.shields.io/discord/1026664296861679646?style=flat-square&color=blue)](https://discord.gg/VX8PdWSwNZ)
 
 > **Note**
-> ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk
+> ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.
 
-## What is Barreleye?
+## 🤓 What is Barreleye?
 
-Barreleye is an open-source **blockchain KYC** tool. It can trace the flow and amount of funds to & from risky addresses.
+Barreleye is an open-source **blockchain KYC** tool. It can trace the flow of funds, along with their amounts, to & from specific addresses.
 
 Features:
 
-1. **Simple.** Easy to get started with on a single machine.
-1. **Scalable.** Optimized for demanding business use-cases.
-1. **Extendable.** API-based interface so it can be integrated into other systems.
-1. **Multi-chain.** Supports Bitcoin and EVM-based networks (with ability to add more).
+1. **Easy to get started with** — can start running on a single machine
+1. **Scalable** — optimized for demanding business use-cases
+1. **Extendable** — API-based interface that can be integrated into other systems
+1. **Multi-chain** — designed with support for multiple blockchain architectures
 
-## Get Started
+## Requirements
+
+1. [Rust](https://www.rust-lang.org/) v1.70+ — if you're compiling from source
+1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
+1. Individual blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
+
+> **Note**
+> ⚠️ EVM-based chains are not yet supported (this is a work-in-progress)
+
+## 👩‍💻 Get Started
 
 Clone, build & install:
 
@@ -29,9 +38,6 @@ cd barreleye
 cargo build
 cargo install
 ```
-
-> **Note**
-> ⚠️ [ClickHouse](https://github.com/ClickHouse/ClickHouse) is a requirement for Barreleye
 
 Run locally (pointing to your [ClickHouse](https://github.com/ClickHouse/ClickHouse) instance):
 
@@ -48,7 +54,7 @@ This will do the following:
   - Store relational data in [SQLite](https://www.sqlite.org/) locally
   - Store warehouse data in [DuckDB](https://duckdb.org/) locally
 
-For production you'll probably want to store extracted blockchain data in the cloud (eg: Amazon S3, Cloudflare R2, etc), as opposed to your local files:
+For production you'll probably want to store extracted blockchain data in the cloud (eg: [Amazon S3](https://aws.amazon.com/s3/), [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/), etc), as opposed to your local files:
 
 ```bash
 barreleye \
@@ -56,7 +62,7 @@ barreleye \
   --storage http://s3.us-east-1.amazonaws.com/bucket_name/
 ```
 
-You can also use a hosted RDBMS like PostgreSQL or MySQL instead of SQLite:
+You can also use a hosted RDBMS like [PostgreSQL](https://www.postgresql.org/) or [MySQL](https://www.mysql.com/) instead of SQLite:
 
 ```bash
 barreleye \
@@ -65,23 +71,51 @@ barreleye \
   --database postgres://username:password@postgres-host:5432/database_name
 ```
 
-## Add Custom Networks
+## 📦 Modes
 
-You have to add network nodes in order for indexer to start processing data.
+Barreleye is bundled with the indexer and the server in the same program. The indexer is responsible for crawling blockchains and retrieving all the necessary data, while the server is focused on handling API requests (data management + KYC requests).
 
-A default API key is generated on the first run, so to get it - connect to your RDBMS and run:
+By default, both the indexer and the server are enabled and will run in parallel:
 
-```sql
-select uuid from api_keys;
+```bash
+barreleye
 ```
 
-Add a Bitcoin RPC node (`-txindex` is required):
+To run only the indexer:
+
+```bash
+barreleye --mode indexer
+```
+
+To run only the server:
+
+```bash
+barreleye --mode http
+```
+
+> **Note**
+> ⚠️ Indexer is designed to run in failover mode. Only the primary instance will run at once; the others will wait for the primary to fail in order to promote a secondary.
+
+## 💾 Add Data
+
+Barreleye does not come with any pre-defined data. Instead, it gives you the ability to add and manage data yourself. The API calls below give an overview of how to manage data.
+
+A default API key is generated when you first start Barreleye, so to get it — connect to your RDBMS and retrieve the only key that has been auto-created:
+
+```sql
+select uuid from api_keys; -- will be $YOUR_API_KEY in examples below
+```
+
+### Add Blockchains
+
+Add a Bitcoin RPC node:
 
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
+    "id": "net_bitcoin",
     "name": "Bitcoin",
     "architecture": "bitcoin",
     "blockTime": 600000,
@@ -97,39 +131,126 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
+    "id": "net_ethereum",
     "name": "Ethereum",
     "architecture": "evm",
+    "chainId": 1,
     "blockTime": 12000,
     "rpcEndpoint": "http://127.0.0.1:8545"
   }' \
   http://localhost:4000/v1/networks
 ```
 
-⏳ Indexing will take a while. To monitor progress:
+### Add Tokens
+
+To add native Bitcoin currency:
 
 ```bash
-curl -X GET \
+curl -X POST \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $YOUR_API_KEY" \
-  http://localhost:4000/v1/stats
+  -d '{
+    "network": "net_bitcoin",
+    "name": "bitcoin",
+    "symbol": "BTC",
+    "decimals": 8
+  }' \
+  http://localhost:4000/v1/tokens
+```
+
+To add native Ethereum currency:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -d '{
+    "network": "net_ethereum",
+    "chainId": 1,
+    "name": "Ether",
+    "symbol": "ETH",
+    "decimals": 18
+  }' \
+  http://localhost:4000/v1/tokens
+```
+
+To add an ERC-20 token:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -d '{
+    "network": "net_ethereum",
+    "chainId": 1,
+    "name": "USD Coin",
+    "symbol": "USDC",
+    "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "decimals": 6
+  }' \
+  http://localhost:4000/v1/tokens
+```
+
+### Add Tags
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -d '{
+    "id": "tag_exchange",
+    "name": "Exchange"
+  }' \
+  http://localhost:4000/v1/tags
+```
+
+### Add Entities
+
+An entity can be an item that contains one or several blockchain addresses:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -d '{
+    "id": "ent_coinbase",
+    "name": "Coinbase",
+    "description": "",
+    "tags": ["tag_exchange"]
+  }' \
+  http://localhost:4000/v1/entities
+```
+
+To add addresses:
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $YOUR_API_KEY" \
+  -d '{
+    "entity": "ent_coinbase",
+    "network": "net_ethereum",
+    "addresses": [
+      {
+        "address": "0x71660c4005BA85c37ccec55d0C4493E66Fe775d3",
+        "description": "Address #1"
+      }, {
+        "address": "0x503828976d22510aad0201ac7ec88293211d23da",
+        "description": "Address #2"
+      }
+    ]
+  }' \
+  http://localhost:4000/v1/addresses
 ```
 
 ## Analytics
 
-To get networks, assets, labels, etc:
+To query information about a particular blockchain address:
 
 ```bash
 curl -X GET \
   -H 'Content-Type: application/json' \
-  http://localhost:4000/v1/info?address=$BLOCKCHAIN_ADDRESS
-```
-
-To find connected labeled addresses that might have funded the requested address through multiple hops:
-
-```bash
-curl -X GET \
-  -H 'Content-Type: application/json' \
-  http://localhost:4000/v1/upstream?address=$BLOCKCHAIN_ADDRESS
+  http://localhost:4000/v1/info?q=$BLOCKCHAIN_ADDRESS
 ```
 
 ## Random Notes
