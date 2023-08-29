@@ -19,7 +19,7 @@ Features:
 1. **Extendable** — API-based interface that can be integrated into other systems
 1. **Multi-chain** — designed with support for multiple blockchain architectures
 
-## Requirements
+## 🧰 Requirements
 
 1. [Rust](https://www.rust-lang.org/) v1.70+ — if you're compiling from source
 1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
@@ -243,7 +243,7 @@ curl -X POST \
   http://localhost:4000/v1/addresses
 ```
 
-## 🤓 Analytics
+## 🛡 Analytics
 
 To query information about a particular blockchain address:
 
