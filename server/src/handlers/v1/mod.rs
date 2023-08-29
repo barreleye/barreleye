@@ -11,6 +11,7 @@ mod keys;
 mod networks;
 mod stats;
 mod tags;
+mod tokens;
 
 pub fn get_routes() -> Router<Arc<App>> {
 	Router::new()
@@ -20,6 +21,7 @@ pub fn get_routes() -> Router<Arc<App>> {
 		.nest("/networks", networks::get_routes())
 		.nest("/entities", entities::get_routes())
 		.nest("/addresses", addresses::get_routes())
+		.nest("/tokens", tokens::get_routes())
 		.nest("/tags", tags::get_routes())
 		.nest("/info", info::get_routes())
 }

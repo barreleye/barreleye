@@ -289,6 +289,8 @@ pub enum IdPrefix {
 	Address,
 	#[display(fmt = "tag")]
 	Tag,
+	#[display(fmt = "tok")]
+	Token,
 }
 
 #[derive(

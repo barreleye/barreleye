@@ -7,6 +7,7 @@ use sea_orm::{
 use sea_orm_migration::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::HashSet;
 
 use crate::{
 	models::{db::entity, BasicModel, EntityColumn, PrimaryId, PrimaryIds, SoftDeleteModel},
@@ -39,12 +40,8 @@ pub struct Model {
 
 impl From<Vec<Model>> for PrimaryIds {
 	fn from(m: Vec<Model>) -> PrimaryIds {
-		let mut ids: Vec<PrimaryId> = m.iter().map(|m| m.address_id).collect();
-
-		ids.sort_unstable();
-		ids.dedup();
-
-		PrimaryIds(ids)
+		let ids: HashSet<PrimaryId> = m.iter().map(|m| m.address_id).collect();
+		PrimaryIds(ids.into_iter().collect())
 	}
 }
 
