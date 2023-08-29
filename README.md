@@ -8,7 +8,7 @@
 > **Note**
 > ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.
 
-## 🤓 What is Barreleye?
+## 🧐 What is Barreleye?
 
 Barreleye is an open-source **blockchain KYC** tool. It can trace the flow of funds, along with their amounts, to & from specific addresses.
 
@@ -243,7 +243,7 @@ curl -X POST \
   http://localhost:4000/v1/addresses
 ```
 
-## Analytics
+## 🤓 Analytics
 
 To query information about a particular blockchain address:
 
@@ -253,12 +253,12 @@ curl -X GET \
   http://localhost:4000/v1/info?q=$BLOCKCHAIN_ADDRESS
 ```
 
-## Random Notes
+## 🗒 Random Notes
 
 - Be aware of your RPC node limits. Indexer makes a significant amount of RPC calls to index historical and new blocks.
 - For indexing, you might have to set ClickHouse's `max_server_memory_usage_to_ram_ratio` to `2` ([read more](https://github.com/ClickHouse/ClickHouse/issues/17631))
 
-## Get Involved
+## 🥹 Get Involved
 
 To stay in touch with Barreleye:
 
@@ -267,7 +267,7 @@ To stay in touch with Barreleye:
 - Join on [Discord](https://discord.gg/VX8PdWSwNZ)
 - [Contribute](/CONTRIBUTING.md) -- pull requests are welcome (for major changes, please open an issue first to discuss what you would like to change)
 
-## License
+## ⚖️ License
 
 Source code for Barreleye is variously licensed under a number of different licenses. A copy of each license can be found in [each repository](https://github.com/barreleye).
 
