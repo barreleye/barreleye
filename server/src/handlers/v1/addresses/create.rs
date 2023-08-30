@@ -46,13 +46,14 @@ pub async fn handler(
 		});
 	}
 
+	// get network
 	let network =
 		Network::get_by_id(app.db(), &payload.network).await?.ok_or(ServerError::InvalidParam {
 			field: "network".to_string(),
 			value: payload.network,
 		})?;
 
-	// check for soft-deleted records
+	// check for soft-deleted address conflicts
 	let addresses = Address::get_all_by_entity_id_network_id_and_addresses(
 		app.db(),
 		entity.entity_id,
@@ -62,9 +63,9 @@ pub async fn handler(
 	)
 	.await?;
 	if !addresses.is_empty() {
-		return Err(ServerError::Conflict {
+		return Err(ServerError::TooEarly {
 			reason: format!(
-				"the following addresses have not been properly deleted yet: {}; try again later",
+				"addresses haven't been deleted yet: {}",
 				addresses.into_iter().map(|a| a.address).collect::<Vec<String>>().join(", ")
 			),
 		});

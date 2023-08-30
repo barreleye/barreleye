@@ -40,8 +40,8 @@ pub enum ServerError {
 	#[display(fmt = "bad request: {reason}")]
 	BadRequest { reason: String },
 
-	#[display(fmt = "conflict: {reason}")]
-	Conflict { reason: String },
+	#[display(fmt = "too early: {reason}")]
+	TooEarly { reason: String },
 
 	#[display(fmt = "not found")]
 	NotFound,
@@ -55,6 +55,7 @@ impl IntoResponse for ServerError {
 		let http_code = match self {
 			ServerError::NotFound => StatusCode::NOT_FOUND,
 			ServerError::Unauthorized => StatusCode::UNAUTHORIZED,
+			ServerError::TooEarly { .. } => StatusCode::from_u16(425).unwrap(),
 			ServerError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
 			_ => StatusCode::BAD_REQUEST,
 		};

@@ -31,8 +31,16 @@ pub async fn handler(
 		}
 	}
 
-	// check for duplicate name
+	// check name
 	if let Some(name) = payload.name.clone() {
+		// check for soft-deleted matches
+		if Entity::get_by_name(app.db(), &name, Some(true)).await?.is_some() {
+			return Err(ServerError::TooEarly {
+				reason: format!("entity hasn't been deleted yet: {name}"),
+			});
+		}
+
+		// check for any duplicate
 		if Entity::get_by_name(app.db(), &name, None).await?.is_some() {
 			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 		}
@@ -45,12 +53,18 @@ pub async fn handler(
 			"tags",
 			tags.clone(),
 			IdPrefix::Tag,
-			Tag::get_all_where(app.db(), TagColumn::Id.is_in(tags))
+			Tag::get_all_where(app.db(), TagColumn::Id.is_in(tags.clone()))
 				.await?
 				.into_iter()
 				.map(|t| (t.id, t.tag_id))
 				.collect(),
 		)?;
+		if tag_ids.len() != tags.len() {
+			return Err(ServerError::InvalidValues {
+				field: "tags".to_string(),
+				values: tags.join(", "),
+			});
+		}
 	}
 
 	// create new

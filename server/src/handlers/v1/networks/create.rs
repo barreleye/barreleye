@@ -37,7 +37,14 @@ pub async fn handler(
 		}
 	}
 
-	// check for duplicate name
+	// check name for soft-deleted matches
+	if Network::get_by_name(app.db(), &payload.name, Some(true)).await?.is_some() {
+		return Err(ServerError::TooEarly {
+			reason: format!("network hasn't been deleted yet: {}", payload.name),
+		});
+	}
+
+	// check name for any duplicate
 	if Network::get_by_name(app.db(), &payload.name, None).await?.is_some() {
 		return Err(ServerError::Duplicate { field: "name".to_string(), value: payload.name });
 	}

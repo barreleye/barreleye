@@ -34,8 +34,16 @@ pub async fn handler(
 	let network =
 		Network::get_existing_by_id(app.db(), &network_id).await?.ok_or(ServerError::NotFound)?;
 
-	// check for duplicate name
+	// check name
 	if let Some(name) = payload.name.clone() {
+		// check for soft-deleted matches
+		if Network::get_by_name(app.db(), &name, Some(true)).await?.is_some() {
+			return Err(ServerError::TooEarly {
+				reason: format!("network hasn't been deleted yet: {name}"),
+			});
+		}
+
+		// check for any duplicate
 		if network_id != network.id
 			&& network.name.trim().to_lowercase() == name.trim().to_lowercase()
 		{
