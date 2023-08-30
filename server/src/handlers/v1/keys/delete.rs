@@ -1,22 +1,35 @@
-use axum::{
-	extract::{Path, State},
-	http::StatusCode,
-};
-use std::sync::Arc;
+use axum::{extract::State, http::StatusCode, Json};
+use sea_orm::ColumnTrait;
+use serde::Deserialize;
+use std::{collections::HashSet, sync::Arc};
 
-use crate::{errors::ServerError, ServerResult};
+use crate::ServerResult;
 use barreleye_common::{
-	models::{ApiKey, BasicModel},
+	models::{ApiKey, ApiKeyColumn, BasicModel},
 	App,
 };
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Payload {
+	keys: HashSet<String>,
+}
+
 pub async fn handler(
 	State(app): State<Arc<App>>,
-	Path(api_key_id): Path<String>,
+	Json(payload): Json<Payload>,
 ) -> ServerResult<StatusCode> {
-	if ApiKey::delete_by_id(app.db(), &api_key_id).await? {
-		Ok(StatusCode::NO_CONTENT)
-	} else {
-		Err(ServerError::NotFound)
+	// exit if no input
+	if payload.keys.is_empty() {
+		return Ok(StatusCode::NO_CONTENT);
 	}
+
+	// delete all keys
+	ApiKey::delete_all_where(
+		app.db(),
+		ApiKeyColumn::Id.is_in(payload.keys.into_iter().collect::<Vec<String>>()),
+	)
+	.await?;
+
+	Ok(StatusCode::NO_CONTENT)
 }
