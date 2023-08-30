@@ -7,7 +7,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use barreleye_common::{
 	models::{Address, Network, PrimaryId, PrimaryIds, Tag},
-	App,
+	utils, App,
 };
 
 mod create;
@@ -56,7 +56,13 @@ pub async fn get_addresses_data(
 		.map(|n| (n.network_id, n))
 		.collect::<HashMap<PrimaryId, Network>>();
 
-	let networks = networks_map.into_values().collect::<Vec<Network>>();
+	let networks = networks_map
+		.into_values()
+		.map(|mut n| {
+			n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
+			n
+		})
+		.collect::<Vec<Network>>();
 
 	let mut map = HashMap::<PrimaryId, Vec<String>>::new();
 	for address in addresses.iter() {

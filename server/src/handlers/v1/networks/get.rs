@@ -8,7 +8,7 @@ use std::sync::Arc;
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{Network, SoftDeleteModel},
-	App,
+	utils, App,
 };
 
 #[derive(Serialize)]
@@ -23,6 +23,9 @@ pub async fn handler(
 ) -> ServerResult<Json<Response>> {
 	Network::get_existing_by_id(app.db(), &network_id)
 		.await?
-		.map(|network| Response { network }.into())
+		.map(|mut n| {
+			n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
+			Response { network: n }.into()
+		})
 		.ok_or(ServerError::NotFound)
 }

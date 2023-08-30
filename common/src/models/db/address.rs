@@ -25,8 +25,8 @@ pub struct Model {
 	pub entity_id: PrimaryId,
 	#[serde(skip_serializing)]
 	pub network_id: PrimaryId,
-	pub network: String,
 	pub id: String,
+	pub network: String,
 	pub address: String,
 	pub description: String,
 	pub data: Json,

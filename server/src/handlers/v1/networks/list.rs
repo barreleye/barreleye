@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::ServerResult;
 use barreleye_common::{
 	models::{BasicModel, Network, NetworkColumn},
-	App,
+	utils, App,
 };
 
 #[derive(Deserialize)]
@@ -33,7 +33,13 @@ pub async fn handler(
 		payload.offset,
 		payload.limit,
 	)
-	.await?;
+	.await?
+	.into_iter()
+	.map(|mut n| {
+		n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
+		n
+	})
+	.collect::<Vec<Network>>();
 
 	Ok(Response { networks }.into())
 }
