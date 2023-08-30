@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
-	models::{Network, SoftDeleteModel, Token},
+	models::{BasicModel, Network, Token},
 	App,
 };
 
@@ -22,7 +22,7 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(token_id): Path<String>,
 ) -> ServerResult<Json<Response>> {
-	if let Some(token) = Token::get_existing_by_id(app.db(), &token_id).await? {
+	if let Some(token) = Token::get_by_id(app.db(), &token_id).await? {
 		let networks =
 			Network::get_all_by_network_ids(app.db(), token.network_id.into(), Some(false)).await?;
 		Ok(Response { token, networks }.into())

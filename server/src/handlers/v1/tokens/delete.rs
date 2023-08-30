@@ -5,7 +5,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use crate::ServerResult;
 use barreleye_common::{
-	models::{set, BasicModel, PrimaryId, Token, TokenActiveModel, TokenColumn},
+	models::{BasicModel, PrimaryId, Token, TokenColumn},
 	App,
 };
 
@@ -32,12 +32,11 @@ pub async fn handler(
 		return Ok(StatusCode::NO_CONTENT);
 	}
 
-	// soft-delete all tokens
-	Token::update_all_where(
+	// delete all associated tokens
+	Token::delete_all_where(
 		app.db(),
 		TokenColumn::TokenId
 			.is_in(all_tokens.iter().map(|t| t.token_id).collect::<Vec<PrimaryId>>()),
-		TokenActiveModel { is_deleted: set(true), ..Default::default() },
 	)
 	.await?;
 

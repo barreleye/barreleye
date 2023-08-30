@@ -26,7 +26,6 @@ impl MigrationTrait for Migration {
 					.col(ColumnDef::new(Tokens::Symbol).unique_key().string().not_null())
 					.col(ColumnDef::new(Tokens::Address).string().not_null())
 					.col(ColumnDef::new(Tokens::Decimals).small_integer().not_null())
-					.col(ColumnDef::new(Tokens::IsDeleted).boolean().not_null())
 					.col(ColumnDef::new(Tokens::UpdatedAt).date_time().null())
 					.col(
 						ColumnDef::new(Tokens::CreatedAt)
@@ -69,17 +68,6 @@ impl MigrationTrait for Migration {
 					.col(Tokens::NetworkId)
 					.to_owned(),
 			)
-			.await?;
-
-		manager
-			.create_index(
-				Index::create()
-					.if_not_exists()
-					.name("ix_tokens_is_deleted")
-					.table(Tokens::Table)
-					.col(Tokens::IsDeleted)
-					.to_owned(),
-			)
 			.await
 	}
 
@@ -100,7 +88,6 @@ enum Tokens {
 	Symbol,
 	Address,
 	Decimals,
-	IsDeleted,
 	UpdatedAt,
 	CreatedAt,
 }

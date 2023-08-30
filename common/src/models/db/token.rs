@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use eyre::Result;
 use sea_orm::{
 	entity::{prelude::*, *},
@@ -9,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 use crate::{
-	models::{BasicModel, PrimaryId, PrimaryIds, SoftDeleteModel},
+	models::{BasicModel, PrimaryId, PrimaryIds},
 	utils, IdPrefix,
 };
 
@@ -28,8 +27,6 @@ pub struct Model {
 	pub symbol: String,
 	pub address: String,
 	pub decimals: i16,
-	#[serde(skip_serializing)]
-	pub is_deleted: bool,
 	#[sea_orm(nullable)]
 	#[serde(skip_serializing)]
 	pub updated_at: Option<DateTime>,
@@ -55,11 +52,6 @@ impl BasicModel for Model {
 	type ActiveModel = ActiveModel;
 }
 
-#[async_trait]
-impl SoftDeleteModel for Model {
-	type ActiveModel = ActiveModel;
-}
-
 impl Model {
 	pub fn new_model(
 		id: Option<String>,
@@ -78,7 +70,6 @@ impl Model {
 			symbol: Set(symbol.to_string()),
 			address: Set(address.to_string()),
 			decimals: Set(decimals),
-			is_deleted: Set(false),
 			..Default::default()
 		}
 	}
@@ -99,20 +90,10 @@ impl Model {
 		Ok(insert_result.last_insert_id)
 	}
 
-	pub async fn get_all_by_network_ids<C>(
-		c: &C,
-		network_ids: PrimaryIds,
-		is_deleted: Option<bool>,
-	) -> Result<Vec<Self>>
+	pub async fn get_all_by_network_ids<C>(c: &C, network_ids: PrimaryIds) -> Result<Vec<Self>>
 	where
 		C: ConnectionTrait,
 	{
-		let mut q = Entity::find().filter(Column::NetworkId.is_in(network_ids));
-
-		if let Some(is_deleted) = is_deleted {
-			q = q.filter(Column::IsDeleted.eq(is_deleted))
-		}
-
-		Ok(q.all(c).await?)
+		Ok(Entity::find().filter(Column::NetworkId.is_in(network_ids)).all(c).await?)
 	}
 }
