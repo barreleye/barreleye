@@ -1,6 +1,7 @@
 use axum::{extract::State, Json};
 use axum_extra::extract::Query;
 use eyre::Result;
+use sea_orm::ColumnTrait;
 use serde::{Deserialize, Serialize};
 use std::{
 	collections::{HashMap, HashSet},
@@ -11,7 +12,7 @@ use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{
 		Address, Amount, Balance, BasicModel, Entity, Link, Network, PrimaryId, SanitizedEntity,
-		SanitizedNetwork, SanitizedTag, Tag,
+		SanitizedNetwork, SanitizedTag, Tag, Token, TokenColumn,
 	},
 	App, RiskLevel, RiskReason,
 };
@@ -33,8 +34,18 @@ pub struct ResponseRisk {
 #[serde(rename_all = "camelCase")]
 pub struct ResponseAsset {
 	network: String,
-	address: Option<String>,
+	token: Option<String>,
 	balance: String,
+}
+
+#[derive(Serialize, Eq, PartialEq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponseToken {
+	id: String,
+	name: String,
+	symbol: String,
+	address: String,
+	decimals: u16,
 }
 
 #[derive(Serialize)]
@@ -53,6 +64,7 @@ pub struct Response {
 	addresses: Vec<String>,
 	risk: ResponseRisk,
 	assets: Vec<ResponseAsset>,
+	tokens: Vec<ResponseToken>,
 	sources: Vec<ResponseSource>,
 	networks: Vec<SanitizedNetwork>,
 	entities: Vec<SanitizedEntity>,
@@ -88,12 +100,19 @@ pub async fn handler(
 	// find links
 	let links = Link::get_all_disinct_by_addresses(&app.warehouse, addresses.clone()).await?;
 
-	async fn get_assets(app: Arc<App>, addresses: Vec<String>) -> Result<Vec<ResponseAsset>> {
-		let mut ret = vec![];
+	async fn get_assets(
+		app: Arc<App>,
+		addresses: Vec<String>,
+	) -> Result<(Vec<ResponseAsset>, Vec<ResponseToken>)> {
+		let mut assets_map = HashMap::new();
+		let mut tokens = HashSet::new();
 
 		let n = app.networks.read().await;
 		let all_balances = Balance::get_all_by_addresses(&app.warehouse, addresses).await?;
 		if !all_balances.is_empty() {
+			let mut all_addresses = HashSet::new();
+
+			// insert assets
 			for balance_data in all_balances.into_iter() {
 				if balance_data.balance.is_zero() {
 					continue;
@@ -101,20 +120,46 @@ pub async fn handler(
 
 				let network_id = balance_data.network_id as PrimaryId;
 				if let Some(chain) = n.get(&network_id) {
-					ret.push(ResponseAsset {
-						network: chain.get_network().id,
-						address: if balance_data.asset_address.is_empty() {
-							None
-						} else {
-							Some(chain.format_address(&balance_data.asset_address))
+					let network = chain.get_network();
+
+					let key = (network_id, network.chain_id, balance_data.asset_address.clone());
+					assets_map.insert(
+						key,
+						ResponseAsset {
+							network: network.id,
+							token: None,
+							balance: balance_data.balance.to_string(),
 						},
-						balance: balance_data.balance.to_string(),
-					});
+					);
+
+					// @TODO optimize further; should be a tuple of (network_id, chain_id, address)
+					all_addresses.insert(balance_data.asset_address);
+				}
+			}
+
+			// fetch tokens
+			if !assets_map.is_empty() {
+				let all_tokens =
+					Token::get_all_where(app.db(), TokenColumn::Address.is_in(all_addresses))
+						.await?;
+				for token in all_tokens {
+					let key = (token.network_id, token.chain_id, token.address.clone());
+					if let Some(asset) = assets_map.get_mut(&key) {
+						asset.token = Some(token.id.clone());
+
+						tokens.insert(ResponseToken {
+							id: token.id,
+							name: token.name,
+							symbol: token.symbol,
+							address: token.address,
+							decimals: token.decimals as u16,
+						});
+					}
 				}
 			}
 		}
 
-		Ok(ret)
+		Ok((assets_map.into_values().collect(), tokens.into_iter().collect()))
 	}
 
 	async fn get_entities_data(
@@ -193,7 +238,7 @@ pub async fn handler(
 		Ok(ret)
 	}
 
-	let (assets, networks, entities_data) = tokio::join!(
+	let (assets_data, networks, entities_data) = tokio::join!(
 		get_assets(app.clone(), addresses.clone()),
 		get_networks(app.clone(), addresses.clone()),
 		get_entities_data(app.clone(), {
@@ -208,6 +253,7 @@ pub async fn handler(
 		}),
 	);
 
+	let (assets, tokens) = assets_data?;
 	let (address_map, entities_map, tags, risk_level) = entities_data?;
 
 	// assemble sources
@@ -246,7 +292,8 @@ pub async fn handler(
 	Ok(Response {
 		addresses,
 		risk: ResponseRisk { level: risk_level, reasons: risk_reasons },
-		assets: assets?,
+		assets,
+		tokens,
 		sources,
 		networks: networks?.into_iter().map(|n| n.into()).collect(),
 		entities: entities_map.into_values().map(|e| e.into()).collect(),
