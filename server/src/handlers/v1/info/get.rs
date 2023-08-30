@@ -122,7 +122,7 @@ pub async fn handler(
 				if let Some(chain) = n.get(&network_id) {
 					let network = chain.get_network();
 
-					let key = (network_id, network.chain_id, balance_data.asset_address.clone());
+					let key = (network_id, balance_data.asset_address.clone());
 					assets_map.insert(
 						key,
 						ResponseAsset {
@@ -132,7 +132,7 @@ pub async fn handler(
 						},
 					);
 
-					// @TODO optimize further; should be a tuple of (network_id, chain_id, address)
+					// @TODO optimize further; should be a tuple of (network_id, address)
 					all_addresses.insert(balance_data.asset_address);
 				}
 			}
@@ -143,7 +143,7 @@ pub async fn handler(
 					Token::get_all_where(app.db(), TokenColumn::Address.is_in(all_addresses))
 						.await?;
 				for token in all_tokens {
-					let key = (token.network_id, token.chain_id, token.address.clone());
+					let key = (token.network_id, token.address.clone());
 					if let Some(asset) = assets_map.get_mut(&key) {
 						asset.token = Some(token.id.clone());
 

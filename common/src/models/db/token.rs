@@ -22,7 +22,6 @@ pub struct Model {
 	#[serde(skip_serializing)]
 	pub network_id: PrimaryId,
 	pub id: String,
-	pub chain_id: i64,
 	pub name: String,
 	pub symbol: String,
 	pub address: String,
@@ -56,7 +55,6 @@ impl Model {
 	pub fn new_model(
 		id: Option<String>,
 		network_id: PrimaryId,
-		chain_id: i64,
 		name: &str,
 		symbol: &str,
 		address: &str,
@@ -65,7 +63,6 @@ impl Model {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Token))),
 			network_id: Set(network_id),
-			chain_id: Set(chain_id),
 			name: Set(name.to_string()),
 			symbol: Set(symbol.to_string()),
 			address: Set(address.to_string()),
@@ -80,9 +77,7 @@ impl Model {
 	{
 		let insert_result = Entity::insert_many(data)
 			.on_conflict(
-				OnConflict::columns([Column::NetworkId, Column::ChainId, Column::Address])
-					.do_nothing()
-					.to_owned(),
+				OnConflict::columns([Column::NetworkId, Column::Address]).do_nothing().to_owned(),
 			)
 			.exec(c)
 			.await?;

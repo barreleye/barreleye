@@ -14,7 +14,6 @@ use barreleye_common::{
 pub struct Payload {
 	id: Option<String>,
 	network: String,
-	chain_id: Option<u64>,
 	name: String,
 	symbol: String,
 	address: Option<String>,
@@ -25,7 +24,6 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<Json<Token>> {
-	let chain_id = payload.chain_id.unwrap_or_default();
 	let address = payload.address.unwrap_or_default();
 
 	// check that id is valid
@@ -42,12 +40,11 @@ pub async fn handler(
 			value: payload.network,
 		})?;
 
-	// check for duplicate network + chain_id + address
+	// check for duplicate network + address
 	if !Token::get_all_where(
 		app.db(),
 		Condition::all()
 			.add(TokenColumn::NetworkId.eq(network.network_id))
-			.add(TokenColumn::ChainId.eq(chain_id))
 			.add(TokenColumn::Address.eq(address.clone())),
 	)
 	.await?
@@ -62,7 +59,6 @@ pub async fn handler(
 		Token::new_model(
 			payload.id,
 			network.network_id,
-			chain_id as i64,
 			&payload.name,
 			&payload.symbol,
 			&address,

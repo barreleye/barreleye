@@ -21,7 +21,6 @@ impl MigrationTrait for Migration {
 					)
 					.col(ColumnDef::new(Tokens::NetworkId).big_integer().not_null())
 					.col(ColumnDef::new(Tokens::Id).unique_key().string().not_null())
-					.col(ColumnDef::new(Tokens::ChainId).big_integer().not_null())
 					.col(ColumnDef::new(Tokens::Name).unique_key().string().not_null())
 					.col(ColumnDef::new(Tokens::Symbol).unique_key().string().not_null())
 					.col(ColumnDef::new(Tokens::Address).string().not_null())
@@ -49,11 +48,10 @@ impl MigrationTrait for Migration {
 			.create_index(
 				Index::create()
 					.if_not_exists()
-					.name("ux_tokens_network_id_chain_id_address")
+					.name("ux_tokens_network_id_address")
 					.table(Tokens::Table)
 					.unique()
 					.col(Tokens::NetworkId)
-					.col(Tokens::ChainId)
 					.col(Tokens::Address)
 					.to_owned(),
 			)
@@ -83,7 +81,6 @@ enum Tokens {
 	TokenId,
 	NetworkId,
 	Id,
-	ChainId,
 	Name,
 	Symbol,
 	Address,
