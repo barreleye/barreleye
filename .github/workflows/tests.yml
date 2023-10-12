@@ -38,5 +38,11 @@ jobs:
           cargo deny check
           cargo outdated --exit-code 1
           rm -rf ~/.cargo/advisory-db
+      - name: Free
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Test
         run: cargo test --all
