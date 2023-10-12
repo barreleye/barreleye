@@ -89,7 +89,7 @@ impl Server {
 			.map_err(|_| ServerError::Unauthorized)?;
 
 		let token = match authorization.split_once(' ') {
-			Some((name, contents)) if name == "Bearer" => contents.to_string(),
+			Some(("Bearer", contents)) => contents.to_string(),
 			_ => return Err(ServerError::Unauthorized),
 		};
 
