@@ -24,7 +24,7 @@ hyper = "0.14.27"
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
 tower = { version = "0.4.13", features = ["timeout"] }
 tower-http = { version = "0.4.4", features = ["trace"] }
-tracing = "0.1.37"
+tracing = "0.1.39"
 
 barreleye-common = { path = "../common", version = "0.1.0" }
 

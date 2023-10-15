@@ -19,14 +19,14 @@ bitcoin = "0.30.1"
 console = "0.15.7"
 governor = "0.6.0"
 base64 = "0.21.4"
-regex = "1.10.0"
+regex = "1.10.1"
 bitcoincore-rpc-json = "0.17.0"
 derive_more = "0.99.17"
 log = "0.4.20"
 tokio = { version = "1.33.0", features = ["full"] }
 uuid = { version = "1.4.1", features = ["v4", "fast-rng"] }
 reqwest = { version = "0.11.22", features = ["rustls-tls"] }
-tracing = "0.1.37"
+tracing = "0.1.39"
 
 barreleye-common = { path = "../common", version = "0.1.0" }
 
