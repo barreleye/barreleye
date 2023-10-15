@@ -11,7 +11,7 @@ rust-version = "1.70"
 workspace = ".."
 
 [dependencies]
-async-trait = "0.1.73"
+async-trait = "0.1.74"
 eyre = "0.6.8"
 sea-orm-migration = "0.12.3"
 nanoid = "0.4.0"
