@@ -15,7 +15,7 @@ async-trait = "0.1.74"
 eyre = "0.6.8"
 sea-orm-migration = "0.12.4"
 nanoid = "0.4.0"
-serde = "1.0.189"
+serde = "1.0.190"
 log = "0.4.20"
 derive_more = "0.99.17"
 indicatif = "0.17.7"
@@ -30,7 +30,7 @@ regex = "1.10.2"
 governor = "0.6.0"
 base64 = "0.21.5"
 itertools = "0.11.0"
-futures = "0.3.28"
+futures = "0.3.29"
 hex = "0.4.3"
 num_cpus = "1.16.0"
 bitcoincore-rpc-json = "0.17.0"
@@ -39,7 +39,7 @@ reqwest = { version = "0.11.22", features = ["rustls-tls"] }
 tokio = { version = "1.33.0", features = ["full"] }
 ethers = { version = "2.0.10", features = ["rustls"] }
 clickhouse = { version = "0.11.6", features = ["uuid"] }
-clap = { version = "4.4.6", features = ["cargo", "derive", "env"] }
+clap = { version = "4.4.7", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.5.0", features = ["v4", "fast-rng"] }
 tracing = "0.1.40"
 
