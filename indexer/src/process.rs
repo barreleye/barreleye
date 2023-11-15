@@ -303,7 +303,8 @@ impl Indexer {
 						while should_keep_going.load(Ordering::SeqCst) {
 							match block_height_max {
 								Some(block_height_max) if block_height + 1 > block_height_max => {
-									// push no matter what (even if no warehouse data) so that config keys get updated
+									// push no matter what (even if no warehouse data) so that
+									// config keys get updated
 									pipe.push(
 										config_value(block_height),
 										warehouse_data.clone(),
@@ -323,7 +324,8 @@ impl Indexer {
 									.unwrap_or(0);
 
 									if block_height + 1 > last_synced_block_height {
-										// push only if have some warehouse data; otherwise, it's ok if config keys get updated later
+										// push only if have some warehouse data; otherwise, it's ok
+										// if config keys get updated later
 										if !warehouse_data.is_empty() {
 											pipe.push(
 												config_value(block_height),

@@ -19,9 +19,7 @@ use std::{
 };
 use tokio::signal;
 use tower::ServiceBuilder;
-use tower_http::trace;
-use tower_http::trace::TraceLayer;
-use tower_http::LatencyUnit;
+use tower_http::{trace, trace::TraceLayer, LatencyUnit};
 use tracing::Level;
 use uuid::Uuid;
 

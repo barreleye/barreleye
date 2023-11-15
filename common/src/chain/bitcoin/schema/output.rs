@@ -1,4 +1,5 @@
 use bitcoin::{
+	amount::Amount,
 	blockdata::script::ScriptBuf,
 	hashes::{self, sha256d::Hash},
 };
@@ -11,7 +12,7 @@ use crate::storage::{StorageDb, StorageModelTrait};
 #[derive(Debug, Clone)]
 pub struct Output {
 	pub tx_hash: Hash,
-	pub value: u64,
+	pub value: Amount,
 	pub script_pubkey: ScriptBuf,
 }
 
@@ -34,7 +35,7 @@ impl Output {
 
 				ret.push(Output {
 					tx_hash: hashes::Hash::from_slice(&tx_hash)?,
-					value: row.get(1)?,
+					value: Amount::from_sat(row.get(1)?),
 					script_pubkey: ScriptBuf::from_bytes(script_pubkey),
 				});
 			}
@@ -72,7 +73,7 @@ impl StorageModelTrait for Output {
 			),
 			params![
 				<Hash as AsRef<[u8]>>::as_ref(&self.tx_hash),
-				self.value,
+				self.value.to_sat(),
 				self.script_pubkey.clone().into_bytes(),
 			],
 		)?;

@@ -3,7 +3,7 @@ use bitcoin::{Block, BlockHash};
 use bitcoincore_rpc_json::{
 	bitcoin::{
 		consensus::{Decodable, ReadExt},
-		hashes::hex::HexIterator,
+		hashes::hex::HexToBytesIter,
 	},
 	GetBlockchainInfoResult,
 };
@@ -142,7 +142,7 @@ impl Client {
 }
 
 fn deserialize_hex<T: Decodable>(hex: &str) -> Result<T> {
-	let mut reader = HexIterator::new(hex)?;
+	let mut reader = HexToBytesIter::new(hex)?;
 	let object = Decodable::consensus_decode(&mut reader)?;
 
 	if reader.read_u8().is_ok() {

@@ -135,7 +135,8 @@ impl Indexer {
 				continue;
 			}
 
-			// marker to test whether link-step's block height has caught up to process-step's block height
+			// marker to test whether link-step's block height has caught up to process-step's block
+			// height
 			let mut is_caught_up = true;
 
 			// process a chunk of blocks per address

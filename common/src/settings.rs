@@ -21,7 +21,8 @@ use crate::{
 	long_about = None
 )]
 pub struct Settings {
-	/// Mode can be used to run either the server or the indexer. By default both are run in parallel.
+	/// Mode can be used to run either the server or the indexer. By default both are run in
+	/// parallel.
 	#[arg(help_heading = "Runtime options", long, num_args = 1.., value_delimiter = ',')]
 	mode: Vec<Mode>,
 	#[arg(skip)]

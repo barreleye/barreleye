@@ -185,7 +185,7 @@ impl ChainTrait for Bitcoin {
 						lock_time: tx.lock_time,
 						input_count: tx.input.len() as u32,
 						output_count: tx.output.len() as u32,
-						is_coin_base: tx.is_coin_base(),
+						is_coinbase: tx.is_coinbase(),
 					})?;
 
 					for txin in tx.input.clone().into_iter() {
@@ -248,7 +248,7 @@ impl Bitcoin {
 			let mut ret = vec![];
 
 			for tx_input in tx_inputs.iter() {
-				if !tx.is_coin_base {
+				if !tx.is_coinbase {
 					if let Some((a, v)) =
 						self.get_utxo(&tx, &tx_outputs, tx_input.previous_output_vout).await?
 					{
@@ -280,7 +280,7 @@ impl Bitcoin {
 
 		for (i, txout) in tx_outputs.iter().enumerate() {
 			if let Some(address) = self.get_address(tx, tx_outputs, i as u32)? {
-				ret.push((address, txout.value));
+				ret.push((address, txout.value.to_sat()));
 			}
 		}
 
@@ -295,7 +295,7 @@ impl Bitcoin {
 	) -> Result<Option<(String, u64)>> {
 		Ok(self
 			.get_address(tx, tx_outputs, vout)?
-			.map(|address| (address, tx_outputs[vout as usize].value)))
+			.map(|address| (address, tx_outputs[vout as usize].value.to_sat())))
 	}
 
 	fn get_address(

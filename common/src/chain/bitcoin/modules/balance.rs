@@ -3,8 +3,10 @@ use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
-	chain::bitcoin::schema::Transaction as ParquetTransaction,
-	chain::{bitcoin::modules::BitcoinModuleTrait, ModuleId, ModuleTrait, WarehouseData, U256},
+	chain::{
+		bitcoin::{modules::BitcoinModuleTrait, schema::Transaction as ParquetTransaction},
+		ModuleId, ModuleTrait, WarehouseData, U256,
+	},
 	models::{Amount, PrimaryId},
 	BlockHeight,
 };
@@ -36,7 +38,7 @@ impl BitcoinModuleTrait for BitcoinBalance {
 		let mut ret = WarehouseData::new();
 		let mut balance_map = HashMap::<String, (u64, u64)>::new();
 
-		if !tx.is_coin_base {
+		if !tx.is_coinbase {
 			for (address, new_amount) in inputs.into_iter() {
 				if let Some(amounts) = balance_map.get_mut(&address) {
 					amounts.1 += new_amount;

@@ -1,5 +1,5 @@
 use bitcoin::{
-	blockdata::locktime::absolute::LockTime,
+	blockdata::{locktime::absolute::LockTime, transaction::Version},
 	hashes::{self, sha256d::Hash},
 };
 use duckdb::{params, Connection};
@@ -11,11 +11,11 @@ use crate::storage::{StorageDb, StorageModelTrait};
 #[derive(Debug, Clone)]
 pub struct Transaction {
 	pub hash: Hash,
-	pub version: i32,
+	pub version: Version,
 	pub lock_time: LockTime,
 	pub input_count: u32,
 	pub output_count: u32,
-	pub is_coin_base: bool,
+	pub is_coinbase: bool,
 }
 
 impl Transaction {
@@ -32,11 +32,11 @@ impl Transaction {
 
 				ret.push(Transaction {
 					hash: hashes::Hash::from_slice(&hash)?,
-					version: row.get(1)?,
+					version: Version(row.get(1)?),
 					lock_time: LockTime::from_consensus(row.get(2)?),
 					input_count: row.get(3)?,
 					output_count: row.get(4)?,
-					is_coin_base: row.get(5)?,
+					is_coinbase: row.get(5)?,
 				});
 			}
 		}
@@ -54,7 +54,7 @@ impl StorageModelTrait for Transaction {
                 lock_time UINT32 NOT NULL,
                 input_count UINT32 NOT NULL,
                 output_count UINT32 NOT NULL,
-				is_coin_base BOOLEAN NOT NULL,
+				is_coinbase BOOLEAN NOT NULL,
             );"#,
 			ParquetFile::Transactions
 		))?;
@@ -68,7 +68,7 @@ impl StorageModelTrait for Transaction {
 		db.execute(
 			&format!(
 				r#"INSERT INTO {} (
-                    hash, version, lock_time, input_count, output_count, is_coin_base
+                    hash, version, lock_time, input_count, output_count, is_coinbase
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?
                 );"#,
@@ -76,11 +76,11 @@ impl StorageModelTrait for Transaction {
 			),
 			params![
 				<Hash as AsRef<[u8]>>::as_ref(&self.hash),
-				self.version,
+				self.version.0,
 				self.lock_time.to_consensus_u32(),
 				self.input_count,
 				self.output_count,
-				self.is_coin_base
+				self.is_coinbase
 			],
 		)?;
 

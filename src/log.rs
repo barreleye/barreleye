@@ -1,7 +1,5 @@
 use eyre::Result;
-use tracing_subscriber::fmt;
-use tracing_subscriber::prelude::*;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub fn setup() -> Result<()> {
 	color_eyre::install()?;
