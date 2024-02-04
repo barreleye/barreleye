@@ -5,19 +5,19 @@
 [![Discord](https://img.shields.io/discord/1026664296861679646?logo=discord&logoColor=ffffff&label=discord)](https://discord.gg/VX8PdWSwNZ)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/GetBarreleye?logo=twitter&style=flat&logoColor=ffffff)](https://twitter.com/GetBarreleye)
 
-> **Note**
-> ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.
-
-## 🧐 What is Barreleye?
+## What is Barreleye?
 
 Barreleye is an open-source blockchain analytics tool. It's entity based, so it can answer questions like what assets an entity has and where they came from.
 
-Features:
+> **Note**
+> This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.
+
+## ✨ Features
 
 - ⛵️ **Easy of use** — start on a single machine, scale up as needed
 - 🚢 **Scalable** — optimized for demanding business use-cases
 - 🥳 **Self-hosted** — API-based interface that can be integrated into other systems
-- 🪢 **Multi-chain** — designed to support multiple blockchain architectures
+- 💪 **Multi-chain** — designed to support multiple blockchain architectures
 
 ## 🧰 Requirements
 
@@ -26,7 +26,7 @@ Features:
 1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
 > **Note**
-> ⚠️ EVM-based chains are not yet supported (this is a work-in-progress).
+> ⚠️ EVM-based chains are not yet supported (this is a work-in-progress)
 
 ## 👩‍💻 Get Started
 
@@ -242,7 +242,7 @@ curl -X POST \
   http://localhost:4000/v1/addresses
 ```
 
-## 🛡 Analytics
+## 🧐 Analytics
 
 To query information about a particular blockchain address:
 
