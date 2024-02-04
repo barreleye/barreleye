@@ -16,8 +16,8 @@ use crate::Indexer;
 use barreleye_common::{
 	chain::WarehouseData,
 	models::{
-		Address, AddressColumn, BasicModel, Config, ConfigKey, Link, LinkUuid, Network, PrimaryId,
-		PrimaryIds, SoftDeleteModel, Transfer,
+		Address, AddressColumn, BasicModel, Config, ConfigKey, Link, LinkUuid,
+		Network, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
 	},
 	BlockHeight,
 };
@@ -50,14 +50,18 @@ impl IndexedLinks {
 			if let Some(set) = self.data.get_mut(&link.to_address) {
 				set.insert(link);
 			} else {
-				self.data.insert(link.to_address.clone(), HashSet::from([link]));
+				self.data
+					.insert(link.to_address.clone(), HashSet::from([link]));
 			}
 		}
 	}
 }
 
 impl Indexer {
-	pub async fn link(&self, mut networks_updated: Receiver<SystemTime>) -> Result<()> {
+	pub async fn link(
+		&self,
+		mut networks_updated: Receiver<SystemTime>,
+	) -> Result<()> {
 		let mut warehouse_data = WarehouseData::new();
 		let mut config_key_map = HashMap::<ConfigKey, BlockHeight>::new();
 		let mut blocked_and_notified = false;
@@ -70,13 +74,18 @@ impl Indexer {
 
 			// skip network if "process" step is not done yet
 			let mut networks = vec![];
-			for network in Network::get_all_existing(self.app.db(), Some(false)).await?.into_iter()
+			for network in Network::get_all_existing(self.app.db(), Some(false))
+				.await?
+				.into_iter()
 			{
 				let process_step_started = matches!(Config::get::<_, BlockHeight>(
                     self.app.db(),
                     ConfigKey::IndexerProcessTail(network.network_id),
                 ).await?, Some(hit) if hit.value > 0);
-				let process_step_synced = Config::get_many::<_, (BlockHeight, BlockHeight)>(
+				let process_step_synced = Config::get_many::<
+					_,
+					(BlockHeight, BlockHeight),
+				>(
 					self.app.db(),
 					vec![
 						ConfigKey::IndexerProcessChunk(network.network_id, 0),
@@ -94,17 +103,27 @@ impl Indexer {
 			let block_height_map = {
 				let map = networks
 					.into_iter()
-					.map(|n| (ConfigKey::IndexerProcessTail(n.network_id), n.network_id))
+					.map(|n| {
+						(
+							ConfigKey::IndexerProcessTail(n.network_id),
+							n.network_id,
+						)
+					})
 					.collect::<HashMap<ConfigKey, PrimaryId>>();
 
-				Config::get_many::<_, BlockHeight>(self.app.db(), map.clone().into_keys().collect())
-					.await?
-					.into_iter()
-					.filter_map(|(config_key, hit)| match hit.value > 0 {
-						true => map.get(&config_key).map(|&network_id| (network_id, hit.value)),
-						_ => None,
-					})
-					.collect::<HashMap<PrimaryId, BlockHeight>>()
+				Config::get_many::<_, BlockHeight>(
+					self.app.db(),
+					map.clone().into_keys().collect(),
+				)
+				.await?
+				.into_iter()
+				.filter_map(|(config_key, hit)| match hit.value > 0 {
+					true => map
+						.get(&config_key)
+						.map(|&network_id| (network_id, hit.value)),
+					_ => None,
+				})
+				.collect::<HashMap<PrimaryId, BlockHeight>>()
 			};
 			if block_height_map.is_empty() {
 				if !blocked_and_notified {
@@ -117,14 +136,22 @@ impl Indexer {
 				blocked_and_notified = false;
 			}
 
-			// break the link chains that contain newly added addresses in the middle
-			let network_ids: PrimaryIds =
-				block_height_map.clone().into_keys().collect::<Vec<PrimaryId>>().into();
+			// break the link chains that contain newly added addresses in the
+			// middle
+			let network_ids: PrimaryIds = block_height_map
+				.clone()
+				.into_keys()
+				.collect::<Vec<PrimaryId>>()
+				.into();
 			self.break_in_new_addresses(network_ids.clone()).await?;
 
 			// fetch all addresses
-			let addresses =
-				Address::get_all_by_network_ids(self.app.db(), network_ids, Some(false)).await?;
+			let addresses = Address::get_all_by_network_ids(
+				self.app.db(),
+				network_ids,
+				Some(false),
+			)
+			.await?;
 			let all_entity_addresses = addresses
 				.iter()
 				.map(|a| (a.network_id, a.address.clone()))
@@ -135,8 +162,8 @@ impl Indexer {
 				continue;
 			}
 
-			// marker to test whether link-step's block height has caught up to process-step's block
-			// height
+			// marker to test whether link-step's block height has caught up to
+			// process-step's block height
 			let mut is_caught_up = true;
 
 			// process a chunk of blocks per address
@@ -148,23 +175,33 @@ impl Indexer {
 				// get latest block for this address:
 				// 1. if in cache -> get it from there
 				// 2. if cache is not set -> try reading from configs
-				// 3. if not in configs -> fast-forward to 1st interaction from warehouse
-				// 4. if not in warehouse -> no need to scan chain; set to chain height
-				let config_key = ConfigKey::IndexerLink(network_id, address.address_id);
+				// 3. if not in configs -> fast-forward to 1st interaction from
+				//    warehouse
+				// 4. if not in warehouse -> no need to scan chain; set to chain
+				//    height
+				let config_key =
+					ConfigKey::IndexerLink(network_id, address.address_id);
 				let block_height = match config_key_map.get(&config_key) {
 					Some(&block_height) => block_height,
 					_ => {
-						let block_height =
-							match Config::get::<_, BlockHeight>(self.app.db(), config_key).await? {
-								Some(hit) => hit.value,
-								_ => Transfer::get_first_by_source(
-									&self.app.warehouse,
-									network_id,
-									&address.address,
-								)
-								.await?
-								.map_or_else(|| latest_block_height, |t| t.block_height - 1),
-							};
+						let block_height = match Config::get::<_, BlockHeight>(
+							self.app.db(),
+							config_key,
+						)
+						.await?
+						{
+							Some(hit) => hit.value,
+							_ => Transfer::get_first_by_source(
+								&self.app.warehouse,
+								network_id,
+								&address.address,
+							)
+							.await?
+							.map_or_else(
+								|| latest_block_height,
+								|t| t.block_height - 1,
+							),
+						};
 
 						config_key_map.insert(config_key, block_height);
 						block_height
@@ -175,24 +212,25 @@ impl Indexer {
 				if block_height < latest_block_height {
 					let warehouse = self.app.warehouse.clone();
 					let min_block_height = block_height + 1;
-					let max_block_height =
-						cmp::min(block_height + BLOCKS_PER_LOOP, latest_block_height);
+					let max_block_height = cmp::min(
+						block_height + BLOCKS_PER_LOOP,
+						latest_block_height,
+					);
 
 					if max_block_height != latest_block_height {
 						is_caught_up = false;
 					}
 
-					let network_entity_addresses =
-						all_entity_addresses
-							.iter()
-							.filter_map(|(nid, address)| {
-								if *nid == network_id {
-									Some(address.clone())
-								} else {
-									None
-								}
-							})
-							.collect::<HashSet<String>>();
+					let network_entity_addresses = all_entity_addresses
+						.iter()
+						.filter_map(|(nid, address)| {
+							if *nid == network_id {
+								Some(address.clone())
+							} else {
+								None
+							}
+						})
+						.collect::<HashSet<String>>();
 
 					futures.spawn({
 						let uncommitted_links = warehouse_data
@@ -206,8 +244,10 @@ impl Indexer {
 							let mut ret = WarehouseData::new();
 
 							// seed data from processed but uncommitted links
-							let mut indexed_links =
-								IndexedLinks::new(&address.address.clone(), uncommitted_links);
+							let mut indexed_links = IndexedLinks::new(
+								&address.address.clone(),
+								uncommitted_links,
+							);
 
 							// seed data from warehouse
 							indexed_links.push(
@@ -228,23 +268,34 @@ impl Indexer {
 							.await?
 							.into_iter()
 							{
-								if indexed_links.contains(&transfer.from_address) {
+								if indexed_links
+									.contains(&transfer.from_address)
+								{
 									let mut new_links = vec![];
 
 									// create new links
-									if let Some(set) = indexed_links.get(&transfer.from_address) {
-										// make sure we don't track past existing entity addresses
+									if let Some(set) = indexed_links
+										.get(&transfer.from_address)
+									{
+										// make sure we don't track past
+										// existing entity addresses
 										if !network_entity_addresses
 											.contains(&transfer.from_address)
 										{
 											// extend branch
 											for prev_link in set.iter() {
 												let mut transfer_uuids =
-													prev_link.transfer_uuids.clone();
-												transfer_uuids.push(LinkUuid(transfer.uuid));
+													prev_link
+														.transfer_uuids
+														.clone();
+												transfer_uuids.push(LinkUuid(
+													transfer.uuid,
+												));
 
 												// avoid loopbacks
-												if prev_link.from_address != transfer.to_address {
+												if prev_link.from_address !=
+													transfer.to_address
+												{
 													let link = Link::new(
 														address.network_id,
 														transfer.block_height,
@@ -254,12 +305,15 @@ impl Indexer {
 														transfer.created_at,
 													);
 
-													ret.links.insert(link.clone());
+													ret.links
+														.insert(link.clone());
 													new_links.push(link);
 												}
 											}
 										}
-									} else if transfer.from_address != transfer.to_address {
+									} else if transfer.from_address !=
+										transfer.to_address
+									{
 										// start a new branch
 										let link = Link::new(
 											address.network_id,
@@ -279,7 +333,11 @@ impl Indexer {
 								}
 							}
 
-							Ok::<_, ErrReport>((config_key, max_block_height, ret))
+							Ok::<_, ErrReport>((
+								config_key,
+								max_block_height,
+								ret,
+							))
 						}
 					});
 				}
@@ -314,14 +372,20 @@ impl Indexer {
 			if self.app.is_leading() {
 				// push to warehouse
 				if warehouse_data.should_commit(is_caught_up) {
-					trace!(warehouse = "pushing", records = warehouse_data.len());
+					trace!(
+						warehouse = "pushing",
+						records = warehouse_data.len()
+					);
 					warehouse_data.commit(self.app.warehouse.clone()).await?;
 				}
 
 				// commit config marker updates
 				if is_caught_up {
-					Config::set_many::<_, BlockHeight>(self.app.db(), config_key_map.clone())
-						.await?;
+					Config::set_many::<_, BlockHeight>(
+						self.app.db(),
+						config_key_map.clone(),
+					)
+					.await?;
 					config_key_map.clear();
 				}
 			}
@@ -333,7 +397,10 @@ impl Indexer {
 		}
 	}
 
-	async fn break_in_new_addresses(&self, network_ids: PrimaryIds) -> Result<()> {
+	async fn break_in_new_addresses(
+		&self,
+		network_ids: PrimaryIds,
+	) -> Result<()> {
 		// get all newly added addresses for the provided networks
 		let address_ids = Config::get_many::<_, PrimaryId>(
 			self.app.db(),
@@ -352,23 +419,34 @@ impl Indexer {
 			)
 			.await?;
 
-			// delete all links that contain newly added entity addresses in the middle
-			let mut address_map: HashMap<PrimaryId, HashSet<String>> = HashMap::new();
+			// delete all links that contain newly added entity addresses in the
+			// middle
+			let mut address_map: HashMap<PrimaryId, HashSet<String>> =
+				HashMap::new();
 			for address in newly_added_addresses.clone().into_iter() {
 				if let Some(set) = address_map.get_mut(&address.network_id) {
 					set.insert(address.address);
 				} else {
-					address_map.insert(address.network_id, HashSet::from([address.address]));
+					address_map.insert(
+						address.network_id,
+						HashSet::from([address.address]),
+					);
 				}
 			}
-			Link::delete_all_by_newly_added_addresses(&self.app.warehouse, address_map).await?;
+			Link::delete_all_by_newly_added_addresses(
+				&self.app.warehouse,
+				address_map,
+			)
+			.await?;
 
 			// delete configs for the newly added addresses
 			Config::delete_many(
 				self.app.db(),
 				newly_added_addresses
 					.iter()
-					.map(|a| ConfigKey::NewlyAddedAddress(a.network_id, a.address_id))
+					.map(|a| {
+						ConfigKey::NewlyAddedAddress(a.network_id, a.address_id)
+					})
 					.collect(),
 			)
 			.await?;

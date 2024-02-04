@@ -1,6 +1,6 @@
 use bitcoin::{
-	blockdata::block::Version, hash_types::TxMerkleNode, hashes::Hash, pow::CompactTarget,
-	BlockHash,
+	blockdata::block::Version, hash_types::TxMerkleNode, hashes::Hash,
+	pow::CompactTarget, BlockHash,
 };
 use duckdb::{params, Connection};
 use eyre::Result;
@@ -23,9 +23,12 @@ impl Block {
 	pub fn get(storage_db: &StorageDb) -> Result<Option<Block>> {
 		let mut ret = None;
 
-		if let Some(path) = storage_db.get_path(&ParquetFile::Blocks.to_string())? {
-			let mut statement =
-				storage_db.db.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
+		if let Some(path) =
+			storage_db.get_path(&ParquetFile::Blocks.to_string())?
+		{
+			let mut statement = storage_db
+				.db
+				.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
 			let mut rows = statement.query([])?;
 
 			if let Some(row) = rows.next()? {

@@ -23,8 +23,9 @@ pub fn project_dir(folder: Option<&str>) -> PathBuf {
 }
 
 pub fn get_rate_limiter(rps: u32) -> Option<Arc<RateLimiter>> {
-	NonZeroU32::new(rps)
-		.map(|non_zero_rps| Arc::new(GovernorRateLimiter::direct(Quota::per_second(non_zero_rps))))
+	NonZeroU32::new(rps).map(|non_zero_rps| {
+		Arc::new(GovernorRateLimiter::direct(Quota::per_second(non_zero_rps)))
+	})
 }
 
 pub fn new_unique_id(prefix: IdPrefix) -> String {
@@ -33,8 +34,9 @@ pub fn new_unique_id(prefix: IdPrefix) -> String {
 		&nanoid!(
 			8,
 			&[
-				'2', '3', '4', '5', '6', '7', '8', '9', 'a', 'c', 'd', 'e', 'g', 'h', 'j', 'k',
-				'm', 'n', 'q', 'r', 's', 't', 'v', 'w', 'x', 'z',
+				'2', '3', '4', '5', '6', '7', '8', '9', 'a', 'c', 'd', 'e',
+				'g', 'h', 'j', 'k', 'm', 'n', 'q', 'r', 's', 't', 'v', 'w',
+				'x', 'z',
 			]
 		),
 	)
@@ -112,7 +114,10 @@ mod tests {
 			("", ""),
 			("http://test.com/", "http://test.com/"),
 			("http://username@test.com/", "http://username@test.com/"),
-			("http://username:password@test.com/", "http://username:***@test.com/"),
+			(
+				"http://username:password@test.com/",
+				"http://username:***@test.com/",
+			),
 		]);
 
 		for (from, to) in data.into_iter() {
@@ -125,7 +130,10 @@ mod tests {
 		let data = HashMap::from([
 			("", ("", "")),
 			("http://test.com/pathname", ("http://test.com/", "pathname")),
-			("http://username@test.com/pathname", ("http://username@test.com/", "pathname")),
+			(
+				"http://username@test.com/pathname",
+				("http://username@test.com/", "pathname"),
+			),
 			(
 				"http://username:password@test.com/pathname",
 				("http://username:password@test.com/", "pathname"),
@@ -133,7 +141,10 @@ mod tests {
 		]);
 
 		for (from, (to, pathname)) in data.into_iter() {
-			assert_eq!(without_pathname(&from), (to.to_string(), pathname.to_string()))
+			assert_eq!(
+				without_pathname(&from),
+				(to.to_string(), pathname.to_string())
+			)
 		}
 	}
 

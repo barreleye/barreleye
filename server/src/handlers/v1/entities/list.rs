@@ -53,7 +53,8 @@ pub async fn handler(
 
 	for entity in entities.iter_mut() {
 		entity.tags = tags_map.get(&entity.entity_id).cloned().or(Some(vec![]));
-		entity.addresses = addresses_map.get(&entity.entity_id).cloned().or(Some(vec![]));
+		entity.addresses =
+			addresses_map.get(&entity.entity_id).cloned().or(Some(vec![]));
 	}
 
 	Ok(Response { entities, tags, addresses, networks }.into())

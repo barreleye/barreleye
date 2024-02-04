@@ -10,7 +10,9 @@ use crate::{
 	utils, IdPrefix,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
+#[derive(
+	Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel,
+)]
 #[sea_orm(table_name = "api_keys")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {

@@ -14,10 +14,12 @@ use crate::{
 	models::Network,
 	utils, BlockHeight, RateLimiter, Storage,
 };
-use modules::{EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer};
+use modules::{
+	EvmBalance, EvmModuleTrait, EvmTokenBalance, EvmTokenTransfer, EvmTransfer,
+};
 use schema::{
-	Block as ParquetBlock, Log as ParquetLog, ParquetFile, Receipt as ParquetReceipt,
-	Transaction as ParquetTransaction,
+	Block as ParquetBlock, Log as ParquetLog, ParquetFile,
+	Receipt as ParquetReceipt, Transaction as ParquetTransaction,
 };
 
 mod modules;
@@ -63,9 +65,11 @@ impl Evm {
 #[async_trait]
 impl ChainTrait for Evm {
 	async fn connect(&mut self) -> Result<bool> {
-		if let Ok(provider) =
-			Provider::<RetryClient<Http>>::new_client(&self.network.rpc_endpoint, 10, 1_000)
-		{
+		if let Ok(provider) = Provider::<RetryClient<Http>>::new_client(
+			&self.network.rpc_endpoint,
+			10,
+			1_000,
+		) {
 			if let Some(rate_limiter) = &self.rate_limiter {
 				rate_limiter.until_ready().await;
 			}
@@ -136,7 +140,9 @@ impl ChainTrait for Evm {
 
 					// process tx only if receipt exists
 					self.rate_limit().await;
-					if let Some(receipt) = provider.get_transaction_receipt(tx.hash()).await? {
+					if let Some(receipt) =
+						provider.get_transaction_receipt(tx.hash()).await?
+					{
 						// skip if tx reverted
 						if let Some(status) = receipt.status {
 							if status == U64::zero() {
@@ -198,7 +204,9 @@ impl ChainTrait for Evm {
 
 					// process tx only if receipt exists
 					self.rate_limit().await;
-					if let Some(receipt) = provider.get_transaction_receipt(tx.hash()).await? {
+					if let Some(receipt) =
+						provider.get_transaction_receipt(tx.hash()).await?
+					{
 						// skip if tx reverted
 						if let Some(status) = receipt.status {
 							if status == U64::zero() {
@@ -209,21 +217,29 @@ impl ChainTrait for Evm {
 						storage_db.insert(ParquetTransaction {
 							hash: tx.hash,
 							nonce: tx.nonce,
-							transaction_index: tx.transaction_index.map(|v| v.as_u64()),
+							transaction_index: tx
+								.transaction_index
+								.map(|v| v.as_u64()),
 							from_address: tx.from,
 							to_address: tx.to,
 							value: tx.value,
 							gas_price: tx.gas_price,
 							gas: tx.gas,
-							transaction_type: tx.transaction_type.map(|v| v.as_u64()),
+							transaction_type: tx
+								.transaction_type
+								.map(|v| v.as_u64()),
 							chain_id: tx.chain_id,
 						})?;
 
 						storage_db.insert(ParquetReceipt {
 							transaction_hash: receipt.transaction_hash,
-							transaction_index: receipt.transaction_index.as_u64(),
+							transaction_index: receipt
+								.transaction_index
+								.as_u64(),
 							block_hash: receipt.block_hash,
-							block_number: receipt.block_number.map(|v| v.as_u64()),
+							block_number: receipt
+								.block_number
+								.map(|v| v.as_u64()),
 							from_address: receipt.from,
 							to_address: receipt.to,
 							cumulative_gas_used: receipt.cumulative_gas_used,
@@ -232,7 +248,9 @@ impl ChainTrait for Evm {
 							logs: receipt.logs.len() as u32,
 							status: receipt.status.map(|v| v.as_u64()),
 							root: receipt.root,
-							transaction_type: receipt.transaction_type.map(|v| v.as_u64()),
+							transaction_type: receipt
+								.transaction_type
+								.map(|v| v.as_u64()),
 							effective_gas_price: receipt.effective_gas_price,
 						})?;
 
@@ -242,9 +260,12 @@ impl ChainTrait for Evm {
 								topics: log.topics,
 								data: log.data,
 								transaction_hash: log.transaction_hash,
-								transaction_index: log.transaction_index.map(|v| v.as_u64()),
+								transaction_index: log
+									.transaction_index
+									.map(|v| v.as_u64()),
 								log_index: log.log_index,
-								transaction_log_index: log.transaction_log_index,
+								transaction_log_index: log
+									.transaction_log_index,
 								log_type: log.log_type,
 								removed: log.removed,
 							})?;
@@ -277,15 +298,26 @@ impl Evm {
 	) -> Result<WarehouseData> {
 		let mut ret = WarehouseData::new();
 
-		for module in self.modules.iter().filter(|m| module_ids.contains(&m.get_id())) {
-			ret += module.run(self, block_height, block_time, tx.clone(), receipt.clone()).await?;
+		for module in
+			self.modules.iter().filter(|m| module_ids.contains(&m.get_id()))
+		{
+			ret += module
+				.run(
+					self,
+					block_height,
+					block_time,
+					tx.clone(),
+					receipt.clone(),
+				)
+				.await?;
 		}
 
 		Ok(ret)
 	}
 
 	fn get_topic(&self, log: &Log) -> Result<EvmTopic> {
-		if log.topics.len() == 3 && log.topics[0].encode_hex::<String>() == *TRANSFER_FROM_TO_AMOUNT
+		if log.topics.len() == 3 &&
+			log.topics[0].encode_hex::<String>() == *TRANSFER_FROM_TO_AMOUNT
 		{
 			let from = Address::from(log.topics[1]);
 			let to = Address::from(log.topics[2]);

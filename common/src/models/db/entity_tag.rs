@@ -11,7 +11,9 @@ use crate::models::{
 	BasicModel, EntityColumn, PrimaryId, PrimaryIds, TagColumn,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
+#[derive(
+	Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel,
+)]
 #[sea_orm(table_name = "entity_tags")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -34,7 +36,11 @@ pub enum Relation {
 		to = "EntityColumn::EntityId"
 	)]
 	Entity,
-	#[sea_orm(belongs_to = "tag::Entity", from = "Column::TagId", to = "TagColumn::TagId")]
+	#[sea_orm(
+		belongs_to = "tag::Entity",
+		from = "Column::TagId",
+		to = "TagColumn::TagId"
+	)]
 	Tag,
 }
 
@@ -46,16 +52,25 @@ impl BasicModel for Model {
 
 impl Model {
 	pub fn new_model(entity_id: PrimaryId, tag_id: PrimaryId) -> ActiveModel {
-		ActiveModel { entity_id: Set(entity_id), tag_id: Set(tag_id), ..Default::default() }
+		ActiveModel {
+			entity_id: Set(entity_id),
+			tag_id: Set(tag_id),
+			..Default::default()
+		}
 	}
 
-	pub async fn create_many<C>(c: &C, data: Vec<ActiveModel>) -> Result<(PrimaryId, PrimaryId)>
+	pub async fn create_many<C>(
+		c: &C,
+		data: Vec<ActiveModel>,
+	) -> Result<(PrimaryId, PrimaryId)>
 	where
 		C: ConnectionTrait,
 	{
 		let insert_result = Entity::insert_many(data)
 			.on_conflict(
-				OnConflict::columns([Column::EntityId, Column::TagId]).do_nothing().to_owned(),
+				OnConflict::columns([Column::EntityId, Column::TagId])
+					.do_nothing()
+					.to_owned(),
 			)
 			.exec(c)
 			.await?;

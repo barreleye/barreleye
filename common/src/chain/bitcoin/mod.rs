@@ -10,10 +10,12 @@ use crate::{
 	utils, BlockHeight, RateLimiter, Storage,
 };
 use client::{Auth, Client};
-use modules::{BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinTransfer};
+use modules::{
+	BitcoinBalance, BitcoinCoinbase, BitcoinModuleTrait, BitcoinTransfer,
+};
 use schema::{
-	Block as ParquetBlock, Input as ParquetInput, Output as ParquetOutput, ParquetFile,
-	Transaction as ParquetTransaction,
+	Block as ParquetBlock, Input as ParquetInput, Output as ParquetOutput,
+	ParquetFile, Transaction as ParquetTransaction,
 };
 
 mod client;
@@ -70,9 +72,15 @@ impl ChainTrait for Bitcoin {
 				rate_limiter.until_ready().await;
 			}
 
-			let client = Client::new_without_retry(&self.network.rpc_endpoint, auth.clone());
+			let client = Client::new_without_retry(
+				&self.network.rpc_endpoint,
+				auth.clone(),
+			);
 			if client.get_blockchain_info().await.is_ok() {
-				self.client = Some(Arc::new(Client::new(&self.network.rpc_endpoint, auth)));
+				self.client = Some(Arc::new(Client::new(
+					&self.network.rpc_endpoint,
+					auth,
+				)));
 				self.rpc = Some(self.network.rpc_endpoint.clone());
 			}
 		}
@@ -102,7 +110,9 @@ impl ChainTrait for Bitcoin {
 
 	fn format_address(&self, address: &str) -> String {
 		if let Ok(unknown_address) = Address::from_str(address) {
-			if let Ok(parsed_address) = unknown_address.require_network(self.bitcoin_network) {
+			if let Ok(parsed_address) =
+				unknown_address.require_network(self.bitcoin_network)
+			{
 				return parsed_address.to_string();
 			}
 		}
@@ -146,7 +156,11 @@ impl ChainTrait for Bitcoin {
 						.into_iter()
 						.filter(|i| i.tx_hash == tx.clone().hash)
 						.collect(),
-					all_tx_outputs.clone().into_iter().filter(|o| o.tx_hash == tx.hash).collect(),
+					all_tx_outputs
+						.clone()
+						.into_iter()
+						.filter(|o| o.tx_hash == tx.hash)
+						.collect(),
 					module_ids.clone(),
 				)
 				.await?;
@@ -165,9 +179,13 @@ impl ChainTrait for Bitcoin {
 		let storage_db = storage.get(self.network.network_id, block_height)?;
 
 		self.rate_limit().await;
-		if let Ok(block_hash) = self.client.as_ref().unwrap().get_block_hash(block_height).await {
+		if let Ok(block_hash) =
+			self.client.as_ref().unwrap().get_block_hash(block_height).await
+		{
 			self.rate_limit().await;
-			if let Ok(block) = self.client.as_ref().unwrap().get_block(&block_hash).await {
+			if let Ok(block) =
+				self.client.as_ref().unwrap().get_block(&block_hash).await
+			{
 				storage_db.insert(ParquetBlock {
 					hash: block_hash,
 					version: block.header.version,
@@ -191,7 +209,10 @@ impl ChainTrait for Bitcoin {
 					for txin in tx.input.clone().into_iter() {
 						storage_db.insert(ParquetInput {
 							tx_hash: tx.txid().to_raw_hash(),
-							previous_output_tx_hash: txin.previous_output.txid.to_raw_hash(),
+							previous_output_tx_hash: txin
+								.previous_output
+								.txid
+								.to_raw_hash(),
 							previous_output_vout: txin.previous_output.vout,
 						})?;
 					}
@@ -249,8 +270,13 @@ impl Bitcoin {
 
 			for tx_input in tx_inputs.iter() {
 				if !tx.is_coinbase {
-					if let Some((a, v)) =
-						self.get_utxo(&tx, &tx_outputs, tx_input.previous_output_vout).await?
+					if let Some((a, v)) = self
+						.get_utxo(
+							&tx,
+							&tx_outputs,
+							tx_input.previous_output_vout,
+						)
+						.await?
 					{
 						ret.push((a, v))
 					}
@@ -260,11 +286,21 @@ impl Bitcoin {
 			ret
 		});
 
-		let outputs = get_unique_addresses(self.index_transaction_outputs(&tx, &tx_outputs).await?);
+		let outputs = get_unique_addresses(
+			self.index_transaction_outputs(&tx, &tx_outputs).await?,
+		);
 
-		for module in self.modules.iter().filter(|m| module_ids.contains(&m.get_id())) {
+		for module in
+			self.modules.iter().filter(|m| module_ids.contains(&m.get_id()))
+		{
 			ret += module
-				.run(block_height, block_time, tx.clone(), inputs.clone(), outputs.clone())
+				.run(
+					block_height,
+					block_time,
+					tx.clone(),
+					inputs.clone(),
+					outputs.clone(),
+				)
 				.await?;
 		}
 
@@ -274,7 +310,7 @@ impl Bitcoin {
 	async fn index_transaction_outputs(
 		&self,
 		tx: &ParquetTransaction,
-		tx_outputs: &Vec<ParquetOutput>,
+		tx_outputs: &[ParquetOutput],
 	) -> Result<Vec<(String, u64)>> {
 		let mut ret = vec![];
 
@@ -290,7 +326,7 @@ impl Bitcoin {
 	async fn get_utxo(
 		&self,
 		tx: &ParquetTransaction,
-		tx_outputs: &Vec<ParquetOutput>,
+		tx_outputs: &[ParquetOutput],
 		vout: u32,
 	) -> Result<Option<(String, u64)>> {
 		Ok(self
@@ -301,15 +337,16 @@ impl Bitcoin {
 	fn get_address(
 		&self,
 		tx: &ParquetTransaction,
-		tx_outputs: &Vec<ParquetOutput>,
+		tx_outputs: &[ParquetOutput],
 		vout: u32,
 	) -> Result<Option<String>> {
 		let mut ret = None;
 
 		if vout < tx_outputs.len() as u32 {
-			if let Ok(address) =
-				Address::from_script(&tx_outputs[vout as usize].script_pubkey, self.bitcoin_network)
-			{
+			if let Ok(address) = Address::from_script(
+				&tx_outputs[vout as usize].script_pubkey,
+				self.bitcoin_network,
+			) {
 				ret = Some(address.to_string());
 			} else {
 				ret = Some(format!("{}:{}", tx.hash, vout));

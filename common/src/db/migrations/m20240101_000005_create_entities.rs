@@ -19,11 +19,29 @@ impl MigrationTrait for Migration {
 							.auto_increment()
 							.primary_key(),
 					)
-					.col(ColumnDef::new(Entities::Id).unique_key().string().not_null())
-					.col(ColumnDef::new(Entities::Name).unique_key().string().null())
-					.col(ColumnDef::new(Entities::Description).string().not_null())
+					.col(
+						ColumnDef::new(Entities::Id)
+							.unique_key()
+							.string()
+							.not_null(),
+					)
+					.col(
+						ColumnDef::new(Entities::Name)
+							.unique_key()
+							.string()
+							.null(),
+					)
+					.col(
+						ColumnDef::new(Entities::Description)
+							.string()
+							.not_null(),
+					)
 					.col(ColumnDef::new(Entities::Data).json().not_null())
-					.col(ColumnDef::new(Entities::IsDeleted).boolean().not_null())
+					.col(
+						ColumnDef::new(Entities::IsDeleted)
+							.boolean()
+							.not_null(),
+					)
 					.col(ColumnDef::new(Entities::UpdatedAt).date_time().null())
 					.col(
 						ColumnDef::new(Entities::CreatedAt)
@@ -48,7 +66,9 @@ impl MigrationTrait for Migration {
 	}
 
 	async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-		manager.drop_table(Table::drop().table(Entities::Table).to_owned()).await
+		manager
+			.drop_table(Table::drop().table(Entities::Table).to_owned())
+			.await
 	}
 }
 

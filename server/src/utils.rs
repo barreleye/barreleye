@@ -19,7 +19,8 @@ pub fn extract_primary_ids(
 		let invalid_ids = ids
 			.into_iter()
 			.filter_map(|id| {
-				if !map.contains_key(&id) && is_valid_id(&id, id_prefix.clone()) {
+				if !map.contains_key(&id) && is_valid_id(&id, id_prefix.clone())
+				{
 					Some(id)
 				} else {
 					None

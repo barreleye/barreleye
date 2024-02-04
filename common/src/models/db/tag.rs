@@ -8,11 +8,15 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 use crate::{
-	models::{db::entity_tag, BasicModel, EntityTagColumn, PrimaryId, PrimaryIds},
+	models::{
+		db::entity_tag, BasicModel, EntityTagColumn, PrimaryId, PrimaryIds,
+	},
 	utils, IdPrefix, RiskLevel,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
+#[derive(
+	Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel,
+)]
 #[sea_orm(table_name = "tags")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -110,7 +114,11 @@ impl BasicModel for Model {
 }
 
 impl Model {
-	pub fn new_model(id: Option<String>, name: &str, risk_level: RiskLevel) -> ActiveModel {
+	pub fn new_model(
+		id: Option<String>,
+		name: &str,
+		risk_level: RiskLevel,
+	) -> ActiveModel {
 		ActiveModel {
 			id: Set(id.unwrap_or(utils::new_unique_id(IdPrefix::Tag))),
 			name: Set(name.to_string()),
@@ -124,14 +132,20 @@ impl Model {
 		C: ConnectionTrait,
 	{
 		Ok(Entity::find()
-			.filter(Condition::all().add(
-				Expr::expr(Func::lower(Expr::col(Column::Name))).eq(name.trim().to_lowercase()),
-			))
+			.filter(
+				Condition::all().add(
+					Expr::expr(Func::lower(Expr::col(Column::Name)))
+						.eq(name.trim().to_lowercase()),
+				),
+			)
 			.one(c)
 			.await?)
 	}
 
-	pub async fn get_all_by_entity_ids<C>(c: &C, entity_ids: PrimaryIds) -> Result<Vec<JoinedModel>>
+	pub async fn get_all_by_entity_ids<C>(
+		c: &C,
+		entity_ids: PrimaryIds,
+	) -> Result<Vec<JoinedModel>>
 	where
 		C: ConnectionTrait,
 	{

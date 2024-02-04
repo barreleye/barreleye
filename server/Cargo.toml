@@ -1,16 +1,18 @@
 [package]
 name = "barreleye-server"
+publish = false
 description = "Open-source blockchain analytics."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.com"
-version = "0.1.0"
+version = "0.2.0-alpha.0"
 license = "Apache-2.0"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.75"
 workspace = ".."
 
 [dependencies]
+barreleye-common = { path = "../common" }
 tokio = { version = "1.36.0", features = ["full"] }
 log = "0.4.20"
 eyre = "0.6.12"
@@ -25,8 +27,6 @@ uuid = { version = "1.7.0", features = ["v4", "fast-rng"] }
 tower = { version = "0.4.13", features = ["timeout"] }
 tower-http = { version = "0.5.1", features = ["trace"] }
 tracing = "0.1.40"
-
-barreleye-common = { path = "../common", version = "0.1.0" }
 
 [dependencies.sea-orm]
 version = "0.12.12"

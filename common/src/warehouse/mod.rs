@@ -26,7 +26,8 @@ pub struct Warehouse {
 
 impl Warehouse {
 	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
-		let (url_without_database, db_name) = utils::without_pathname(&settings.warehouse);
+		let (url_without_database, db_name) =
+			utils::without_pathname(&settings.warehouse);
 
 		// create db if doesn't exist + check that connection is good
 		ClickHouseClient::default()

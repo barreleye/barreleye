@@ -51,7 +51,9 @@ impl EvmModuleTrait for EvmTokenBalance {
 
 			// process token `transfer` event
 			match evm.get_topic(&log)? {
-				EvmTopic::TokenTransfer(from, to, amount) if amount > U256::zero() => {
+				EvmTopic::TokenTransfer(from, to, amount)
+					if amount > U256::zero() =>
+				{
 					ret.amounts.insert(Amount::new(
 						self.get_id(),
 						self.network_id,

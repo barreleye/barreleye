@@ -28,29 +28,44 @@ pub fn get_routes() -> Router<Arc<App>> {
 pub async fn get_data_by_tag_ids(
 	app: Arc<App>,
 	tag_ids: PrimaryIds,
-) -> Result<(HashMap<PrimaryId, Vec<String>>, Vec<Entity>, Vec<Address>, Vec<Network>)> {
-	let joined_entities = Entity::get_all_by_tag_ids(app.db(), tag_ids, Some(false)).await?;
+) -> Result<(
+	HashMap<PrimaryId, Vec<String>>,
+	Vec<Entity>,
+	Vec<Address>,
+	Vec<Network>,
+)> {
+	let joined_entities =
+		Entity::get_all_by_tag_ids(app.db(), tag_ids, Some(false)).await?;
 
-	let addresses =
-		Address::get_all_by_entity_ids(app.db(), joined_entities.clone().into(), Some(false))
-			.await?;
+	let addresses = Address::get_all_by_entity_ids(
+		app.db(),
+		joined_entities.clone().into(),
+		Some(false),
+	)
+	.await?;
 
-	let network_ids = addresses.iter().map(|a| a.network_id).collect::<Vec<PrimaryId>>();
-	let networks = Network::get_all_by_network_ids(app.db(), network_ids.into(), Some(false))
-		.await?
-		.into_iter()
-		.map(|mut n| {
-			n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
-			n
-		})
-		.collect::<Vec<Network>>();
+	let network_ids =
+		addresses.iter().map(|a| a.network_id).collect::<Vec<PrimaryId>>();
+	let networks = Network::get_all_by_network_ids(
+		app.db(),
+		network_ids.into(),
+		Some(false),
+	)
+	.await?
+	.into_iter()
+	.map(|mut n| {
+		n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
+		n
+	})
+	.collect::<Vec<Network>>();
 
 	let mut tags_map = HashMap::<PrimaryId, Vec<String>>::new();
 	for joined_entity in joined_entities.iter() {
 		if let Some(ids) = tags_map.get_mut(&joined_entity.tag_id) {
 			ids.push(joined_entity.id.clone());
 		} else {
-			tags_map.insert(joined_entity.tag_id, vec![joined_entity.id.clone()]);
+			tags_map
+				.insert(joined_entity.tag_id, vec![joined_entity.id.clone()]);
 		}
 	}
 
@@ -67,7 +82,8 @@ pub async fn get_data_by_tag_ids(
 		.into_iter()
 		.map(|je| {
 			let mut entity: Entity = je.into();
-			entity.addresses = entities_map.get(&entity.entity_id).cloned().or(Some(vec![]));
+			entity.addresses =
+				entities_map.get(&entity.entity_id).cloned().or(Some(vec![]));
 			entity
 		})
 		.collect();

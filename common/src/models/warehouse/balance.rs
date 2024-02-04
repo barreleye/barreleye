@@ -26,8 +26,8 @@ impl Model {
 		warehouse: &Warehouse,
 		mut addresses: Vec<String>,
 	) -> Result<Vec<Model>> {
-		// @TODO until I256 is implemented, doing this hacky "group by" statement
-		// ideally: "SELECT ?fields FROM {TABLE} WHERE address IN ?"
+		// @TODO until I256 is implemented, doing this hacky "group by"
+		// statement ideally: "SELECT ?fields FROM {TABLE} WHERE address IN ?"
 
 		addresses.sort_unstable();
 		addresses.dedup();

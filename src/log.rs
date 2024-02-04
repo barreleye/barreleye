@@ -10,7 +10,10 @@ pub fn setup() -> Result<()> {
 		.add_directive("barreleye=trace".parse()?)
 		.add_directive("tower_http::trace=debug".parse()?);
 
-	tracing_subscriber::registry().with(fmt::layer().compact()).with(filter).init();
+	tracing_subscriber::registry()
+		.with(fmt::layer().compact())
+		.with(filter)
+		.init();
 
 	Ok(())
 }

@@ -4,7 +4,10 @@ use std::collections::HashMap;
 
 use crate::{
 	chain::{
-		bitcoin::{modules::BitcoinModuleTrait, schema::Transaction as ParquetTransaction},
+		bitcoin::{
+			modules::BitcoinModuleTrait,
+			schema::Transaction as ParquetTransaction,
+		},
 		ModuleId, ModuleTrait, WarehouseData, U256,
 	},
 	models::{Amount, PrimaryId},

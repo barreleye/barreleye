@@ -31,7 +31,8 @@ pub async fn handler(
 				..Default::default()
 			};
 			if update_data.is_changed() {
-				ApiKey::update_by_id(app.db(), &api_key_id, update_data).await?;
+				ApiKey::update_by_id(app.db(), &api_key_id, update_data)
+					.await?;
 			}
 
 			Ok(StatusCode::NO_CONTENT)

@@ -105,7 +105,9 @@ pub trait BasicModel {
 		C: ConnectionTrait,
 	{
 		let insert_result =
-			<Self::ActiveModel as ActiveModelTrait>::Entity::insert(data).exec(c).await?;
+			<Self::ActiveModel as ActiveModelTrait>::Entity::insert(data)
+				.exec(c)
+				.await?;
 
 		Ok(insert_result.last_insert_id)
 	}
@@ -119,7 +121,9 @@ pub trait BasicModel {
 		C: ConnectionTrait,
 	{
 		let insert_result =
-			<Self::ActiveModel as ActiveModelTrait>::Entity::insert_many(data).exec(c).await?;
+			<Self::ActiveModel as ActiveModelTrait>::Entity::insert_many(data)
+				.exec(c)
+				.await?;
 
 		Ok(insert_result.last_insert_id)
 	}
@@ -132,7 +136,11 @@ pub trait BasicModel {
 	where
 		C: ConnectionTrait,
 	{
-		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find_by_id(primary_id).one(c).await?)
+		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find_by_id(
+			primary_id,
+		)
+		.one(c)
+		.await?)
 	}
 
 	async fn get_by_id<C>(
@@ -154,7 +162,9 @@ pub trait BasicModel {
 	where
 		C: ConnectionTrait,
 	{
-		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find().all(c).await?)
+		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find()
+			.all(c)
+			.await?)
 	}
 
 	async fn get_all_paginated<C>(
@@ -185,7 +195,10 @@ pub trait BasicModel {
 		C: ConnectionTrait,
 		F: IntoCondition + Send,
 	{
-		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find().filter(filter).all(c).await?)
+		Ok(<Self::ActiveModel as ActiveModelTrait>::Entity::find()
+			.filter(filter)
+			.all(c)
+			.await?)
 	}
 
 	async fn get_all_paginated_where<C, F>(
@@ -198,7 +211,8 @@ pub trait BasicModel {
 		C: ConnectionTrait,
 		F: IntoCondition + Send,
 	{
-		let mut q = <Self::ActiveModel as ActiveModelTrait>::Entity::find().filter(filter);
+		let mut q = <Self::ActiveModel as ActiveModelTrait>::Entity::find()
+			.filter(filter);
 
 		if let Some(v) = offset {
 			q = q.offset(v);
@@ -210,31 +224,41 @@ pub trait BasicModel {
 		Ok(q.all(c).await?)
 	}
 
-	async fn update_by_id<C>(c: &C, id: &str, data: Self::ActiveModel) -> Result<bool>
+	async fn update_by_id<C>(
+		c: &C,
+		id: &str,
+		data: Self::ActiveModel,
+	) -> Result<bool>
 	where
 		C: ConnectionTrait,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::update_many()
-			.col_expr(Alias::new("updated_at"), Expr::value(utils::now()))
-			.set(data)
-			.filter(Expr::col(Alias::new("id")).eq(id))
-			.exec(c)
-			.await?;
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::update_many()
+				.col_expr(Alias::new("updated_at"), Expr::value(utils::now()))
+				.set(data)
+				.filter(Expr::col(Alias::new("id")).eq(id))
+				.exec(c)
+				.await?;
 
 		Ok(res.rows_affected == 1)
 	}
 
-	async fn update_all_where<C, F>(c: &C, filter: F, data: Self::ActiveModel) -> Result<u64>
+	async fn update_all_where<C, F>(
+		c: &C,
+		filter: F,
+		data: Self::ActiveModel,
+	) -> Result<u64>
 	where
 		C: ConnectionTrait,
 		F: IntoCondition + Send,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::update_many()
-			.col_expr(Alias::new("updated_at"), Expr::value(utils::now()))
-			.set(data)
-			.filter(filter)
-			.exec(c)
-			.await?;
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::update_many()
+				.col_expr(Alias::new("updated_at"), Expr::value(utils::now()))
+				.set(data)
+				.filter(filter)
+				.exec(c)
+				.await?;
 
 		Ok(res.rows_affected)
 	}
@@ -247,7 +271,10 @@ pub trait BasicModel {
 	where
 		C: ConnectionTrait,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::delete_by_id(primary_id)
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::delete_by_id(
+				primary_id,
+			)
 			.exec(c)
 			.await?;
 
@@ -258,10 +285,11 @@ pub trait BasicModel {
 	where
 		C: ConnectionTrait,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
-			.filter(Expr::col(Alias::new("id")).eq(id))
-			.exec(c)
-			.await?;
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
+				.filter(Expr::col(Alias::new("id")).eq(id))
+				.exec(c)
+				.await?;
 
 		Ok(res.rows_affected == 1)
 	}
@@ -271,10 +299,11 @@ pub trait BasicModel {
 		C: ConnectionTrait,
 		F: IntoCondition + Send,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
-			.filter(filter)
-			.exec(c)
-			.await?;
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
+				.filter(filter)
+				.exec(c)
+				.await?;
 
 		Ok(res.rows_affected)
 	}
@@ -318,10 +347,11 @@ pub trait SoftDeleteModel {
 	where
 		C: ConnectionTrait,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
-			.filter(Expr::col(Alias::new("is_deleted")).eq(true))
-			.exec(c)
-			.await?;
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
+				.filter(Expr::col(Alias::new("is_deleted")).eq(true))
+				.exec(c)
+				.await?;
 
 		Ok(res.rows_affected)
 	}
@@ -331,11 +361,12 @@ pub trait SoftDeleteModel {
 		C: ConnectionTrait,
 		F: IntoCondition + Send,
 	{
-		let res = <Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
-			.filter(Expr::col(Alias::new("is_deleted")).eq(true))
-			.filter(filter)
-			.exec(c)
-			.await?;
+		let res =
+			<Self::ActiveModel as ActiveModelTrait>::Entity::delete_many()
+				.filter(Expr::col(Alias::new("is_deleted")).eq(true))
+				.filter(filter)
+				.exec(c)
+				.await?;
 
 		Ok(res.rows_affected)
 	}
@@ -356,7 +387,10 @@ mod tests {
 			(("net_", IdPrefix::Network), false),
 			(("net_?", IdPrefix::Network), false),
 			(("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", IdPrefix::Network), true),
-			(("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA", IdPrefix::Network), false),
+			(
+				("net_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaA", IdPrefix::Network),
+				false,
+			),
 		]);
 
 		for (input, output) in data.into_iter() {

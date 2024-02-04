@@ -3,7 +3,7 @@
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml)](https://github.com/barreleye/barreleye/actions)
 [![License](https://img.shields.io/github/license/barreleye/barreleye)](/LICENSE)
 [![Discord](https://img.shields.io/discord/1026664296861679646?logo=discord&logoColor=ffffff&label=discord)](https://discord.gg/VX8PdWSwNZ)
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/GetBarreleye?logo=twitter&style=flat&logoColor=ffffff)](https://twitter.com/GetBarreleye)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/GetBarreleye)](https://twitter.com/GetBarreleye)
 
 ## What is Barreleye?
 
@@ -242,7 +242,7 @@ curl -X POST \
   http://localhost:4000/v1/addresses
 ```
 
-## 🧐 Analytics
+## 📊 Analytics
 
 To query information about a particular blockchain address:
 

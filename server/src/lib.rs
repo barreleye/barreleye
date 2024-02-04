@@ -18,7 +18,8 @@ use uuid::Uuid;
 
 use crate::errors::ServerError;
 use barreleye_common::{
-	models::ApiKey, quit, App, AppError, Progress, ProgressReadyType, ProgressStep, Warnings,
+	models::ApiKey, quit, App, AppError, Progress, ProgressReadyType,
+	ProgressStep, Warnings,
 };
 
 mod errors;
@@ -36,7 +37,11 @@ impl Server {
 		Self { app }
 	}
 
-	async fn auth(State(app): State<Arc<App>>, req: Request, next: Next) -> ServerResult<Response> {
+	async fn auth(
+		State(app): State<Arc<App>>,
+		req: Request,
+		next: Next,
+	) -> ServerResult<Response> {
 		for public_endpoint in ["/v1/info"].iter() {
 			if req.uri().to_string().starts_with(public_endpoint) {
 				return Ok(next.run(req).await);
@@ -55,7 +60,8 @@ impl Server {
 			_ => return Err(ServerError::Unauthorized),
 		};
 
-		let api_key = Uuid::parse_str(&token).map_err(|_| ServerError::Unauthorized)?;
+		let api_key =
+			Uuid::parse_str(&token).map_err(|_| ServerError::Unauthorized)?;
 
 		match ApiKey::get_by_uuid(app.db(), &api_key)
 			.await
@@ -66,7 +72,11 @@ impl Server {
 		}
 	}
 
-	pub async fn start(&self, warnings: Warnings, progress: Progress) -> Result<()> {
+	pub async fn start(
+		&self,
+		warnings: Warnings,
+		progress: Progress,
+	) -> Result<()> {
 		let settings = self.app.settings.clone();
 
 		async fn handle_404() -> ServerResult<StatusCode> {
@@ -78,12 +88,17 @@ impl Server {
 			uri: Uri,
 			_err: BoxError,
 		) -> ServerResult<StatusCode> {
-			Err(ServerError::Internal { error: Report::msg(format!("`{method} {uri}` timed out")) })
+			Err(ServerError::Internal {
+				error: Report::msg(format!("`{method} {uri}` timed out")),
+			})
 		}
 
 		let app = Router::new()
 			.nest("/", handlers::get_routes())
-			.route_layer(middleware::from_fn_with_state(self.app.clone(), Self::auth))
+			.route_layer(middleware::from_fn_with_state(
+				self.app.clone(),
+				Self::auth,
+			))
 			.fallback(handle_404)
 			.layer(
 				ServiceBuilder::new()
@@ -92,7 +107,9 @@ impl Server {
 			)
 			.layer(
 				TraceLayer::new_for_http()
-					.make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
+					.make_span_with(
+						trace::DefaultMakeSpan::new().level(Level::INFO),
+					)
 					.on_request(())
 					.on_response(
 						trace::DefaultOnResponse::new()
@@ -118,9 +135,10 @@ impl Server {
 			show_progress(&format!("Listening on {}…", style(ip_addr).bold()));
 
 			match TcpListener::bind(&ip_addr).await {
-				Err(e) => {
-					quit(AppError::ServerStartup { url: ip_addr.to_string(), error: e.to_string() })
-				}
+				Err(e) => quit(AppError::ServerStartup {
+					url: ip_addr.to_string(),
+					error: e.to_string(),
+				}),
 				Ok(listener) => {
 					self.app.set_is_ready();
 					axum::serve(listener, app)

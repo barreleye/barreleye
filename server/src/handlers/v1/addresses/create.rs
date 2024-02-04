@@ -8,7 +8,10 @@ use std::{
 
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
-	models::{Address, BasicModel, Config, ConfigKey, Entity, Network, PrimaryId, SoftDeleteModel},
+	models::{
+		Address, BasicModel, Config, ConfigKey, Entity, Network, PrimaryId,
+		SoftDeleteModel,
+	},
 	App,
 };
 
@@ -35,7 +38,10 @@ pub async fn handler(
 	// fetch entity
 	let entity = Entity::get_existing_by_id(app.db(), &payload.entity)
 		.await?
-		.ok_or(ServerError::InvalidParam { field: "entity".to_string(), value: payload.entity })?;
+		.ok_or(ServerError::InvalidParam {
+		field: "entity".to_string(),
+		value: payload.entity,
+	})?;
 
 	// ensure addresses are unique
 	let unique_addresses: HashSet<String> =
@@ -47,11 +53,12 @@ pub async fn handler(
 	}
 
 	// get network
-	let network =
-		Network::get_by_id(app.db(), &payload.network).await?.ok_or(ServerError::InvalidParam {
+	let network = Network::get_by_id(app.db(), &payload.network).await?.ok_or(
+		ServerError::InvalidParam {
 			field: "network".to_string(),
 			value: payload.network,
-		})?;
+		},
+	)?;
 
 	// check for soft-deleted address conflicts
 	let addresses = Address::get_all_by_entity_id_network_id_and_addresses(
@@ -66,7 +73,11 @@ pub async fn handler(
 		return Err(ServerError::TooEarly {
 			reason: format!(
 				"addresses haven't been deleted yet: {}",
-				addresses.into_iter().map(|a| a.address).collect::<Vec<String>>().join(", ")
+				addresses
+					.into_iter()
+					.map(|a| a.address)
+					.collect::<Vec<String>>()
+					.join(", ")
 			),
 		});
 	}
@@ -83,7 +94,11 @@ pub async fn handler(
 	if !addresses.is_empty() {
 		return Err(ServerError::Duplicates {
 			field: "addresses".to_string(),
-			values: addresses.into_iter().map(|a| a.address).collect::<Vec<String>>().join(", "),
+			values: addresses
+				.into_iter()
+				.map(|a| a.address)
+				.collect::<Vec<String>>()
+				.join(", "),
 		});
 	}
 
@@ -121,7 +136,12 @@ pub async fn handler(
 		)
 		.await?
 		.into_iter()
-		.map(|a| (ConfigKey::NewlyAddedAddress(a.network_id, a.address_id), a.address_id))
+		.map(|a| {
+			(
+				ConfigKey::NewlyAddedAddress(a.network_id, a.address_id),
+				a.address_id,
+			)
+		})
 		.collect::<HashMap<ConfigKey, PrimaryId>>(),
 	)
 	.await?;

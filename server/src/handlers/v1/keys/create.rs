@@ -20,14 +20,19 @@ pub async fn handler(
 ) -> ServerResult<Json<ApiKey>> {
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
-		if !is_valid_id(&id, IdPrefix::ApiKey) || ApiKey::get_by_id(app.db(), &id).await?.is_some()
+		if !is_valid_id(&id, IdPrefix::ApiKey) ||
+			ApiKey::get_by_id(app.db(), &id).await?.is_some()
 		{
-			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+			return Err(ServerError::InvalidParam {
+				field: "id".to_string(),
+				value: id,
+			});
 		}
 	}
 
 	// create new
-	let api_key_id = ApiKey::create(app.db(), ApiKey::new_model(payload.id)).await?;
+	let api_key_id =
+		ApiKey::create(app.db(), ApiKey::new_model(payload.id)).await?;
 
 	// return newly created
 	Ok(ApiKey::get(app.db(), api_key_id).await?.unwrap().format().into())

@@ -27,17 +27,24 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Query(payload): Query<Payload>,
 ) -> ServerResult<Json<Response>> {
-	let tokens = Token::get_all_paginated(app.db(), payload.offset, payload.limit).await?;
+	let tokens =
+		Token::get_all_paginated(app.db(), payload.offset, payload.limit)
+			.await?;
 
-	let network_ids = tokens.iter().map(|t| t.network_id).collect::<Vec<PrimaryId>>();
-	let networks = Network::get_all_by_network_ids(app.db(), network_ids.into(), Some(false))
-		.await?
-		.into_iter()
-		.map(|mut n| {
-			n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
-			n
-		})
-		.collect::<Vec<Network>>();
+	let network_ids =
+		tokens.iter().map(|t| t.network_id).collect::<Vec<PrimaryId>>();
+	let networks = Network::get_all_by_network_ids(
+		app.db(),
+		network_ids.into(),
+		Some(false),
+	)
+	.await?
+	.into_iter()
+	.map(|mut n| {
+		n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
+		n
+	})
+	.collect::<Vec<Network>>();
 
 	Ok(Response { tokens, networks }.into())
 }

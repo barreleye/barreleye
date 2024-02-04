@@ -28,7 +28,11 @@ struct NetworkRange {
 }
 
 impl NetworkRange {
-	pub fn new(network_id: PrimaryId, min: BlockHeight, max: Option<BlockHeight>) -> Self {
+	pub fn new(
+		network_id: PrimaryId,
+		min: BlockHeight,
+		max: Option<BlockHeight>,
+	) -> Self {
 		Self { network_id, range: (min, max) }
 	}
 }
@@ -63,7 +67,10 @@ impl Pipe {
 }
 
 impl Indexer {
-	pub async fn sync(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
+	pub async fn sync(
+		&self,
+		mut networks_updated: watch::Receiver<SystemTime>,
+	) -> Result<()> {
 		'indexing: loop {
 			if !self.app.is_leading() {
 				sleep(Duration::from_secs(1)).await;
@@ -79,16 +86,20 @@ impl Indexer {
 			for (network_id, _) in self.app.networks.read().await.iter() {
 				let nid = *network_id;
 
-				let mut last_copied_block =
-					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::IndexerSyncTail(nid))
-						.await?
-						.map(|h| h.value)
-						.unwrap_or(0);
+				let mut last_copied_block = Config::get::<_, BlockHeight>(
+					self.app.db(),
+					ConfigKey::IndexerSyncTail(nid),
+				)
+				.await?
+				.map(|h| h.value)
+				.unwrap_or(0);
 
-				let block_height =
-					self.get_updated_block_height(nid, Some(last_copied_block)).await?;
+				let block_height = self
+					.get_updated_block_height(nid, Some(last_copied_block))
+					.await?;
 
-				// if first time, split up network into chunks for faster initial syncing
+				// if first time, split up network into chunks for faster
+				// initial syncing
 				if last_copied_block == 0 &&
 					self.app.cpu_count > 0 &&
 					Config::get_many::<_, (BlockHeight, BlockHeight)>(
@@ -101,7 +112,9 @@ impl Indexer {
 					let block_sync_ranges = self
 						.get_block_chunk_ranges(block_height)?
 						.into_iter()
-						.map(|(min, max)| (ConfigKey::IndexerSyncChunk(nid, max), (min, max)))
+						.map(|(min, max)| {
+							(ConfigKey::IndexerSyncChunk(nid, max), (min, max))
+						})
 						.collect::<HashMap<_, _>>();
 
 					// create chunk sync indexes
@@ -128,15 +141,20 @@ impl Indexer {
 				);
 
 				// push all fast-sync block ranges
-				for (config_key, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
-					self.app.db(),
-					vec![ConfigKey::IndexerSyncChunk(nid, 0)],
-				)
-				.await?
+				for (config_key, block_range) in
+					Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerSyncChunk(nid, 0)],
+					)
+					.await?
 				{
 					network_range_map.insert(
 						config_key,
-						NetworkRange::new(nid, block_range.value.0, Some(block_range.value.1)),
+						NetworkRange::new(
+							nid,
+							block_range.value.0,
+							Some(block_range.value.1),
+						),
 					);
 				}
 			}
@@ -146,7 +164,8 @@ impl Indexer {
 				continue;
 			}
 
-			let (pipe_sender, mut pipe_receiver) = mpsc::channel(network_range_map.len());
+			let (pipe_sender, mut pipe_receiver) =
+				mpsc::channel(network_range_map.len());
 			let (abort_sender, _) = broadcast::channel(network_range_map.len());
 			let should_keep_going = Arc::new(AtomicBool::new(true));
 			let mut receipts = HashMap::<ConfigKey, mpsc::Sender<()>>::new();
@@ -155,7 +174,9 @@ impl Indexer {
 			debug!("Launching {thread_count} thread(s)…");
 
 			let mut futures = JoinSet::new();
-			for (config_key, network_params) in network_range_map.clone().into_iter() {
+			for (config_key, network_params) in
+				network_range_map.clone().into_iter()
+			{
 				let (rtx, receipt) = mpsc::channel(1);
 				receipts.insert(config_key, rtx);
 
@@ -178,7 +199,9 @@ impl Indexer {
 						let block_height_max = network_params.range.1;
 
 						let config_value = |block_height| match config_key {
-							ConfigKey::IndexerSyncTail(_) => json!(block_height),
+							ConfigKey::IndexerSyncTail(_) => {
+								json!(block_height)
+							}
 							ConfigKey::IndexerSyncChunk(_, _) => {
 								json!((block_height, block_height_max.unwrap()))
 							}
@@ -187,20 +210,28 @@ impl Indexer {
 
 						while should_keep_going.load(Ordering::SeqCst) {
 							match block_height_max {
-								Some(block_height_max) if block_height + 1 > block_height_max => {
+								Some(block_height_max)
+									if block_height + 1 > block_height_max =>
+								{
 									break;
 								}
 								None => {
-									let config_key = ConfigKey::BlockHeight(nid);
-									let saved_block_height =
-										Config::get::<_, BlockHeight>(&db, config_key)
-											.await?
-											.map(|v| v.value)
-											.unwrap_or(0);
+									let config_key =
+										ConfigKey::BlockHeight(nid);
+									let saved_block_height = Config::get::<
+										_,
+										BlockHeight,
+									>(&db, config_key)
+									.await?
+									.map(|v| v.value)
+									.unwrap_or(0);
 
 									if block_height + 1 > saved_block_height {
-										let latest_block_height = chain.get_block_height().await?;
-										if latest_block_height > saved_block_height {
+										let latest_block_height =
+											chain.get_block_height().await?;
+										if latest_block_height >
+											saved_block_height
+										{
 											Config::set::<_, BlockHeight>(
 												&db,
 												config_key,
@@ -208,8 +239,12 @@ impl Indexer {
 											)
 											.await?;
 										} else {
-											let timeout = chain.get_network().block_time;
-											sleep(Duration::from_millis(timeout as u64)).await;
+											let timeout =
+												chain.get_network().block_time;
+											sleep(Duration::from_millis(
+												timeout as u64,
+											))
+											.await;
 											continue;
 										}
 									}
@@ -311,15 +346,19 @@ impl Indexer {
 		loop {
 			sleep(Duration::from_secs(secs)).await;
 
-			for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
+			for (network_id, chain) in
+				self.app.networks.read().await.clone().into_iter()
+			{
 				let nid = network_id;
 				let mut scores = vec![];
 
-				let block_height =
-					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
-						.await?
-						.map(|v| v.value)
-						.unwrap_or(0);
+				let block_height = Config::get::<_, BlockHeight>(
+					self.app.db(),
+					ConfigKey::BlockHeight(nid),
+				)
+				.await?
+				.map(|v| v.value)
+				.unwrap_or(0);
 
 				if block_height == 0 {
 					scores.push(0.0);
@@ -333,21 +372,27 @@ impl Indexer {
 					.unwrap_or(0);
 
 					let mut done_blocks = tail_block;
-					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
-						self.app.db(),
-						vec![ConfigKey::IndexerSyncChunk(nid, 0)],
-					)
-					.await?
+					for (_, block_range) in
+						Config::get_many::<_, (BlockHeight, BlockHeight)>(
+							self.app.db(),
+							vec![ConfigKey::IndexerSyncChunk(nid, 0)],
+						)
+						.await?
 					{
-						done_blocks -= block_range.value.1 - block_range.value.0;
+						done_blocks -=
+							block_range.value.1 - block_range.value.0;
 					}
 
 					scores.push(done_blocks as f64 / block_height as f64);
 				}
 
 				let progress = scores.iter().sum::<f64>() / scores.len() as f64;
-				Config::set::<_, f64>(self.app.db(), ConfigKey::IndexerSyncProgress(nid), progress)
-					.await?;
+				Config::set::<_, f64>(
+					self.app.db(),
+					ConfigKey::IndexerSyncProgress(nid),
+					progress,
+				)
+				.await?;
 
 				info!(
 					network = chain.get_network().name,

@@ -12,8 +12,9 @@ use crate::{models::PrimaryId, utils, BlockHeight};
 // Things to keep in mind when defining configs:
 // 0. stick to similar format: "title_a1_b2_c3"
 // 1. one letter per object: "network" => "n"
-// 2. no similar prefix (has to do with "LIKE" selection syntax in `adjust_filter()`) bad:
-//    "title_a1_b2" & "title_a1_b2_c3" good: "title_a1_b2" & "diff_title_a1_b2_c3"
+// 2. no similar prefix (has to do with "LIKE" selection syntax in
+//    `adjust_filter()`) bad: "title_a1_b2" & "title_a1_b2_c3" good:
+//    "title_a1_b2" & "diff_title_a1_b2_c3"
 #[derive(Ord, PartialOrd, Display, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ConfigKey {
 	#[display(fmt = "primary")]
@@ -49,16 +50,25 @@ impl From<String> for ConfigKey {
 		let re = Regex::new(r"(\d+)").unwrap();
 
 		let template = re.replace_all(&s, "{}");
-		let n = re.find_iter(&s).filter_map(|n| n.as_str().parse().ok()).collect::<Vec<i64>>();
+		let n = re
+			.find_iter(&s)
+			.filter_map(|n| n.as_str().parse().ok())
+			.collect::<Vec<i64>>();
 
 		match template.to_string().as_str() {
 			"primary" => Self::Primary,
-			"indexer_sync_tail_n{}" if n.len() == 1 => Self::IndexerSyncTail(n[0]),
+			"indexer_sync_tail_n{}" if n.len() == 1 => {
+				Self::IndexerSyncTail(n[0])
+			}
 			"indexer_sync_chunk_n{}_b{}" if n.len() == 2 => {
 				Self::IndexerSyncChunk(n[0], n[1] as BlockHeight)
 			}
-			"indexer_sync_progress_n{}" if n.len() == 1 => Self::IndexerSyncProgress(n[0]),
-			"indexer_process_tail_n{}" if n.len() == 1 => Self::IndexerProcessTail(n[0]),
+			"indexer_sync_progress_n{}" if n.len() == 1 => {
+				Self::IndexerSyncProgress(n[0])
+			}
+			"indexer_process_tail_n{}" if n.len() == 1 => {
+				Self::IndexerProcessTail(n[0])
+			}
 			"indexer_process_chunk_n{}_b{}" if n.len() == 2 => {
 				Self::IndexerProcessChunk(n[0], n[1] as BlockHeight)
 			}
@@ -68,11 +78,17 @@ impl From<String> for ConfigKey {
 			"indexer_process_module_done_n{}_m{}" if n.len() == 2 => {
 				Self::IndexerProcessModuleDone(n[0], n[1] as u16)
 			}
-			"indexer_process_progress_n{}" if n.len() == 1 => Self::IndexerProcessProgress(n[0]),
-			"indexer_link_n{}_a{}" if n.len() == 2 => Self::IndexerLink(n[0], n[1]),
+			"indexer_process_progress_n{}" if n.len() == 1 => {
+				Self::IndexerProcessProgress(n[0])
+			}
+			"indexer_link_n{}_a{}" if n.len() == 2 => {
+				Self::IndexerLink(n[0], n[1])
+			}
 			"block_height_n{}" if n.len() == 1 => Self::BlockHeight(n[0]),
 			"networks_updated" => Self::NetworksUpdated,
-			"newly_added_address_n{}_a{}" if n.len() == 2 => Self::NewlyAddedAddress(n[0], n[1]),
+			"newly_added_address_n{}_a{}" if n.len() == 2 => {
+				Self::NewlyAddedAddress(n[0], n[1])
+			}
 			_ => panic!("no match in From<String> for ConfigKey: {s:?}"),
 		}
 	}
@@ -87,30 +103,50 @@ mod tests {
 		let config_keys = HashMap::from([
 			(ConfigKey::Primary, "primary"),
 			(ConfigKey::IndexerSyncTail(123), "indexer_sync_tail_n123"),
-			(ConfigKey::IndexerSyncChunk(123, 456), "indexer_sync_chunk_n123_b456"),
+			(
+				ConfigKey::IndexerSyncChunk(123, 456),
+				"indexer_sync_chunk_n123_b456",
+			),
 			(ConfigKey::IndexerSyncProgress(123), "indexer_sync_progress_n123"),
 			(ConfigKey::IndexerProcessTail(123), "indexer_process_tail_n123"),
-			(ConfigKey::IndexerProcessChunk(123, 456), "indexer_process_chunk_n123_b456"),
-			(ConfigKey::IndexerProcessModule(123, 456), "indexer_process_module_n123_m456"),
+			(
+				ConfigKey::IndexerProcessChunk(123, 456),
+				"indexer_process_chunk_n123_b456",
+			),
+			(
+				ConfigKey::IndexerProcessModule(123, 456),
+				"indexer_process_module_n123_m456",
+			),
 			(
 				ConfigKey::IndexerProcessModuleDone(123, 456),
 				"indexer_process_module_done_n123_m456",
 			),
-			(ConfigKey::IndexerProcessProgress(123), "indexer_process_progress_n123"),
+			(
+				ConfigKey::IndexerProcessProgress(123),
+				"indexer_process_progress_n123",
+			),
 			(ConfigKey::IndexerLink(123, 456), "indexer_link_n123_a456"),
 			(ConfigKey::BlockHeight(123), "block_height_n123"),
 			(ConfigKey::NetworksUpdated, "networks_updated"),
-			(ConfigKey::NewlyAddedAddress(123, 456), "newly_added_address_n123_a456"),
+			(
+				ConfigKey::NewlyAddedAddress(123, 456),
+				"newly_added_address_n123_a456",
+			),
 		]);
 
 		for (config_key, config_key_str) in config_keys.into_iter() {
 			assert_eq!(config_key.to_string(), config_key_str);
-			assert_eq!(Into::<ConfigKey>::into(config_key_str.to_string()), config_key);
+			assert_eq!(
+				Into::<ConfigKey>::into(config_key_str.to_string()),
+				config_key
+			);
 		}
 	}
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
+#[derive(
+	Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel,
+)]
 #[sea_orm(table_name = "configs")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -183,7 +219,10 @@ impl Model {
 		Ok(update_result.rows_affected == 1)
 	}
 
-	pub async fn set_many<C, T>(c: &C, values: HashMap<ConfigKey, T>) -> Result<()>
+	pub async fn set_many<C, T>(
+		c: &C,
+		values: HashMap<ConfigKey, T>,
+	) -> Result<()>
 	where
 		C: ConnectionTrait,
 		T: Serialize,
@@ -215,11 +254,15 @@ impl Model {
 		C: ConnectionTrait,
 		T: for<'a> Deserialize<'a>,
 	{
-		Ok(Entity::find().filter(Column::Key.eq(key.to_string())).one(c).await?.map(|m| Value {
-			value: serde_json::from_str(&m.value).unwrap(),
-			updated_at: m.updated_at,
-			created_at: m.created_at,
-		}))
+		Ok(Entity::find()
+			.filter(Column::Key.eq(key.to_string()))
+			.one(c)
+			.await?
+			.map(|m| Value {
+				value: serde_json::from_str(&m.value).unwrap(),
+				updated_at: m.updated_at,
+				created_at: m.created_at,
+			}))
 	}
 
 	pub async fn get_many<C, T>(
@@ -255,7 +298,10 @@ impl Model {
 	where
 		C: ConnectionTrait,
 	{
-		Entity::delete_many().filter(Column::Key.eq(key.to_string())).exec(c).await?;
+		Entity::delete_many()
+			.filter(Column::Key.eq(key.to_string()))
+			.exec(c)
+			.await?;
 		Ok(())
 	}
 
@@ -273,11 +319,17 @@ impl Model {
 		Ok(())
 	}
 
-	pub async fn delete_all_by_keywords<C>(c: &C, keywords: Vec<String>) -> Result<()>
+	pub async fn delete_all_by_keywords<C>(
+		c: &C,
+		keywords: Vec<String>,
+	) -> Result<()>
 	where
 		C: ConnectionTrait,
 	{
-		Entity::delete_many().filter(Self::get_keyword_conditions(keywords)).exec(c).await?;
+		Entity::delete_many()
+			.filter(Self::get_keyword_conditions(keywords))
+			.exec(c)
+			.await?;
 		Ok(())
 	}
 
@@ -303,8 +355,10 @@ impl Model {
 		let mut condition = Condition::any();
 
 		for keyword in keywords.into_iter() {
-			condition = condition.add(Column::Key.like(&format!("%_{keyword}_%")));
-			condition = condition.add(Column::Key.like(&format!("%_{keyword}")));
+			condition =
+				condition.add(Column::Key.like(&format!("%_{keyword}_%")));
+			condition =
+				condition.add(Column::Key.like(&format!("%_{keyword}")));
 		}
 
 		condition

@@ -64,7 +64,11 @@ impl StorageModelTrait for Log {
 			),
 			params![
 				self.address.encode(),
-				self.topics.iter().map(|v| v.encode_hex()).collect::<Vec<String>>().join(","),
+				self.topics
+					.iter()
+					.map(|v| v.encode_hex())
+					.collect::<Vec<String>>()
+					.join(","),
 				self.data.to_vec(),
 				self.transaction_hash.map(|v| v.encode_hex()),
 				self.transaction_index,
