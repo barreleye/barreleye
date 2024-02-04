@@ -119,9 +119,9 @@ impl Indexer {
 				.unwrap_or(0);
 
 				// if first time, split up network into chunks for faster initial processing
-				if last_processed_block == 0
-					&& self.app.cpu_count > 0
-					&& Config::get_many::<_, (BlockHeight, BlockHeight)>(
+				if last_processed_block == 0 &&
+					self.app.cpu_count > 0 &&
+					Config::get_many::<_, (BlockHeight, BlockHeight)>(
 						self.app.db(),
 						vec![ConfigKey::IndexerProcessChunk(nid, 0)],
 					)
@@ -291,8 +291,8 @@ impl Indexer {
 
 						let config_value = |block_height| match config_key {
 							ConfigKey::IndexerProcessTail(_) => json!(block_height),
-							ConfigKey::IndexerProcessChunk(_, _)
-							| ConfigKey::IndexerProcessModule(_, _)
+							ConfigKey::IndexerProcessChunk(_, _) |
+							ConfigKey::IndexerProcessModule(_, _)
 								if block_height_max.is_some() =>
 							{
 								json!((block_height, block_height_max.unwrap()))

@@ -11,27 +11,27 @@ rust-version = "1.70"
 workspace = ".."
 
 [dependencies]
-eyre = "0.6.8"
+eyre = "0.6.12"
 serde = { version = "1.0", features = [ "derive" ] }
-serde_json = "1.0.108"
-async-trait = "0.1.74"
-bitcoin = { version = "0.31.0", features = ["serde"] }
-console = "0.15.7"
+serde_json = "1.0.113"
+async-trait = "0.1.77"
+bitcoin = { version = "0.31.1", features = ["serde"] }
+console = "0.15.8"
 governor = "0.6.0"
-base64 = "0.21.5"
-regex = "1.10.2"
+base64 = "0.21.7"
+regex = "1.10.3"
 bitcoincore-rpc-json = "0.18.0"
 derive_more = "0.99.17"
 log = "0.4.20"
-tokio = { version = "1.34.0", features = ["full"] }
-uuid = { version = "1.5.0", features = ["v4", "fast-rng"] }
-reqwest = { version = "0.11.22", features = ["rustls-tls"] }
+tokio = { version = "1.36.0", features = ["full"] }
+uuid = { version = "1.7.0", features = ["v4", "fast-rng"] }
+reqwest = { version = "0.11.24", features = ["rustls-tls"] }
 tracing = "0.1.40"
 
 barreleye-common = { path = "../common", version = "0.1.0" }
 
 [dependencies.sea-orm]
-version = "0.12.6"
+version = "0.12.12"
 features = [
   "sqlx-sqlite",
   "sqlx-postgres",

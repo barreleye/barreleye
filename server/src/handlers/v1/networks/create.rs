@@ -30,8 +30,8 @@ pub async fn handler(
 
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
-		if !is_valid_id(&id, IdPrefix::Network)
-			|| Network::get_by_id(app.db(), &id).await?.is_some()
+		if !is_valid_id(&id, IdPrefix::Network) ||
+			Network::get_by_id(app.db(), &id).await?.is_some()
 		{
 			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
 		}

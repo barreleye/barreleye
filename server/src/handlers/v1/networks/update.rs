@@ -44,8 +44,8 @@ pub async fn handler(
 		}
 
 		// check for any duplicate
-		if network_id != network.id
-			&& network.name.trim().to_lowercase() == name.trim().to_lowercase()
+		if network_id != network.id &&
+			network.name.trim().to_lowercase() == name.trim().to_lowercase()
 		{
 			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 		}

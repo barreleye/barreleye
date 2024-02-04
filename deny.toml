@@ -13,7 +13,9 @@ unmaintained = "warn"
 unsound = "deny"
 yanked = "deny"
 notice = "warn"
-ignore = []
+ignore = [
+    "RUSTSEC-2023-0071" # @TODO Marvin Attack: potential key recovery through timing sidechannels
+]
 
 [licenses]
 unlicensed = "deny"
@@ -24,20 +26,6 @@ unused-allowed-license = "deny"
 confidence-threshold = 0.95
 allow = ["MPL-2.0", "MITNFA"]
 exceptions = []
-
-[[licenses.clarify]]
-name = "webpki"
-expression = "ISC"
-license-files = [
-    { path = "LICENSE", hash = 0x001c7e6c }
-]
-
-[[licenses.clarify]]
-name = "rustls-webpki"
-expression = "ISC"
-license-files = [
-    { path = "LICENSE", hash = 0x001c7e6c }
-]
 
 [[licenses.clarify]]
 name = "ring"

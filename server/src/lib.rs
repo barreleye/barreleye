@@ -1,23 +1,16 @@
 use axum::{
 	error_handling::HandleErrorLayer,
-	extract::State,
-	http::{header, Method, Request, StatusCode, Uri},
+	extract::{Request, State},
+	http::{header, Method, StatusCode, Uri},
 	middleware::{self, Next},
 	response::Response,
-	BoxError, Router, Server as AxumServer,
+	BoxError, Router,
 };
 use console::style;
 use eyre::{Report, Result};
-use hyper::server::{accept::Accept, conn::AddrIncoming};
 use signal::unix::SignalKind;
-use std::{
-	net::SocketAddr,
-	pin::Pin,
-	sync::Arc,
-	task::{Context, Poll},
-	time::Duration,
-};
-use tokio::signal;
+use std::{net::SocketAddr, sync::Arc, time::Duration};
+use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::{trace, trace::TraceLayer, LatencyUnit};
 use tracing::Level;
@@ -34,31 +27,6 @@ mod utils;
 
 pub type ServerResult<T> = Result<T, ServerError>;
 
-struct CombinedIncoming {
-	a: AddrIncoming,
-	b: AddrIncoming,
-}
-
-impl Accept for CombinedIncoming {
-	type Conn = <AddrIncoming as Accept>::Conn;
-	type Error = <AddrIncoming as Accept>::Error;
-
-	fn poll_accept(
-		mut self: Pin<&mut Self>,
-		cx: &mut Context<'_>,
-	) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
-		if let Poll::Ready(Some(value)) = Pin::new(&mut self.a).poll_accept(cx) {
-			return Poll::Ready(Some(value));
-		}
-
-		if let Poll::Ready(Some(value)) = Pin::new(&mut self.b).poll_accept(cx) {
-			return Poll::Ready(Some(value));
-		}
-
-		Poll::Pending
-	}
-}
-
 pub struct Server {
 	app: Arc<App>,
 }
@@ -68,11 +36,7 @@ impl Server {
 		Self { app }
 	}
 
-	async fn auth<B>(
-		State(app): State<Arc<App>>,
-		req: Request<B>,
-		next: Next<B>,
-	) -> ServerResult<Response> {
+	async fn auth(State(app): State<Arc<App>>, req: Request, next: Next) -> ServerResult<Response> {
 		for public_endpoint in ["/v1/info"].iter() {
 			if req.uri().to_string().starts_with(public_endpoint) {
 				return Ok(next.run(req).await);
@@ -149,44 +113,19 @@ impl Server {
 			))
 		};
 
-		if let Some(ip_addr) = settings.ipv4.xor(settings.ipv6) {
-			let ip_addr = SocketAddr::new(ip_addr, settings.http_port);
-			show_progress(&style(ip_addr).bold().to_string());
+		if let Some(ip_addr) = settings.ip_addr {
+			let ip_addr = SocketAddr::new(ip_addr, settings.port);
+			show_progress(&format!("Listening on {}…", style(ip_addr).bold()));
 
-			match AxumServer::try_bind(&ip_addr) {
-				Err(e) => quit(AppError::ServerStartup {
-					url: ip_addr.to_string(),
-					error: e.message().to_string(),
-				}),
-				Ok(server) => {
+			match TcpListener::bind(&ip_addr).await {
+				Err(e) => {
+					quit(AppError::ServerStartup { url: ip_addr.to_string(), error: e.to_string() })
+				}
+				Ok(listener) => {
 					self.app.set_is_ready();
-					server
-						.serve(app.into_make_service())
+					axum::serve(listener, app)
 						.with_graceful_shutdown(Self::shutdown_signal())
 						.await?
-				}
-			}
-		} else {
-			let ipv4 = SocketAddr::new(settings.ipv4.unwrap(), settings.http_port);
-			let ipv6 = SocketAddr::new(settings.ipv6.unwrap(), settings.http_port);
-
-			match (AddrIncoming::bind(&ipv4), AddrIncoming::bind(&ipv6)) {
-				(Err(e), _) => quit(AppError::ServerStartup {
-					url: ipv4.to_string(),
-					error: e.message().to_string(),
-				}),
-				(_, Err(e)) => quit(AppError::ServerStartup {
-					url: ipv6.to_string(),
-					error: e.message().to_string(),
-				}),
-				(Ok(a), Ok(b)) => {
-					show_progress(&format!("{} & {}", style(ipv4).bold(), style(ipv6).bold()));
-
-					self.app.set_is_ready();
-					AxumServer::builder(CombinedIncoming { a, b })
-						.serve(app.into_make_service())
-						.with_graceful_shutdown(Self::shutdown_signal())
-						.await?;
 				}
 			}
 		}

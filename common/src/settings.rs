@@ -127,21 +127,15 @@ pub struct Settings {
 	#[arg(
 		help_heading = "Server options",
 		long,
-		default_value = "127.0.0.1",
-		value_name = "IP_V4_ADDRESS"
+		default_value = "0.0.0.0",
+		value_name = "IP_ADDRESS"
 	)]
-	http_ipv4: String,
+	ip: String,
 	#[arg(skip)]
-	pub ipv4: Option<IpAddr>,
-
-	/// Provide an empty string to disable IPv6.
-	#[arg(help_heading = "Server options", long, default_value = "", value_name = "IP_V6_ADDRESS")]
-	http_ipv6: String,
-	#[arg(skip)]
-	pub ipv6: Option<IpAddr>,
+	pub ip_addr: Option<IpAddr>,
 
 	#[arg(help_heading = "Server options", long, default_value_t = 4000, value_name = "PORT")]
-	pub http_port: u16,
+	pub port: u16,
 }
 
 impl Settings {
@@ -213,34 +207,17 @@ impl Settings {
 			);
 		}
 
-		// parse ipv4
-		let invalid_ipv4 =
-			AppError::Config { config: "http_ipv4", error: "Could not parse IP v4." };
-		settings.ipv4 = if !settings.http_ipv4.is_empty() {
-			Some(IpAddr::V4(settings.http_ipv4.parse().map_err(|_| invalid_ipv4.clone())?))
-		} else {
-			None
-		};
-
-		// both ipv4 and ipv6 cannot be empty
-		if settings.http_ipv4.is_empty() && settings.http_ipv6.is_empty() {
-			return Err(invalid_ipv4.into());
-		}
-
-		// parse ipv6
-		settings.ipv6 = if !settings.http_ipv6.is_empty() {
-			Some(IpAddr::V6(settings.http_ipv6.parse().map_err(|_| AppError::Config {
-				config: "http_ipv6",
-				error: "Could not parse IP v6.",
-			})?))
-		} else {
-			None
-		};
+		// parse ip address
+		settings.ip_addr =
+			Some(IpAddr::V4(settings.ip.parse().map_err(|_| AppError::Config {
+				config: "ip",
+				error: "could not parse IP v4.",
+			})?));
 
 		// test storage
 		let folder_prefix = "file://";
-		if settings.storage.starts_with('/')
-			|| settings.storage.to_lowercase().starts_with(folder_prefix)
+		if settings.storage.starts_with('/') ||
+			settings.storage.to_lowercase().starts_with(folder_prefix)
 		{
 			let storage = if settings.storage.to_lowercase().starts_with(folder_prefix) {
 				settings.storage[folder_prefix.to_string().len()..].to_string()
@@ -249,8 +226,8 @@ impl Settings {
 			};
 
 			let path = Path::new(&storage);
-			if fs::create_dir_all(path).is_err()
-				|| PathBuf::from(path).into_os_string().into_string().is_err()
+			if fs::create_dir_all(path).is_err() ||
+				PathBuf::from(path).into_os_string().into_string().is_err()
 			{
 				return Err(AppError::Config {
 					config: "storage",
