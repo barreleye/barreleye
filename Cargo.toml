@@ -22,9 +22,9 @@ members = [ "common", "indexer", "server" ]
 normal = ["color-eyre"]
 
 [dependencies]
-barreleye-common = { path = "./common" }
-barreleye-indexer = { path = "./indexer" }
-barreleye-server = { path = "./server" }
+barreleye-common = { path = "./common", version = "0.2.0-alpha.0" }
+barreleye-indexer = { path = "./indexer", version = "0.2.0-alpha.0" }
+barreleye-server = { path = "./server", version = "0.2.0-alpha.0" }
 log = "0.4.20"
 color-eyre = "0.6.2"
 eyre = "0.6.12"

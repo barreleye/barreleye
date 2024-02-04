@@ -14,10 +14,10 @@ Barreleye is an open-source blockchain analytics tool. It's entity based, so it 
 
 ## ✨ Features
 
-- ⛵️ **Easy of use** — start on a single machine, scale up as needed
+- ⛵️ **Easy to use** — start on a single machine, scale up as needed
 - 🚢 **Scalable** — optimized for demanding business use-cases
 - 🥳 **Self-hosted** — API-based interface that can be integrated into other systems
-- 💪 **Multi-chain** — designed to support multiple blockchain architectures
+- 🪢 **Multi-chain** — designed to support multiple blockchain architectures
 
 ## 🧰 Requirements
 
