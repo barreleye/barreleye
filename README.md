@@ -1,28 +1,29 @@
 # [Barreleye](https://barreleye.com/)
 
-[![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml?style=flat-square)](https://github.com/barreleye/barreleye/actions)
-[![License](https://img.shields.io/github/license/barreleye/barreleye?color=orange&style=flat-square)](/LICENSE)
-[![Discord](https://img.shields.io/discord/1026664296861679646?style=flat-square&color=blue)](https://discord.gg/VX8PdWSwNZ)
+[![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml)](https://github.com/barreleye/barreleye/actions)
+[![License](https://img.shields.io/github/license/barreleye/barreleye)](/LICENSE)
+[![Discord](https://img.shields.io/discord/1026664296861679646?logo=discord&logoColor=ffffff&label=discord)](https://discord.gg/VX8PdWSwNZ)
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/GetBarreleye?logo=twitter&style=flat&logoColor=ffffff)](https://twitter.com/GetBarreleye)
 
 > **Note**
 > ⚠️ This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.
 
 ## 🧐 What is Barreleye?
 
-Barreleye is an open-source **blockchain KYC** tool. It can trace the flow of funds, along with their amounts, to & from specific addresses.
+Barreleye is an open-source blockchain analytics tool. It's entity based, so it can answer questions like what assets an entity has and where they came from.
 
 Features:
 
-1. **Easy to get started with** — can start running on a single machine
-1. **Scalable** — optimized for demanding business use-cases
-1. **Extendable** — API-based interface that can be integrated into other systems
-1. **Multi-chain** — designed with support for multiple blockchain architectures
+- ⛵️ **Easy of use** — start on a single machine, scale up as needed
+- 🚢 **Scalable** — optimized for demanding business use-cases
+- 🥳 **Self-hosted** — API-based interface that can be integrated into other systems
+- 🪢 **Multi-chain** — designed to support multiple blockchain architectures
 
 ## 🧰 Requirements
 
 1. [Rust](https://www.rust-lang.org/) v1.70+ — if you're compiling from source
 1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
-1. Individual blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
+1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
 > **Note**
 > ⚠️ EVM-based chains are not yet supported (this is a work-in-progress).
@@ -72,7 +73,7 @@ barreleye \
 
 ## 📦 Modes
 
-Barreleye is bundled with the indexer and the server in the same program. The indexer is responsible for crawling blockchains and retrieving all the necessary data, while the server is focused on handling API requests (data management + KYC requests).
+Barreleye is bundled with the indexer and the server in the same program. The indexer is responsible for crawling blockchains and retrieving all the necessary data, while the server is focused on handling API requests (data management + analytics requests).
 
 By default, both the indexer and the server are enabled and will run in parallel:
 
