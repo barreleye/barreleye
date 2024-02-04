@@ -23,12 +23,7 @@ default = "warn"
 unused-allowed-license = "deny"
 confidence-threshold = 0.95
 allow = ["MPL-2.0", "MITNFA"]
-exceptions = [
-    { name = "barreleye", allow = ["AGPL-3.0"] },
-    { name = "barreleye-common", allow = ["AGPL-3.0"] },
-    { name = "barreleye-indexer", allow = ["AGPL-3.0"] },
-    { name = "barreleye-server", allow = ["AGPL-3.0"] },
-]
+exceptions = []
 
 [[licenses.clarify]]
 name = "webpki"

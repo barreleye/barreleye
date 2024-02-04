@@ -24,7 +24,6 @@ pub struct Model {
 	pub created_at: DateTime,
 }
 
-pub use ActiveModel as EntityTagActiveModel;
 pub use Model as EntityTag;
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

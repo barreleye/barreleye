@@ -131,7 +131,6 @@ pub struct Value<T: for<'a> Deserialize<'a>> {
 	pub created_at: DateTime,
 }
 
-pub use ActiveModel as ConfigActiveModel;
 pub use Model as Config;
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
