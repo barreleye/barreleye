@@ -21,7 +21,7 @@ Barreleye is an open-source blockchain analytics tool. It's entity based, so it 
 
 ## 🧰 Requirements
 
-1. [Rust](https://www.rust-lang.org/) v1.70+ — if you're compiling from source
+1. [Rust](https://www.rust-lang.org/) v1.75+ — if you're compiling from source
 1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
 1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
@@ -103,7 +103,8 @@ Barreleye does not come with any pre-defined data. Instead, it gives you the abi
 A default API key is generated when you first start Barreleye, so to get it — connect to your RDBMS and retrieve the only key that has been auto-created:
 
 ```sql
-select uuid from api_keys; -- will be $YOUR_API_KEY in examples below
+select secret_key from api_keys where id='key_default';
+-- the result will be $YOUR_API_KEY in examples below
 ```
 
 ### Add Blockchains

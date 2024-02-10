@@ -2,11 +2,18 @@ use chrono::{offset::Utc, Duration, NaiveDateTime};
 use directories::ProjectDirs;
 use governor::Quota;
 use nanoid::nanoid;
+use sha2::{Digest, Sha256};
 use std::{num::NonZeroU32, path::PathBuf, sync::Arc};
 use url::Url;
 use uuid::Uuid;
 
 use crate::{GovernorRateLimiter, IdPrefix, RateLimiter};
+
+pub fn sha256(input: &str) -> Vec<u8> {
+	let mut hasher = Sha256::new();
+	hasher.update(input.as_bytes());
+	hasher.finalize().to_vec()
+}
 
 pub fn project_dir(folder: Option<&str>) -> PathBuf {
 	// @TODO will panic on systems with no home directory

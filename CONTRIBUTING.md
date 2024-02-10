@@ -24,7 +24,7 @@ The Barreleye core team will review your pull request and either merge it, reque
 
 ## Contribution Prerequisites
 
-- You have [Rust](https://www.rust-lang.org/) v1.70+ installed.
+- You have [Rust](https://www.rust-lang.org/) v1.75+ installed.
 - You are familiar with [Git](https://git-scm.com).
 
 **Before submitting your pull request** make sure the following requirements are fulfilled:

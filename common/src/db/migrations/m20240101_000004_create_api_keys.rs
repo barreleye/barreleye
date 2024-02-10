@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sea_orm_migration::prelude::*;
 
-use crate::{utils, IdPrefix};
+use crate::{models::ApiKey, utils, IdPrefix};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -27,10 +27,11 @@ impl MigrationTrait for Migration {
 							.string()
 							.not_null(),
 					)
+					.col(ColumnDef::new(ApiKeys::SecretKey).string().null())
 					.col(
-						ColumnDef::new(ApiKeys::Uuid)
+						ColumnDef::new(ApiKeys::SecretKeyHash)
 							.unique_key()
-							.uuid()
+							.binary()
 							.not_null(),
 					)
 					.col(ColumnDef::new(ApiKeys::IsActive).boolean().not_null())
@@ -45,14 +46,21 @@ impl MigrationTrait for Migration {
 			)
 			.await?;
 
+		let (secret_key, secret_key_hash) = ApiKey::generate_key();
 		manager
 			.exec_stmt(
 				Query::insert()
 					.into_table(ApiKeys::Table)
-					.columns([ApiKeys::Id, ApiKeys::Uuid, ApiKeys::IsActive])
+					.columns([
+						ApiKeys::Id,
+						ApiKeys::SecretKey,
+						ApiKeys::SecretKeyHash,
+						ApiKeys::IsActive,
+					])
 					.values_panic([
 						utils::unique_id(IdPrefix::ApiKey, "default").into(),
-						utils::new_uuid().into(),
+						secret_key.into(),
+						secret_key_hash.into(),
 						true.into(),
 					])
 					.on_conflict(
@@ -76,7 +84,8 @@ enum ApiKeys {
 	Table,
 	ApiKeyId,
 	Id,
-	Uuid,
+	SecretKey,
+	SecretKeyHash,
 	IsActive,
 	UpdatedAt,
 	CreatedAt,

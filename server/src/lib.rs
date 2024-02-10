@@ -14,7 +14,6 @@ use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::{trace, trace::TraceLayer, LatencyUnit};
 use tracing::Level;
-use uuid::Uuid;
 
 use crate::errors::ServerError;
 use barreleye_common::{
@@ -60,14 +59,17 @@ impl Server {
 			_ => return Err(ServerError::Unauthorized),
 		};
 
-		let api_key =
-			Uuid::parse_str(&token).map_err(|_| ServerError::Unauthorized)?;
-
-		match ApiKey::get_by_uuid(app.db(), &api_key)
+		match ApiKey::get_by_hashing(app.db(), &token)
 			.await
 			.map_err(|_| ServerError::Unauthorized)?
 		{
-			Some(api_key) if api_key.is_active => Ok(next.run(req).await),
+			Some(api_key) if api_key.is_active => {
+				if api_key.secret_key.is_some() {
+					ApiKey::hide_key(app.db(), api_key.api_key_id).await?;
+				}
+
+				Ok(next.run(req).await)
+			}
 			_ => Err(ServerError::Unauthorized),
 		}
 	}

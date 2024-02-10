@@ -5,3 +5,5 @@ target
 docs
 parquet_files
 .env
+storage
+db
