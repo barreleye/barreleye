@@ -1,13 +1,29 @@
-# [Barreleye](https://barreleye.com/)
+<h1 align="center">
+  <a href="https://barreleye.com/">
+    <img src="docs/img/readme.webp" alt="Barreleye" width="360px">
+  </a>
+  <br />
+</h1>
+
+<p align="center">
+  <b>Open-Source Blockchain Analytics ✨</b> <br />
+</p>
+
+<h3 align="center">
+  <a href="https://barreleye.com/">Website</a> &bull;
+  <a href="https://barreleye.com/?ref=waitlist">Join Waitlist</a> &bull;
+  <a href="https://discord.gg/VX8PdWSwNZ">Chat</a> &bull;
+  <a href="https://twitter.com/GetBarreleye">Twitter</a>
+</h3>
+
+---
 
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml)](https://github.com/barreleye/barreleye/actions)
 [![License](https://img.shields.io/github/license/barreleye/barreleye)](/LICENSE)
 [![Discord](https://img.shields.io/discord/1026664296861679646?logo=discord&logoColor=ffffff&label=discord)](https://discord.gg/VX8PdWSwNZ)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/GetBarreleye)](https://twitter.com/GetBarreleye)
 
-## What is Barreleye?
-
-Barreleye is an open-source blockchain analytics tool. It's entity based, so it can answer questions like what assets an entity has and where they came from.
+**Barreleye** is an open-source blockchain analytics tool. It's entity based, so it can answer questions like what assets an entity has and where they came from.
 
 > **Note**
 > This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.

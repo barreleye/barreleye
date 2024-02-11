@@ -2,7 +2,6 @@ barreleye.toml
 **/*.rs.bk
 .env*.local
 target
-docs
 parquet_files
 .env
 storage
