@@ -116,12 +116,15 @@ barreleye --mode http
 
 Barreleye does not come with any pre-defined data. Instead, it gives you the ability to add and manage data yourself. The API calls below give an overview of how to manage data.
 
-A default API key is generated when you first start Barreleye, so to get it — connect to your RDBMS and retrieve the only key that has been auto-created:
+A default API key is generated when you first start Barreleye, so to get it — connect to your RDBMS and retrieve the only key that has been auto-inserted:
 
 ```sql
 select secret_key from api_keys where id='key_default';
 -- the result will be $YOUR_API_KEY in examples below
 ```
+
+> **Note**
+> Be sure to write down that API key somewhere else, because after the first successful API call, that plaintext value will be erased.
 
 ### Add Blockchains
 

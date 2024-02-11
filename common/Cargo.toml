@@ -21,7 +21,7 @@ log = "0.4.20"
 derive_more = "0.99.17"
 indicatif = "0.17.8"
 serde_json = "1.0.113"
-chrono = { version = "0.4.33", default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
 url = "2.5.0"
 console = "0.15.8"
 exitcode = "1.1.2"
