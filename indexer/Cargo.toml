@@ -15,7 +15,7 @@ workspace = ".."
 barreleye-common = { path = "../common", version = "0.2.0-alpha.0" }
 eyre = "0.6.12"
 serde = { version = "1.0", features = [ "derive" ] }
-serde_json = "1.0.113"
+serde_json = "1.0.114"
 async-trait = "0.1.77"
 bitcoin = { version = "0.31.1", features = ["serde"] }
 console = "0.15.8"
