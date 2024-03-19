@@ -62,7 +62,7 @@ pub fn now() -> NaiveDateTime {
 }
 
 pub fn ago_in_seconds(secs: u64) -> NaiveDateTime {
-	now() - Duration::seconds(secs as i64)
+	now() - Duration::try_seconds(secs as i64).unwrap()
 }
 
 pub fn with_masked_auth(url: &str) -> String {

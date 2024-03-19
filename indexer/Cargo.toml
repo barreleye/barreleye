@@ -16,22 +16,22 @@ barreleye-common = { path = "../common", version = "0.2.0-alpha.0" }
 eyre = "0.6.12"
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0.114"
-async-trait = "0.1.77"
+async-trait = "0.1.78"
 bitcoin = { version = "0.31.1", features = ["serde"] }
 console = "0.15.8"
 governor = "0.6.3"
-base64 = "0.21.7"
+base64 = "0.22.0"
 regex = "1.10.3"
 bitcoincore-rpc-json = "0.18.0"
 derive_more = "0.99.17"
-log = "0.4.20"
+log = "0.4.21"
 tokio = { version = "1.36.0", features = ["full"] }
-uuid = { version = "1.7.0", features = ["v4", "fast-rng"] }
-reqwest = { version = "0.11.24", features = ["rustls-tls"] }
+uuid = { version = "1.8.0", features = ["v4", "fast-rng"] }
+reqwest = { version = "0.11.26", features = ["rustls-tls"] }
 tracing = "0.1.40"
 
 [dependencies.sea-orm]
-version = "0.12.14"
+version = "0.12.15"
 features = [
   "sqlx-sqlite",
   "sqlx-postgres",

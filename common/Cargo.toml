@@ -12,16 +12,16 @@ rust-version = "1.75"
 workspace = ".."
 
 [dependencies]
-async-trait = "0.1.77"
+async-trait = "0.1.78"
 eyre = "0.6.12"
-sea-orm-migration = "0.12.14"
+sea-orm-migration = "0.12.15"
 nanoid = "0.4.0"
 serde = { version = "1.0", features = [ "derive" ] }
-log = "0.4.20"
+log = "0.4.21"
 derive_more = "0.99.17"
 indicatif = "0.17.8"
 serde_json = "1.0.114"
-chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.35", default-features = false, features = ["clock", "std"] }
 url = "2.5.0"
 console = "0.15.8"
 exitcode = "1.1.2"
@@ -29,25 +29,25 @@ bitcoin = { version = "0.31.1", features = ["default", "serde"] }
 directories = "5.0.1"
 regex = "1.10.3"
 governor = "0.6.3"
-base64 = "0.21.7"
+base64 = "0.22.0"
 itertools = "0.12.1"
 futures = "0.3.30"
 hex = "0.4.3"
 num_cpus = "1.16.0"
 bitcoincore-rpc-json = "0.18.0"
-duckdb = { version = "0.10.0", features = ["bundled", "parquet", "httpfs"] }
-reqwest = { version = "0.11.24", features = ["rustls-tls"] }
+duckdb = { version = "0.10.1", features = ["bundled", "parquet", "httpfs"] }
+reqwest = { version = "0.11.26", features = ["rustls-tls"] }
 tokio = { version = "1.36.0", features = ["full"] }
-ethers = { version = "2.0.13", features = ["rustls"] }
+ethers = { version = "2.0.14", features = ["rustls"] }
 clickhouse = { version = "0.11.6", features = ["uuid"] }
-clap = { version = "4.5.1", features = ["cargo", "derive", "env"] }
-uuid = { version = "1.7.0", features = ["v4", "fast-rng"] }
+clap = { version = "4.5.3", features = ["cargo", "derive", "env"] }
+uuid = { version = "1.8.0", features = ["v4", "fast-rng"] }
 tracing = "0.1.40"
 sha2 = "0.10.8"
 base58 = "0.2.0"
 
 [dependencies.sea-orm]
-version = "0.12.14"
+version = "0.12.15"
 features = [
   "sqlx-sqlite",
   "sqlx-postgres",
