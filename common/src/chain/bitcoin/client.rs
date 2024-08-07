@@ -1,14 +1,8 @@
 use base64::{engine::general_purpose, Engine as _};
-use bitcoin::{Block, BlockHash};
-use bitcoincore_rpc_json::{
-	bitcoin::{
-		consensus::{Decodable, ReadExt},
-		hashes::hex::HexToBytesIter,
-	},
-	GetBlockchainInfoResult,
-};
+use bitcoin::{consensus::encode, Block, BlockHash};
+use bitcoincore_rpc_json::GetBlockchainInfoResult;
 use derive_more::{Display, Error};
-use eyre::{eyre, Result};
+use eyre::Result;
 use reqwest::header::AUTHORIZATION;
 use serde::Deserialize;
 use serde_json::{json, Value as JsonValue};
@@ -101,7 +95,7 @@ impl Client {
 		let result = self
 			.request("getblock", &[JsonValue::from(hash.to_string()), 0.into()])
 			.await?;
-		deserialize_hex(result.as_str().unwrap())
+		Ok(encode::deserialize_hex(result.as_str().unwrap())?)
 	}
 
 	async fn request(
@@ -165,16 +159,5 @@ impl Client {
 		}
 
 		Err(ClientError::Connection.into())
-	}
-}
-
-fn deserialize_hex<T: Decodable>(hex: &str) -> Result<T> {
-	let mut reader = HexToBytesIter::new(hex)?;
-	let object = Decodable::consensus_decode(&mut reader)?;
-
-	if reader.read_u8().is_ok() {
-		Err(eyre!("could not deserialize output"))
-	} else {
-		Ok(object)
 	}
 }

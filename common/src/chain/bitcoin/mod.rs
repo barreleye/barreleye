@@ -198,7 +198,7 @@ impl ChainTrait for Bitcoin {
 
 				for tx in block.txdata.into_iter() {
 					storage_db.insert(ParquetTransaction {
-						hash: tx.txid().to_raw_hash(),
+						hash: tx.compute_txid().to_raw_hash(),
 						version: tx.version,
 						lock_time: tx.lock_time,
 						input_count: tx.input.len() as u32,
@@ -208,7 +208,7 @@ impl ChainTrait for Bitcoin {
 
 					for txin in tx.input.clone().into_iter() {
 						storage_db.insert(ParquetInput {
-							tx_hash: tx.txid().to_raw_hash(),
+							tx_hash: tx.compute_txid().to_raw_hash(),
 							previous_output_tx_hash: txin
 								.previous_output
 								.txid
@@ -219,7 +219,7 @@ impl ChainTrait for Bitcoin {
 
 					for txout in tx.output.clone().into_iter() {
 						storage_db.insert(ParquetOutput {
-							tx_hash: tx.txid().to_raw_hash(),
+							tx_hash: tx.compute_txid().to_raw_hash(),
 							value: txout.value,
 							script_pubkey: txout.script_pubkey,
 						})?;

@@ -42,7 +42,7 @@ impl IndexedLinks {
 	}
 
 	pub fn contains(&self, key: &str) -> bool {
-		self.address == key || self.data.get(key).is_some()
+		self.address == key || self.data.contains_key(key)
 	}
 
 	pub fn push(&mut self, links: Vec<Link>) {

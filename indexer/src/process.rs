@@ -241,7 +241,9 @@ impl Indexer {
 						let block_range = match Config::get::<
 							_,
 							(BlockHeight, BlockHeight),
-						>(self.app.db(), ck_block_range)
+						>(
+							self.app.db(), ck_block_range
+						)
 						.await?
 						{
 							Some(hit) => hit.value,

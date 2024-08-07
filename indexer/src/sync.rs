@@ -218,13 +218,13 @@ impl Indexer {
 								None => {
 									let config_key =
 										ConfigKey::BlockHeight(nid);
-									let saved_block_height = Config::get::<
-										_,
-										BlockHeight,
-									>(&db, config_key)
-									.await?
-									.map(|v| v.value)
-									.unwrap_or(0);
+									let saved_block_height =
+										Config::get::<_, BlockHeight>(
+											&db, config_key,
+										)
+										.await?
+										.map(|v| v.value)
+										.unwrap_or(0);
 
 									if block_height + 1 > saved_block_height {
 										let latest_block_height =

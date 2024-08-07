@@ -319,7 +319,6 @@ pub enum IdPrefix {
 #[derive(
 	Default,
 	Debug,
-	EnumIter,
 	DeriveActiveEnum,
 	Copy,
 	Clone,
@@ -339,6 +338,15 @@ pub enum RiskLevel {
 	Critical = 3,
 }
 
+// @TODO for some reason `EnumIter` in sea-orm v1.0.0 doesn't work
+impl strum::IntoEnumIterator for RiskLevel {
+	type Iterator = std::array::IntoIter<RiskLevel, 3>;
+
+	fn iter() -> Self::Iterator {
+		[RiskLevel::Low, RiskLevel::High, RiskLevel::Critical].into_iter()
+	}
+}
+
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum RiskReason {
@@ -349,7 +357,6 @@ pub enum RiskReason {
 #[derive(
 	Default,
 	Debug,
-	EnumIter,
 	DeriveActiveEnum,
 	Copy,
 	Clone,
@@ -366,9 +373,16 @@ pub enum Architecture {
 	Evm = 2,
 }
 
-#[derive(
-	Debug, EnumIter, Copy, Clone, PartialEq, Eq, Serialize, Deserialize,
-)]
+// @TODO for some reason `EnumIter` in sea-orm v1.0.0 doesn't work
+impl strum::IntoEnumIterator for Architecture {
+	type Iterator = std::array::IntoIter<Architecture, 2>;
+
+	fn iter() -> Self::Iterator {
+		[Architecture::Bitcoin, Architecture::Evm].into_iter()
+	}
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Mode {
 	Indexer,
