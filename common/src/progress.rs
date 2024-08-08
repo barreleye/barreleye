@@ -43,7 +43,7 @@ impl Progress {
 		match step {
 			Step::Setup => out(1, EMOJI_SETUP, "Initializing…"),
 			Step::Migrations => out(2, EMOJI_MIGRATIONS, "Running migrations…"),
-			Step::Networks => out(3, EMOJI_NETWORKS, "Connecting to networks…"),
+			Step::Networks => out(3, EMOJI_NETWORKS, "Checking networks…"),
 			Step::Ready(ready_type, warnings) => {
 				out(total_steps, EMOJI_READY, "Starting up…");
 				fn show_status(status: &str) {
@@ -55,16 +55,16 @@ impl Progress {
 				}
 				match ready_type {
 					ReadyType::All(addr) => {
-						show_status("Indexer enabled");
-						show_status(&format!("Listening on {addr}…\n"));
+						show_status("Indexer: Enabled");
+						show_status(&format!("Server: Listening on {addr}…\n"));
 					}
 					ReadyType::Server(addr) => {
-						show_status("Indexer disabled");
-						show_status(&format!("Listening on {addr}…\n"));
+						show_status("Indexer: Disabled");
+						show_status(&format!("Server: Listening on {addr}…\n"));
 					}
 					ReadyType::Indexer => {
-						show_status("Indexer enabled");
-						show_status("Server disabled\n");
+						show_status("Indexer: Enabled");
+						show_status("Server: Disabled\n");
 					}
 				};
 

@@ -134,7 +134,7 @@ impl Server {
 
 		if let Some(ip_addr) = settings.ip_addr {
 			let ip_addr = SocketAddr::new(ip_addr, settings.port);
-			show_progress(&format!("Listening on {}…", style(ip_addr).bold()));
+			show_progress(&style(ip_addr).bold().to_string());
 
 			match TcpListener::bind(&ip_addr).await {
 				Err(e) => quit(AppError::ServerStartup {

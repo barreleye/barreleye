@@ -496,7 +496,7 @@ dependencies = [
 
 [[package]]
 name = "barreleye"
-version = "0.2.0-alpha.0"
+version = "0.2.0"
 dependencies = [
  "barreleye-common",
  "barreleye-indexer",
@@ -514,7 +514,7 @@ dependencies = [
 
 [[package]]
 name = "barreleye-common"
-version = "0.2.0-alpha.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "base58",
@@ -525,7 +525,7 @@ dependencies = [
  "clap",
  "clickhouse",
  "console",
- "derive_more",
+ "derive_more 1.0.0",
  "directories",
  "duckdb",
  "ethers",
@@ -555,7 +555,7 @@ dependencies = [
 
 [[package]]
 name = "barreleye-indexer"
-version = "0.2.0-alpha.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "barreleye-common",
@@ -563,7 +563,7 @@ dependencies = [
  "bitcoin",
  "bitcoincore-rpc-json",
  "console",
- "derive_more",
+ "derive_more 1.0.0",
  "eyre",
  "governor",
  "log",
@@ -579,13 +579,13 @@ dependencies = [
 
 [[package]]
 name = "barreleye-server"
-version = "0.2.0-alpha.0"
+version = "0.2.0"
 dependencies = [
  "axum",
  "axum-extra",
  "barreleye-common",
  "console",
- "derive_more",
+ "derive_more 1.0.0",
  "eyre",
  "hyper 1.4.1",
  "log",
@@ -982,9 +982,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.13"
+version = "4.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fbb260a053428790f3de475e304ff84cdbc4face759ea7a3e64c1edd938a7fc"
+checksum = "c937d4061031a6d0c8da4b9a4f98a172fc2976dfb1c19213a9cf7d0d3c837e36"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -992,9 +992,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.13"
+version = "4.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64b17d7ea74e9f833c7dbf2cbe4fb12ff26783eda4782a8975b72f895c9b4d99"
+checksum = "85379ba512b21a328adf887e85f7742d12e96eb31f3ef077df4ffc26b506ffed"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1022,9 +1022,9 @@ checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
 name = "clickhouse"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab6d70c534d5e54680aae99712800fca8d048cdfad3fbd154daf823d444f08b"
+checksum = "9136d34663bf9964914b5cea6cd126d2b35da8a60ec798c615214679e13e48d9"
 dependencies = [
  "bstr",
  "bytes",
@@ -1036,6 +1036,7 @@ dependencies = [
  "hyper 1.4.1",
  "hyper-util",
  "lz4",
+ "replace_with",
  "sealed",
  "serde",
  "static_assertions",
@@ -1222,9 +1223,12 @@ checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
 name = "convert_case"
-version = "0.4.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
+checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
+dependencies = [
+ "unicode-segmentation",
+]
 
 [[package]]
 name = "core-foundation"
@@ -1392,11 +1396,31 @@ version = "0.99.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f33878137e4dafd7fa914ad4e259e18a4e8e532b9617a2d0150262bf53abfce"
 dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
+name = "derive_more"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a9b99b9cbbe49445b21764dc0625032a89b145a2642e67603e1c936f5458d05"
+dependencies = [
+ "derive_more-impl",
+]
+
+[[package]]
+name = "derive_more-impl"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
+dependencies = [
  "convert_case",
  "proc-macro2",
  "quote",
- "rustc_version",
  "syn 2.0.72",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -4060,6 +4084,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "replace_with"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3a8614ee435691de62bcffcf4a66d91b3594bf1428a5722e79103249a095690"
+
+[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4433,7 +4463,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eca070c12893629e2cc820a9761bedf6ce1dcddc9852984d1dc734b8bd9bd024"
 dependencies = [
  "cfg-if",
- "derive_more",
+ "derive_more 0.99.18",
  "parity-scale-codec",
  "scale-info-derive",
 ]
@@ -4745,18 +4775,18 @@ checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
 
 [[package]]
 name = "serde"
-version = "1.0.204"
+version = "1.0.205"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc76f558e0cbb2a839d37354c575f1dc3fdc6546b5be373ba43d95f231bf7c12"
+checksum = "e33aedb1a7135da52b7c21791455563facbbcc43d0f0f66165b42c21b3dfb150"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.204"
+version = "1.0.205"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0cd7e117be63d3c3678776753929474f3b04a43a080c744d6b0ae2a8c28e222"
+checksum = "692d6f5ac90220161d6774db30c662202721e64aed9058d2c394f451261420c1"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -50,8 +50,8 @@ pub mod warehouse;
 
 mod banner;
 
-static EMOJI_SETUP: Emoji<'_, '_> = Emoji("📦  ", "");
-static EMOJI_MIGRATIONS: Emoji<'_, '_> = Emoji("🚢  ", "");
+static EMOJI_SETUP: Emoji<'_, '_> = Emoji("🚀  ", "");
+static EMOJI_MIGRATIONS: Emoji<'_, '_> = Emoji("📦  ", "");
 static EMOJI_NETWORKS: Emoji<'_, '_> = Emoji("📡  ", "");
 static EMOJI_READY: Emoji<'_, '_> = Emoji("🟢  ", "");
 static EMOJI_QUIT: Emoji<'_, '_> = Emoji("🛑  ", "");
@@ -302,17 +302,17 @@ impl App {
 	Clone, Display, Debug, Serialize, Deserialize, Hash, Eq, PartialEq,
 )]
 pub enum IdPrefix {
-	#[display(fmt = "net")]
+	#[display("net")]
 	Network,
-	#[display(fmt = "key")]
+	#[display("key")]
 	ApiKey,
-	#[display(fmt = "ent")]
+	#[display("ent")]
 	Entity,
-	#[display(fmt = "adr")]
+	#[display("adr")]
 	Address,
-	#[display(fmt = "tag")]
+	#[display("tag")]
 	Tag,
-	#[display(fmt = "tok")]
+	#[display("tok")]
 	Token,
 }
 

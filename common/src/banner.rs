@@ -980,13 +980,13 @@ pub fn show(is_indexer: bool, is_server: bool) -> Result<()> {
 
 		let mut t = vec![];
 		if is_indexer {
-			t.push(s("+Indexer").cyan().to_string())
+			t.push(s("Indexer ✔").cyan().to_string())
 		}
 		if is_server {
-			t.push(s("+Server").green().to_string())
+			t.push(s("Server ✔").green().to_string())
 		}
 
-		let tags = t.join(", ");
+		let tags = t.join(&s(", ").dim().to_string());
 		if tags.is_empty() {
 			tags
 		} else {
@@ -995,7 +995,7 @@ pub fn show(is_indexer: bool, is_server: bool) -> Result<()> {
 	};
 
 	println!(
-		"{}› {} v{}{}\n› https://barreleye.com\n",
+		"{}› {} v{}{}\n› https://barreleye.org\n",
 		banner,
 		style(name).bold(),
 		env!("CARGO_PKG_VERSION"),

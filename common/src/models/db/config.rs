@@ -17,31 +17,31 @@ use crate::{models::PrimaryId, utils, BlockHeight};
 //    "title_a1_b2" & "diff_title_a1_b2_c3"
 #[derive(Ord, PartialOrd, Display, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ConfigKey {
-	#[display(fmt = "primary")]
+	#[display("primary")]
 	Primary,
-	#[display(fmt = "indexer_sync_tail_n{_0}")]
+	#[display("indexer_sync_tail_n{_0}")]
 	IndexerSyncTail(PrimaryId),
-	#[display(fmt = "indexer_sync_chunk_n{_0}_b{_1}")]
+	#[display("indexer_sync_chunk_n{_0}_b{_1}")]
 	IndexerSyncChunk(PrimaryId, BlockHeight),
-	#[display(fmt = "indexer_sync_progress_n{_0}")]
+	#[display("indexer_sync_progress_n{_0}")]
 	IndexerSyncProgress(PrimaryId),
-	#[display(fmt = "indexer_process_tail_n{_0}")]
+	#[display("indexer_process_tail_n{_0}")]
 	IndexerProcessTail(PrimaryId),
-	#[display(fmt = "indexer_process_chunk_n{_0}_b{_1}")]
+	#[display("indexer_process_chunk_n{_0}_b{_1}")]
 	IndexerProcessChunk(PrimaryId, BlockHeight),
-	#[display(fmt = "indexer_process_module_n{_0}_m{_1}")]
+	#[display("indexer_process_module_n{_0}_m{_1}")]
 	IndexerProcessModule(PrimaryId, u16),
-	#[display(fmt = "indexer_process_module_done_n{_0}_m{_1}")]
+	#[display("indexer_process_module_done_n{_0}_m{_1}")]
 	IndexerProcessModuleDone(PrimaryId, u16),
-	#[display(fmt = "indexer_process_progress_n{_0}")]
+	#[display("indexer_process_progress_n{_0}")]
 	IndexerProcessProgress(PrimaryId),
-	#[display(fmt = "indexer_link_n{_0}_a{_1}")]
+	#[display("indexer_link_n{_0}_a{_1}")]
 	IndexerLink(PrimaryId, PrimaryId),
-	#[display(fmt = "block_height_n{_0}")]
+	#[display("block_height_n{_0}")]
 	BlockHeight(PrimaryId),
-	#[display(fmt = "networks_updated")]
+	#[display("networks_updated")]
 	NetworksUpdated,
-	#[display(fmt = "newly_added_address_n{_0}_a{_1}")]
+	#[display("newly_added_address_n{_0}_a{_1}")]
 	NewlyAddedAddress(PrimaryId, PrimaryId),
 }
 

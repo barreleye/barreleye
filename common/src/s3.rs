@@ -6,11 +6,11 @@ use url::Url;
 #[derive(Display, Debug, Clone, Default, PartialEq, Eq)]
 pub enum Service {
 	#[default]
-	#[display(fmt = "Unknown")]
+	#[display("Unknown")]
 	Unknown,
-	#[display(fmt = "S3")]
+	#[display("S3")]
 	S3,
-	#[display(fmt = "S3-compatible")]
+	#[display("S3-compatible")]
 	S3Compatible,
 }
 

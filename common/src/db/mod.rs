@@ -17,13 +17,13 @@ mod migrations;
 pub enum Driver {
 	#[default]
 	#[serde(rename = "sqlite")]
-	#[display(fmt = "SQLite")]
+	#[display("SQLite")]
 	SQLite,
 	#[serde(rename = "postgres")]
-	#[display(fmt = "PostgreSQL")]
+	#[display("PostgreSQL")]
 	PostgreSQL,
 	#[serde(rename = "mysql")]
-	#[display(fmt = "MySQL")]
+	#[display("MySQL")]
 	MySQL,
 }
 

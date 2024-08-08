@@ -10,43 +10,43 @@ use serde_json::json;
 
 #[derive(Debug, Display, Error)]
 pub enum ServerError {
-	#[display(fmt = "unauthorized")]
+	#[display("unauthorized")]
 	Unauthorized,
 
-	#[display(fmt = "validation error @ `{field}`")]
+	#[display("validation error @ `{field}`")]
 	Validation { field: String },
 
-	#[display(fmt = "invalid parameter @ `{field}`: {value}")]
+	#[display("invalid parameter @ `{field}`: {value}")]
 	InvalidParam { field: String, value: String },
 
-	#[display(fmt = "invalid value(s) @ parameter `{field}`: {values}")]
+	#[display("invalid value(s) @ parameter `{field}`: {values}")]
 	InvalidValues { field: String, values: String },
 
-	#[display(fmt = "exceeded limit @ parameter `{field}`: {limit}")]
+	#[display("exceeded limit @ parameter `{field}`: {limit}")]
 	ExceededLimit { field: String, limit: usize },
 
-	#[display(fmt = "missing input params")]
+	#[display("missing input params")]
 	MissingInputParams,
 
-	#[display(fmt = "could not connect to `{name}`")]
+	#[display("could not connect to `{name}`")]
 	InvalidService { name: String },
 
-	#[display(fmt = "duplicate found @ `{field}`: {value}")]
+	#[display("duplicate found @ `{field}`: {value}")]
 	Duplicate { field: String, value: String },
 
-	#[display(fmt = "duplicates found @ `{field}`: {values}")]
+	#[display("duplicates found @ `{field}`: {values}")]
 	Duplicates { field: String, values: String },
 
-	#[display(fmt = "bad request: {reason}")]
+	#[display("bad request: {reason}")]
 	BadRequest { reason: String },
 
-	#[display(fmt = "too early: {reason}")]
+	#[display("too early: {reason}")]
 	TooEarly { reason: String },
 
-	#[display(fmt = "not found")]
+	#[display("not found")]
 	NotFound,
 
-	#[display(fmt = "rekt")]
+	#[display("rekt")]
 	Internal { error: Report },
 }
 

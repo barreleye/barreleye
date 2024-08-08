@@ -1,6 +1,6 @@
 # Contribute to Barreleye
 
-Barreleye Insights is an open-source project administered by [Barreleye](https://barreleye.com/). We appreciate your interest and efforts to contribute to Barreleye Insights. See the [LICENSE](LICENSE) licensing information. All work done is available on GitHub.
+Barreleye Insights is an open-source project administered by [Barreleye](https://barreleye.org/). We appreciate your interest and efforts to contribute to Barreleye Insights. See the [LICENSE](LICENSE) licensing information. All work done is available on GitHub.
 
 We highly appreciate your effort to contribute, but we recommend you talk to a maintainer before spending a lot of time making a pull request that may not align with the project roadmap. Whether it is from Barreleye or contributors, every pull request goes through the same process.
 

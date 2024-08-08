@@ -10,7 +10,7 @@ use crate::{utils, Settings};
 pub enum Driver {
 	#[default]
 	#[serde(rename = "clickhouse")]
-	#[display(fmt = "ClickHouse")]
+	#[display("ClickHouse")]
 	ClickHouse,
 }
 

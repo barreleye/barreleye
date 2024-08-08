@@ -17,13 +17,13 @@ const RPC_TIMEOUT: u64 = 250;
 
 #[derive(Debug, Display, Error)]
 pub enum ClientError {
-	#[display(fmt = "{message}")]
+	#[display("{message}")]
 	General { message: String },
-	#[display(fmt = "Could not connect to rpc endpoint")]
+	#[display("Could not connect to rpc endpoint")]
 	Connection,
-	#[display(fmt = "RPC error: {message}")]
+	#[display("RPC error: {message}")]
 	Rpc { message: String },
-	#[display(fmt = "Nonce mismatch")]
+	#[display("Nonce mismatch")]
 	NonceMismatch,
 }
 

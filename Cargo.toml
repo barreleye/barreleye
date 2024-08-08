@@ -3,8 +3,8 @@ name = "barreleye"
 description = "Open-source blockchain analytics."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
-homepage = "https://barreleye.com"
-version = "0.2.0-alpha.0"
+homepage = "https://barreleye.org"
+version = "0.2.0"
 license = "Apache-2.0"
 edition = "2021"
 rust-version = "1.75"
@@ -22,9 +22,9 @@ members = [ "common", "indexer", "server" ]
 normal = ["color-eyre"]
 
 [dependencies]
-barreleye-common = { path = "./common", version = "0.2.0-alpha.0" }
-barreleye-indexer = { path = "./indexer", version = "0.2.0-alpha.0" }
-barreleye-server = { path = "./server", version = "0.2.0-alpha.0" }
+barreleye-common = { path = "./common", version = "0.2.0" }
+barreleye-indexer = { path = "./indexer", version = "0.2.0" }
+barreleye-server = { path = "./server", version = "0.2.0" }
 log = "0.4.22"
 color-eyre = "0.6.3"
 eyre = "0.6.12"

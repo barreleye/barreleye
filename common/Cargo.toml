@@ -5,7 +5,7 @@ description = "Open-source blockchain analytics."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.com"
-version = "0.2.0-alpha.0"
+version = "0.2.0"
 license = "Apache-2.0"
 edition = "2021"
 rust-version = "1.75"
@@ -18,7 +18,7 @@ sea-orm-migration = "1.0.0"
 nanoid = "0.4.0"
 serde = { version = "1.0", features = [ "derive" ] }
 log = "0.4.22"
-derive_more = "0.99.18"
+derive_more = { version = "1.0.0", features = [ "full" ] }
 indicatif = "0.17.8"
 serde_json = "1.0.122"
 chrono = { version = "0.4.38", default-features = false, features = ["clock", "std"] }
@@ -39,8 +39,8 @@ duckdb = { version = "1.0.0", features = ["bundled", "parquet"] }
 reqwest = { version = "0.12.5", features = ["rustls-tls", "json"] }
 tokio = { version = "1.39.2", features = ["full"] }
 ethers = { version = "2.0.14", features = ["rustls"] }
-clickhouse = { version = "0.12.0", features = ["uuid"] }
-clap = { version = "4.5.13", features = ["cargo", "derive", "env"] }
+clickhouse = { version = "0.12.1", features = ["uuid"] }
+clap = { version = "4.5.14", features = ["cargo", "derive", "env"] }
 uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
 tracing = "0.1.40"
 sha2 = "0.10.8"
