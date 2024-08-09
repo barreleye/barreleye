@@ -267,8 +267,6 @@ curl -X GET \
 To stay in touch with Barreleye:
 
 - Star this repo ★
-- Follow on [Twitter](https://twitter.com/GetBarreleye)
-- Join on [Discord](https://discord.gg/VX8PdWSwNZ)
 - [Contribute](/CONTRIBUTING.md) -- pull requests are welcome (for major changes, please open an issue first to discuss what you would like to change)
 
 ## ⚖️ License
