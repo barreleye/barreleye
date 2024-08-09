@@ -1,8 +1,6 @@
 # Contribute to Barreleye
 
-Barreleye Insights is an open-source project administered by [Barreleye](https://barreleye.org/). We appreciate your interest and efforts to contribute to Barreleye Insights. See the [LICENSE](LICENSE) licensing information. All work done is available on GitHub.
-
-We highly appreciate your effort to contribute, but we recommend you talk to a maintainer before spending a lot of time making a pull request that may not align with the project roadmap. Whether it is from Barreleye or contributors, every pull request goes through the same process.
+The Barreleye project operates an open contributor model where anyone is welcome to contribute towards development in the form of peer review, testing and patches. This document explains the practical process and guidelines for contributing.
 
 ## Feature Requests
 
@@ -14,17 +12,19 @@ This project, and everyone participating in it, are governed by the [Barreleye C
 
 ## Bugs
 
-Barreleye is using [GitHub issues](https://github.com/barreleye/barreleye/issues) to manage bugs. We keep a close eye on them. Before filing a new issue, try to ensure your problem does not already exist.
+Barreleye is using [GitHub issues](https://github.com/barreleye/barreleye/issues) to manage bugs. Before filing a new issue, try to ensure your problem does not already exist.
 
 ---
 
 ## Before Submitting a Pull Request
 
+We highly appreciate your effort to contribute, but we recommend you talk to a maintainer before spending a lot of time making a pull request that may not align with the project roadmap.
+
 The Barreleye core team will review your pull request and either merge it, request changes, or close it.
 
 ## Contribution Prerequisites
 
-- You have [Rust](https://www.rust-lang.org/) v1.75+ installed.
+- You have [Rust](https://www.rust-lang.org/) v1.80+ installed.
 - You are familiar with [Git](https://git-scm.com).
 
 **Before submitting your pull request** make sure the following requirements are fulfilled:

@@ -17,7 +17,7 @@ pub fn sha256(input: &str) -> Vec<u8> {
 
 pub fn project_dir(folder: Option<&str>) -> PathBuf {
 	// @TODO will panic on systems with no home directory
-	ProjectDirs::from("com", "barreleye", "barreleye")
+	ProjectDirs::from("org", "barreleye", "barreleye")
 		.map(|d| {
 			let mut ret = PathBuf::from(d.data_dir());
 			if let Some(folder) = folder {

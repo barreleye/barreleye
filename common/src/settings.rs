@@ -35,9 +35,8 @@ pub struct Settings {
 	/// Can be either a folder or S3-compatible storage.
 	///
 	/// Folder eg: file:///path_to_folder
-	/// Amazon S3 eg: http://s3.us-east-1.amazonaws.com/bucket_name/
-	/// Google Cloud Storage eg: http://storage.googleapis.com/bucket_name/
-	/// MinIO eg: http://localhost/bucket_name/
+	/// Amazon S3 eg: https://s3.<region>.amazonaws.com/bucket_name/
+	/// Cloudflare R2 eg: https://<account_id>.r2.cloudflarestorage.com/bucket_name/
 	#[arg(
 		help_heading = "Storage options",
 		short,
@@ -73,11 +72,11 @@ pub struct Settings {
 	)]
 	pub s3_secret_access_key: Option<String>,
 
-	/// Database to connect to. Supports PostgreSQL, MySQL and SQLite.
+	/// Database to connect to. Supports SQLite, PostgreSQL and MySQL.
 	///
+	/// SQLite eg: sqlite://database_path?mode=rwc
 	/// Postgres eg: postgres://username:password@localhost:5432/database_name
 	/// MySQL eg: mysql://username:password@localhost:3306/database_name
-	/// SQLite eg: sqlite://database_path?mode=rwc
 	#[arg(
 		help_heading = "Database options",
 		short,
@@ -135,8 +134,9 @@ pub struct Settings {
 	)]
 	pub database_max_lifetime: u64,
 
-	/// Warehouse for big data. Supports ClickHouse.
+	/// Warehouse for storing analytical data. Supports DuckDB and ClickHouse.
 	///
+	/// DuckDB eg: @TODO
 	/// ClickHouse eg: http://username:password@localhost:8123/database_name
 	#[arg(
 		help_heading = "Warehouse options",
@@ -153,7 +153,7 @@ pub struct Settings {
 	#[arg(
 		help_heading = "Server options",
 		long,
-		default_value = "0.0.0.0",
+		default_value = "127.0.0.1",
 		value_name = "IP_ADDRESS"
 	)]
 	ip: String,

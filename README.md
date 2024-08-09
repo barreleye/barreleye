@@ -37,7 +37,7 @@
 
 ## 🧰 Requirements
 
-1. [Rust](https://www.rust-lang.org/) v1.75+ — if you're compiling from source
+1. [Rust](https://www.rust-lang.org/) v1.80+ — if you're compiling from source
 1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
 1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
@@ -288,7 +288,4 @@ To stay in touch with Barreleye:
 
 ## ⚖️ License
 
-Source code for Barreleye is variously licensed under a number of different licenses. A copy of each license can be found in [each repository](https://github.com/barreleye).
-
-- Core code for Barreleye, located in [this repository](https://github.com/barreleye/barreleye), is released under the [Apache 2.0](/LICENSE).
-- Libraries and SDKs, each located in its own distinct repository, are released under either the [Apache License 2.0](https://opensource.org/licenses/Apache-2.0) or [MIT License](https://opensource.org/licenses/MIT).
+MIT

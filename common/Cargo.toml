@@ -1,14 +1,14 @@
 [package]
 name = "barreleye-common"
 publish = false
-description = "Open-source blockchain analytics."
+description = "Multichain blockchain indexer and explorer."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
-homepage = "https://barreleye.com"
+homepage = "https://barreleye.org"
 version = "0.2.0"
-license = "Apache-2.0"
+license = "MIT"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.80"
 workspace = ".."
 
 [dependencies]

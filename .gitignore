@@ -1,8 +1,4 @@
-barreleye.toml
 **/*.rs.bk
-.env*.local
 target
-parquet_files
 .env
-storage
-db
+.env*.local
