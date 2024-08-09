@@ -163,7 +163,7 @@ pub struct Settings {
 	#[arg(
 		help_heading = "Server options",
 		long,
-		default_value_t = 4000,
+		default_value_t = 80,
 		value_name = "PORT"
 	)]
 	pub port: u16,

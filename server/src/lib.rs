@@ -133,20 +133,41 @@ impl Server {
 		};
 
 		if let Some(ip_addr) = settings.ip_addr {
-			let ip_addr = SocketAddr::new(ip_addr, settings.port);
-			show_progress(&style(ip_addr).bold().to_string());
+			let mut listener = None;
 
-			match TcpListener::bind(&ip_addr).await {
-				Err(e) => quit(AppError::ServerStartup {
-					url: ip_addr.to_string(),
-					error: e.to_string(),
-				}),
-				Ok(listener) => {
-					self.app.set_is_ready();
-					axum::serve(listener, app)
-						.with_graceful_shutdown(Self::shutdown_signal())
-						.await?
+			let ports_to_try: Vec<u16> = if settings.port == 80 {
+				let mut ports = vec![80, 2277];
+				ports.extend(2278..2300);
+				ports
+			} else {
+				vec![settings.port]
+			};
+
+			for port in &ports_to_try {
+				let ip_addr = SocketAddr::new(ip_addr, *port);
+
+				match TcpListener::bind(&ip_addr).await {
+					Err(_) => {
+						if *port == *ports_to_try.last().unwrap() {
+							quit(AppError::ServerStartup {
+								url: ip_addr.to_string(),
+								error: "Ran out of ports to try".to_string(),
+							});
+						}
+					}
+					Ok(l) => {
+						listener = Some(l);
+						show_progress(&style(ip_addr).bold().to_string());
+						break;
+					}
 				}
+			}
+
+			if let Some(listener) = listener {
+				self.app.set_is_ready();
+				axum::serve(listener, app)
+					.with_graceful_shutdown(Self::shutdown_signal())
+					.await?;
 			}
 		}
 
