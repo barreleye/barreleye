@@ -50,34 +50,43 @@ async fn main() -> Result<()> {
 	// show connection settings
 	fn show_setting(driver: &str, url: &str, tag: &str) {
 		println!(
-			"          {} {} {} {}",
+			"          {} {} {}{}",
 			style("↳").bold().dim(),
-			style(format!("{driver}:")).bold(),
-			style(format!("[{tag}]")).bold().dim(),
+			style(format!("{tag}:")).bold().dim(),
+			if !driver.is_empty() {
+				format!(
+					"{}{}{} ",
+					style("[").bold().dim(),
+					style(driver).bold(),
+					style("]").bold().dim()
+				)
+			} else {
+				"".to_string()
+			},
 			style(url.to_string()).bold().dim(),
 		);
 	}
 	let storage_type;
 	let storage_path;
 	if let Some(path) = settings.storage_path.clone() {
-		storage_type = "DuckDB".to_string();
-		storage_path = format!("file://{}", path.display());
+		storage_type = "".to_string();
+		storage_path = format!("{}", path.display());
 	} else if let Some(s3) = settings.storage_url.clone() {
 		storage_type = s3.service.to_string();
 		storage_path = s3.url;
 	} else {
 		panic!("storage setting must be set");
 	}
+	show_setting(&storage_type, &storage_path, "Storage");
 	show_setting(
 		&settings.database_driver.to_string(),
 		&utils::with_masked_auth(&settings.database),
-		"database",
+		"Database",
 	);
-	show_setting(&storage_type, &storage_path, "storage");
 	show_setting(
 		&settings.warehouse_driver.to_string(),
 		&utils::with_masked_auth(&settings.warehouse),
-		"warehouse",
+		"Warehouse",
 	);
 
 	progress.show(ProgressStep::Migrations);
