@@ -1,7 +1,7 @@
 [package]
 name = "barreleye-server"
 publish = false
-description = "Multichain blockchain indexer and explorer."
+description = "Multi-chain blockchain indexer and explorer."
 repository = "https://github.com/barreleye/barreleye"
 documentation = "https://docs.rs/barreleye"
 homepage = "https://barreleye.org"
