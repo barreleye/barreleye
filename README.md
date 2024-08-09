@@ -5,12 +5,6 @@
   <br />
 </h1>
 
-<p align="center">
-  <b>Multi-chain blockchain indexer and explorer</b> <br />
-</p>
-
----
-
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml)](https://github.com/barreleye/barreleye/actions)
 [![License](https://img.shields.io/github/license/barreleye/barreleye)](/LICENSE)
 
