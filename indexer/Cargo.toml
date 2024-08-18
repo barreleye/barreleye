@@ -15,7 +15,7 @@ workspace = ".."
 barreleye-common = { path = "../common", version = "0.2.0" }
 eyre = "0.6.12"
 serde = { version = "1.0", features = [ "derive" ] }
-serde_json = "1.0.124"
+serde_json = "1.0.125"
 async-trait = "0.1.81"
 bitcoin = { version = "0.32.2", features = ["serde"] }
 console = "0.15.8"
@@ -25,7 +25,7 @@ regex = "1.10.6"
 bitcoincore-rpc-json = "0.19.0"
 derive_more = { version = "1.0.0", features = [ "full" ] }
 log = "0.4.22"
-tokio = { version = "1.39.2", features = ["full"] }
+tokio = { version = "1.39.3", features = ["full"] }
 uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
 reqwest = { version = "0.12.5", features = ["rustls-tls", "json"] }
 tracing = "0.1.40"
