@@ -356,9 +356,8 @@ impl Model {
 
 		for keyword in keywords.into_iter() {
 			condition =
-				condition.add(Column::Key.like(&format!("%_{keyword}_%")));
-			condition =
-				condition.add(Column::Key.like(&format!("%_{keyword}")));
+				condition.add(Column::Key.like(format!("%_{keyword}_%")));
+			condition = condition.add(Column::Key.like(format!("%_{keyword}")));
 		}
 
 		condition

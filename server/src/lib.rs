@@ -41,6 +41,10 @@ impl Server {
 		req: Request,
 		next: Next,
 	) -> ServerResult<Response> {
+		if ApiKey::count(app.db()).await? == 0 {
+			return Ok(next.run(req).await);
+		}
+
 		for public_endpoint in ["/v1/info"].iter() {
 			if req.uri().to_string().starts_with(public_endpoint) {
 				return Ok(next.run(req).await);

@@ -107,7 +107,7 @@ impl StorageDb {
 		for file in files.into_iter() {
 			if let Some(path) = self.get_path(&file)? {
 				commands.push(format!(
-					"COPY {file} TO '{}' (FORMAT PARQUET);",
+					"COPY {file} TO '{}' (FORMAT PARQUET, COMPRESSION GZIP);",
 					path,
 				));
 			}

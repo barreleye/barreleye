@@ -60,6 +60,13 @@ impl Model {
 		}
 	}
 
+	pub async fn count<C>(c: &C) -> Result<u64>
+	where
+		C: ConnectionTrait,
+	{
+		Ok(Entity::find().count(c).await?)
+	}
+
 	pub async fn get_by_hashing<C>(
 		c: &C,
 		secret_key: &str,
