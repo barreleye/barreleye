@@ -22,7 +22,7 @@
 1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
 > [!WARNING]
-> ⚠️ EVM-based chains are not yet supported (this is a work-in-progress)
+> EVM-based chains are not yet supported (this is a work-in-progress)
 
 ## 👩‍💻 Get Started
 
@@ -89,8 +89,8 @@ To run only the server:
 barreleye --mode http
 ```
 
-> **Note**
-> ⚠️ Indexer is designed to run in failover mode. Only the primary instance will run at once; the others will wait for the primary to fail in order to promote a secondary.
+> [!TIP]
+> Indexer is designed to run in failover mode. Only the primary instance will run at once; the others will wait for the primary to fail in order to promote a secondary.
 
 ## 💾 Add Data
 
