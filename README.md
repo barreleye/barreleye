@@ -1,17 +1,12 @@
-<h1 align="center">
-  <a href="https://barreleye.com/">
-    <img src="docs/img/readme.webp" alt="Barreleye" width="360px">
-  </a>
-  <br />
-</h1>
+# Barreleye
 
 [![Github Actions](https://img.shields.io/github/actions/workflow/status/barreleye/barreleye/tests.yml)](https://github.com/barreleye/barreleye/actions)
 [![License](https://img.shields.io/github/license/barreleye/barreleye)](/LICENSE)
 
 **Barreleye** is an open-source multi-chain blockchain indexer and explorer.
 
-> **Note**
-> This is an actively developed work-in-progress and not yet ready for production. Use at your own risk.
+> [!IMPORTANT]
+> This is an actively developed work-in-progress and not yet ready for use or production. Use at your own risk.
 
 ## ✨ Features
 
@@ -26,7 +21,7 @@
 1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
 1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
-> **Note**
+> [!WARNING]
 > ⚠️ EVM-based chains are not yet supported (this is a work-in-progress)
 
 ## 👩‍💻 Get Started
@@ -101,16 +96,6 @@ barreleye --mode http
 
 Barreleye does not come with any pre-defined data. Instead, it gives you the ability to add and manage data yourself. The API calls below give an overview of how to manage data.
 
-A default API key is generated when you first start Barreleye, so to get it — connect to your RDBMS and retrieve the only key that has been auto-inserted:
-
-```sql
-select secret_key from api_keys where id='key_default';
--- the result will be $YOUR_API_KEY in examples below
-```
-
-> **Note**
-> Be sure to write down that API key somewhere else, because after the first successful API call, that plaintext value will be erased.
-
 ### Add Blockchains
 
 Add a Bitcoin RPC node:
@@ -118,7 +103,6 @@ Add a Bitcoin RPC node:
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "id": "net_bitcoin",
     "name": "Bitcoin",
@@ -134,7 +118,6 @@ Add an EVM-based RPC node (archive node is required):
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "id": "net_ethereum",
     "name": "Ethereum",
@@ -153,7 +136,6 @@ To add native Bitcoin currency:
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "network": "net_bitcoin",
     "name": "bitcoin",
@@ -168,7 +150,6 @@ To add native Ethereum currency:
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "network": "net_ethereum",
     "name": "Ether",
@@ -183,7 +164,6 @@ To add an ERC-20 token:
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "network": "net_ethereum",
     "name": "USD Coin",
@@ -199,7 +179,6 @@ curl -X POST \
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "id": "tag_exchange",
     "name": "Exchange",
@@ -215,7 +194,6 @@ An entity can be an item that contains one or several blockchain addresses:
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "id": "ent_coinbase",
     "name": "Coinbase",
@@ -230,7 +208,6 @@ To add addresses:
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $YOUR_API_KEY" \
   -d '{
     "entity": "ent_coinbase",
     "network": "net_ethereum",
@@ -271,4 +248,4 @@ To stay in touch with Barreleye:
 
 ## ⚖️ License
 
-MIT
+[MIT](LICENSE)
