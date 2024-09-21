@@ -17,7 +17,7 @@
 
 ## 🧰 Requirements
 
-1. [Rust](https://www.rust-lang.org/) v1.80+ — if you're compiling from source
+1. [Rust](https://www.rust-lang.org/) v1.81+ — if you're compiling from source
 1. [ClickHouse](https://github.com/ClickHouse/ClickHouse) v23.5+ — for warehouse data storage
 1. Blockchain nodes — for indexing (eg: [Bitcoin](https://bitcoin.org/), [Ethereum](https://ethereum.org/), etc)
 
