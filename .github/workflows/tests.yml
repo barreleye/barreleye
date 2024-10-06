@@ -46,3 +46,6 @@ jobs:
       - name: Install cargo check tools
         run: |
           cargo install --locked cargo-deny || true
+
+      - name: Run cargo deny check
+        run: cargo deny check
