@@ -19,35 +19,12 @@ impl MigrationTrait for Migration {
 							.auto_increment()
 							.primary_key(),
 					)
-					.col(
-						ColumnDef::new(Tokens::NetworkId)
-							.big_integer()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Tokens::Id)
-							.unique_key()
-							.string()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Tokens::Name)
-							.unique_key()
-							.string()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Tokens::Symbol)
-							.unique_key()
-							.string()
-							.not_null(),
-					)
+					.col(ColumnDef::new(Tokens::NetworkId).big_integer().not_null())
+					.col(ColumnDef::new(Tokens::Id).unique_key().string().not_null())
+					.col(ColumnDef::new(Tokens::Name).unique_key().string().not_null())
+					.col(ColumnDef::new(Tokens::Symbol).unique_key().string().not_null())
 					.col(ColumnDef::new(Tokens::Address).string().not_null())
-					.col(
-						ColumnDef::new(Tokens::Decimals)
-							.small_integer()
-							.not_null(),
-					)
+					.col(ColumnDef::new(Tokens::Decimals).small_integer().not_null())
 					.col(ColumnDef::new(Tokens::UpdatedAt).date_time().null())
 					.col(
 						ColumnDef::new(Tokens::CreatedAt)
@@ -59,10 +36,7 @@ impl MigrationTrait for Migration {
 						&mut sea_query::ForeignKey::create()
 							.name("fk_tokens_network_id")
 							.from(Tokens::Table, Tokens::NetworkId)
-							.to(
-								Alias::new("networks"),
-								Alias::new("network_id"),
-							)
+							.to(Alias::new("networks"), Alias::new("network_id"))
 							.on_delete(ForeignKeyAction::Cascade)
 							.to_owned(),
 					)

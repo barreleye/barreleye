@@ -10,8 +10,8 @@ use std::sync::Arc;
 use crate::{errors::ServerError, utils::extract_primary_ids, ServerResult};
 use barreleye_common::{
 	models::{
-		optional_set, BasicModel, Entity, EntityActiveModel, EntityTag,
-		SoftDeleteModel, Tag, TagColumn,
+		optional_set, BasicModel, Entity, EntityActiveModel, EntityTag, SoftDeleteModel, Tag,
+		TagColumn,
 	},
 	App, IdPrefix,
 };
@@ -30,28 +30,20 @@ pub async fn handler(
 	Path(entity_id): Path<String>,
 	Json(payload): Json<Payload>,
 ) -> ServerResult<StatusCode> {
-	if let Some(entity) =
-		Entity::get_existing_by_id(app.db(), &entity_id).await?
-	{
+	if let Some(entity) = Entity::get_existing_by_id(app.db(), &entity_id).await? {
 		// check name
 		if let Some(Some(name)) = payload.name.clone() {
 			// check for soft-deleted matches
-			if Entity::get_by_name(app.db(), &name, Some(true)).await?.is_some()
-			{
+			if Entity::get_by_name(app.db(), &name, Some(true)).await?.is_some() {
 				return Err(ServerError::TooEarly {
 					reason: format!("entity hasn't been deleted yet: {name}"),
 				});
 			}
 
 			// check for any duplicate
-			if let Some(other_entity) =
-				Entity::get_by_name(app.db(), &name, None).await?
-			{
+			if let Some(other_entity) = Entity::get_by_name(app.db(), &name, None).await? {
 				if other_entity.id != entity.id {
-					return Err(ServerError::Duplicate {
-						field: "name".to_string(),
-						value: name,
-					});
+					return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 				}
 			}
 		}
@@ -90,19 +82,13 @@ pub async fn handler(
 
 		// upsert entity/tag mappings
 		if !tag_ids.is_empty() {
-			EntityTag::delete_not_included_tags(
-				app.db(),
-				entity.entity_id,
-				tag_ids.clone().into(),
-			)
-			.await?;
+			EntityTag::delete_not_included_tags(app.db(), entity.entity_id, tag_ids.clone().into())
+				.await?;
 			EntityTag::create_many(
 				app.db(),
 				tag_ids
 					.iter()
-					.map(|tag_id| {
-						EntityTag::new_model(entity.entity_id, *tag_id)
-					})
+					.map(|tag_id| EntityTag::new_model(entity.entity_id, *tag_id))
 					.collect(),
 			)
 			.await?;

@@ -27,8 +27,7 @@ pub async fn handler(
 	// delete all keys
 	ApiKey::delete_all_where(
 		app.db(),
-		ApiKeyColumn::Id
-			.is_in(payload.keys.into_iter().collect::<Vec<String>>()),
+		ApiKeyColumn::Id.is_in(payload.keys.into_iter().collect::<Vec<String>>()),
 	)
 	.await?;
 

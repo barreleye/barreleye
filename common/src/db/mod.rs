@@ -2,8 +2,8 @@ use derive_more::Display;
 use eyre::{Result, WrapErr};
 use log::LevelFilter;
 use sea_orm::{
-	ConnectOptions, ConnectionTrait, Database, DatabaseConnection,
-	DatabaseTransaction, DbBackend, Statement, TransactionTrait,
+	ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DatabaseTransaction, DbBackend,
+	Statement, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use std::{str::FromStr, sync::Arc, time::Duration};
@@ -53,26 +53,16 @@ impl Db {
 
 			// @TODO for sqlite, max out at 1 connection otherwise
 			// writes are not guaranteed to be executed serially
-			let (min_connections, max_connections) =
-				match settings.database_driver {
-					Driver::SQLite => (1, 1),
-					_ => (
-						settings.database_min_connections,
-						settings.database_max_connections,
-					),
-				};
+			let (min_connections, max_connections) = match settings.database_driver {
+				Driver::SQLite => (1, 1),
+				_ => (settings.database_min_connections, settings.database_max_connections),
+			};
 
 			opt.max_connections(max_connections)
 				.min_connections(min_connections)
-				.connect_timeout(Duration::from_secs(
-					settings.database_connect_timeout,
-				))
-				.idle_timeout(Duration::from_secs(
-					settings.database_idle_timeout,
-				))
-				.max_lifetime(Duration::from_secs(
-					settings.database_max_lifetime,
-				))
+				.connect_timeout(Duration::from_secs(settings.database_connect_timeout))
+				.idle_timeout(Duration::from_secs(settings.database_idle_timeout))
+				.max_lifetime(Duration::from_secs(settings.database_max_lifetime))
 				.sqlx_logging(false)
 				.sqlx_logging_level(LevelFilter::Warn);
 
@@ -85,10 +75,9 @@ impl Db {
 		};
 		let url_with_database = url;
 
-		let conn =
-			Database::connect(with_options(url_without_database.clone()))
-				.await
-				.wrap_err(url_without_database.clone())?;
+		let conn = Database::connect(with_options(url_without_database.clone()))
+			.await
+			.wrap_err(url_without_database.clone())?;
 
 		let db = match conn.get_database_backend() {
 			DbBackend::MySql => {

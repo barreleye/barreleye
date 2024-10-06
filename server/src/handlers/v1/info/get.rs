@@ -11,9 +11,8 @@ use std::{
 use crate::{errors::ServerError, ServerResult};
 use barreleye_common::{
 	models::{
-		Address, Amount, Balance, BasicModel, Entity, Link, Network, PrimaryId,
-		SanitizedEntity, SanitizedNetwork, SanitizedTag, Tag, Token,
-		TokenColumn,
+		Address, Amount, Balance, BasicModel, Entity, Link, Network, PrimaryId, SanitizedEntity,
+		SanitizedNetwork, SanitizedTag, Tag, Token, TokenColumn,
 	},
 	App, RiskLevel, RiskReason,
 };
@@ -85,12 +84,9 @@ pub async fn handler(
 		}
 
 		if let Some(entity) = Entity::get_by_id(app.db(), q).await? {
-			for address in Address::get_all_by_entity_ids(
-				app.db(),
-				vec![entity.entity_id].into(),
-				Some(false),
-			)
-			.await?
+			for address in
+				Address::get_all_by_entity_ids(app.db(), vec![entity.entity_id].into(), Some(false))
+					.await?
 			{
 				ret.insert(address.address);
 			}
@@ -102,9 +98,7 @@ pub async fn handler(
 	};
 
 	// find links
-	let links =
-		Link::get_all_disinct_by_addresses(&app.warehouse, addresses.clone())
-			.await?;
+	let links = Link::get_all_disinct_by_addresses(&app.warehouse, addresses.clone()).await?;
 
 	async fn get_assets(
 		app: Arc<App>,
@@ -114,8 +108,7 @@ pub async fn handler(
 		let mut tokens = HashSet::new();
 
 		let n = app.networks.read().await;
-		let all_balances =
-			Balance::get_all_by_addresses(&app.warehouse, addresses).await?;
+		let all_balances = Balance::get_all_by_addresses(&app.warehouse, addresses).await?;
 		if !all_balances.is_empty() {
 			let mut all_addresses = HashSet::new();
 
@@ -147,11 +140,9 @@ pub async fn handler(
 
 			// fetch tokens
 			if !assets_map.is_empty() {
-				let all_tokens = Token::get_all_where(
-					app.db(),
-					TokenColumn::Address.is_in(all_addresses),
-				)
-				.await?;
+				let all_tokens =
+					Token::get_all_where(app.db(), TokenColumn::Address.is_in(all_addresses))
+						.await?;
 				for token in all_tokens {
 					let key = (token.network_id, token.address.clone());
 					if let Some(asset) = assets_map.get_mut(&key) {
@@ -186,9 +177,7 @@ pub async fn handler(
 		let mut tags = vec![];
 		let mut risk_level = RiskLevel::Low;
 
-		let addresses =
-			Address::get_all_by_addresses(app.db(), addresses, Some(false))
-				.await?;
+		let addresses = Address::get_all_by_addresses(app.db(), addresses, Some(false)).await?;
 
 		if !addresses.is_empty() {
 			address_map = addresses
@@ -196,17 +185,10 @@ pub async fn handler(
 				.map(|a| ((a.network_id, a.address.clone()), a.entity_id))
 				.collect::<HashMap<(PrimaryId, String), PrimaryId>>();
 
-			let entity_ids = addresses
+			let entity_ids = addresses.into_iter().map(|a| a.entity_id).collect::<Vec<PrimaryId>>();
+			for entity in Entity::get_all_by_entity_ids(app.db(), entity_ids.into(), Some(false))
+				.await?
 				.into_iter()
-				.map(|a| a.entity_id)
-				.collect::<Vec<PrimaryId>>();
-			for entity in Entity::get_all_by_entity_ids(
-				app.db(),
-				entity_ids.into(),
-				Some(false),
-			)
-			.await?
-			.into_iter()
 			{
 				entities.insert(entity.entity_id, entity);
 			}
@@ -214,11 +196,7 @@ pub async fn handler(
 			if !entities.is_empty() {
 				let joined_tags = Tag::get_all_by_entity_ids(
 					app.db(),
-					entities
-						.clone()
-						.into_keys()
-						.collect::<Vec<PrimaryId>>()
-						.into(),
+					entities.clone().into_keys().collect::<Vec<PrimaryId>>().into(),
 				)
 				.await?;
 
@@ -227,10 +205,7 @@ pub async fn handler(
 					if let Some(ids) = map.get_mut(&joined_tag.entity_id) {
 						ids.push(joined_tag.id.clone());
 					} else {
-						map.insert(
-							joined_tag.entity_id,
-							vec![joined_tag.id.clone()],
-						);
+						map.insert(joined_tag.entity_id, vec![joined_tag.id.clone()]);
 					}
 
 					if joined_tag.risk_level > risk_level {
@@ -249,21 +224,14 @@ pub async fn handler(
 		Ok((address_map, entities, tags, risk_level))
 	}
 
-	pub async fn get_networks(
-		app: Arc<App>,
-		addresses: Vec<String>,
-	) -> Result<Vec<Network>> {
+	pub async fn get_networks(app: Arc<App>, addresses: Vec<String>) -> Result<Vec<Network>> {
 		let mut ret = vec![];
 
 		let n = app.networks.read().await;
 		let network_ids =
-			Amount::get_all_network_ids_by_addresses(&app.warehouse, addresses)
-				.await?;
+			Amount::get_all_network_ids_by_addresses(&app.warehouse, addresses).await?;
 		if !network_ids.is_empty() {
-			for (_, chain) in n
-				.iter()
-				.filter(|(network_id, _)| network_ids.contains(network_id))
-			{
+			for (_, chain) in n.iter().filter(|(network_id, _)| network_ids.contains(network_id)) {
 				ret.push(chain.get_network());
 			}
 		}
@@ -275,10 +243,8 @@ pub async fn handler(
 		get_assets(app.clone(), addresses.clone()),
 		get_networks(app.clone(), addresses.clone()),
 		get_entities_data(app.clone(), {
-			let mut entity_addresses = links
-				.iter()
-				.map(|l| l.from_address.clone())
-				.collect::<HashSet<String>>();
+			let mut entity_addresses =
+				links.iter().map(|l| l.from_address.clone()).collect::<HashSet<String>>();
 
 			for address in addresses.clone() {
 				entity_addresses.insert(address);
@@ -299,9 +265,7 @@ pub async fn handler(
 		if let Some(chain) = n.get(&network_id) {
 			let network = chain.get_network();
 
-			if let Some(&entity_id) =
-				address_map.get(&(network_id, link.from_address.clone()))
-			{
+			if let Some(&entity_id) = address_map.get(&(network_id, link.from_address.clone())) {
 				if let Some(entity) = entities_map.get(&entity_id) {
 					sources.push(ResponseSource {
 						network: network.id,

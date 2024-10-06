@@ -32,8 +32,7 @@ impl FromStr for S3 {
 		let parsed_url = Url::parse(s)?;
 		ret.url = parsed_url.to_string();
 		if let Some(domain) = parsed_url.domain() {
-			let parts: Vec<String> =
-				domain.split('.').map(|v| v.to_string()).collect();
+			let parts: Vec<String> = domain.split('.').map(|v| v.to_string()).collect();
 			if parts.len() >= 3 && parts[parts.len() - 2] == "amazonaws" {
 				ret.service = Service::S3;
 				ret.region = Some(parts[parts.len() - 3].clone());
@@ -67,8 +66,7 @@ mod tests {
 				"http://s3.us-east-1.amazonaws.com/bucket_name/",
 				S3 {
 					service: Service::S3,
-					url: "http://s3.us-east-1.amazonaws.com/bucket_name/"
-						.to_string(),
+					url: "http://s3.us-east-1.amazonaws.com/bucket_name/".to_string(),
 					region: Some("us-east-1".to_string()),
 					domain: None,
 					bucket: Some("bucket_name".to_string()),
@@ -78,8 +76,7 @@ mod tests {
 				"http://storage.googleapis.com/bucket_name/",
 				S3 {
 					service: Service::S3Compatible,
-					url: "http://storage.googleapis.com/bucket_name/"
-						.to_string(),
+					url: "http://storage.googleapis.com/bucket_name/".to_string(),
 					region: None,
 					domain: Some("storage.googleapis.com".to_string()),
 					bucket: Some("bucket_name".to_string()),

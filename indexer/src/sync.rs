@@ -21,20 +21,13 @@ struct NetworkRange {
 }
 
 impl NetworkRange {
-	pub fn new(
-		network_id: PrimaryId,
-		min: BlockHeight,
-		max: Option<BlockHeight>,
-	) -> Self {
+	pub fn new(network_id: PrimaryId, min: BlockHeight, max: Option<BlockHeight>) -> Self {
 		Self { network_id, range: (min, max) }
 	}
 }
 
 impl Indexer {
-	pub async fn sync(
-		&self,
-		mut networks_updated: watch::Receiver<SystemTime>,
-	) -> Result<()> {
+	pub async fn sync(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
 		tokio::spawn({
 			let s = self.clone();
 			async move { s.show_sync_progress(10).await }
@@ -126,25 +119,19 @@ impl Indexer {
 		}
 	}
 
-	async fn get_network_ranges(
-		&self,
-	) -> Result<HashMap<ConfigKey, NetworkRange>> {
+	async fn get_network_ranges(&self) -> Result<HashMap<ConfigKey, NetworkRange>> {
 		let mut ret = HashMap::new();
 
 		for (network_id, _) in self.app.networks.read().await.iter() {
 			let nid = *network_id;
 
-			let mut last_copied_block = Config::get::<_, BlockHeight>(
-				self.app.db(),
-				ConfigKey::IndexerSyncTail(nid),
-			)
-			.await?
-			.map(|h| h.value)
-			.unwrap_or(0);
+			let mut last_copied_block =
+				Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::IndexerSyncTail(nid))
+					.await?
+					.map(|h| h.value)
+					.unwrap_or(0);
 
-			let block_height = self
-				.get_updated_block_height(nid, Some(last_copied_block))
-				.await?;
+			let block_height = self.get_updated_block_height(nid, Some(last_copied_block)).await?;
 
 			// if first time, split up network into chunks for faster
 			// initial syncing
@@ -160,17 +147,12 @@ impl Indexer {
 				let block_sync_ranges = self
 					.get_block_chunk_ranges(block_height)?
 					.into_iter()
-					.map(|(min, max)| {
-						(ConfigKey::IndexerSyncChunk(nid, max), (min, max))
-					})
+					.map(|(min, max)| (ConfigKey::IndexerSyncChunk(nid, max), (min, max)))
 					.collect::<HashMap<_, _>>();
 
 				// create chunk sync indexes
-				Config::set_many::<_, (BlockHeight, BlockHeight)>(
-					self.app.db(),
-					block_sync_ranges,
-				)
-				.await?;
+				Config::set_many::<_, (BlockHeight, BlockHeight)>(self.app.db(), block_sync_ranges)
+					.await?;
 
 				// fast-forward last read block to almost block_height
 				last_copied_block = block_height - 1;
@@ -198,11 +180,7 @@ impl Indexer {
 			.for_each(|(config_key, block_range)| {
 				ret.insert(
 					config_key,
-					NetworkRange::new(
-						nid,
-						block_range.value.0,
-						Some(block_range.value.1),
-					),
+					NetworkRange::new(nid, block_range.value.0, Some(block_range.value.1)),
 				);
 			});
 		}
@@ -236,16 +214,13 @@ impl Indexer {
 					.map(|v| v.value)
 					.unwrap_or(0);
 
-					let done_blocks =
-						Config::get_many::<_, (BlockHeight, BlockHeight)>(
-							self.app.db(),
-							vec![ConfigKey::IndexerSyncChunk(network_id, 0)],
-						)
-						.await?
-						.iter()
-						.fold(tail_block, |acc, (_, range)| {
-							acc - (range.value.1 - range.value.0)
-						});
+					let done_blocks = Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerSyncChunk(network_id, 0)],
+					)
+					.await?
+					.iter()
+					.fold(tail_block, |acc, (_, range)| acc - (range.value.1 - range.value.0));
 
 					done_blocks as f64 / block_height as f64
 				};

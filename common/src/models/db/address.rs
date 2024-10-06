@@ -10,16 +10,11 @@ use serde_json::json;
 use std::collections::HashSet;
 
 use crate::{
-	models::{
-		db::entity, BasicModel, EntityColumn, PrimaryId, PrimaryIds,
-		SoftDeleteModel,
-	},
+	models::{db::entity, BasicModel, EntityColumn, PrimaryId, PrimaryIds, SoftDeleteModel},
 	utils, IdPrefix,
 };
 
-#[derive(
-	Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel,
-)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
 #[sea_orm(table_name = "addresses")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -97,18 +92,13 @@ impl Model {
 		}
 	}
 
-	pub async fn create_many<C>(
-		c: &C,
-		data: Vec<ActiveModel>,
-	) -> Result<PrimaryId>
+	pub async fn create_many<C>(c: &C, data: Vec<ActiveModel>) -> Result<PrimaryId>
 	where
 		C: ConnectionTrait,
 	{
 		let insert_result = Entity::insert_many(data)
 			.on_conflict(
-				OnConflict::columns([Column::NetworkId, Column::Address])
-					.do_nothing()
-					.to_owned(),
+				OnConflict::columns([Column::NetworkId, Column::Address]).do_nothing().to_owned(),
 			)
 			.exec(c)
 			.await?;

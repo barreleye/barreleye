@@ -25,13 +25,9 @@ pub async fn handler(
 ) -> ServerResult<Json<Entity>> {
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
-		if !is_valid_id(&id, IdPrefix::Entity) ||
-			Entity::get_by_id(app.db(), &id).await?.is_some()
+		if !is_valid_id(&id, IdPrefix::Entity) || Entity::get_by_id(app.db(), &id).await?.is_some()
 		{
-			return Err(ServerError::InvalidParam {
-				field: "id".to_string(),
-				value: id,
-			});
+			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
 		}
 	}
 
@@ -46,10 +42,7 @@ pub async fn handler(
 
 		// check for any duplicate
 		if Entity::get_by_name(app.db(), &name, None).await?.is_some() {
-			return Err(ServerError::Duplicate {
-				field: "name".to_string(),
-				value: name,
-			});
+			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 		}
 	}
 
@@ -77,12 +70,7 @@ pub async fn handler(
 	// create new
 	let entity_id = Entity::create(
 		app.db(),
-		Entity::new_model(
-			payload.id,
-			payload.name,
-			&payload.description,
-			payload.data,
-		),
+		Entity::new_model(payload.id, payload.name, &payload.description, payload.data),
 	)
 	.await?;
 
@@ -90,10 +78,7 @@ pub async fn handler(
 	if !tag_ids.is_empty() {
 		EntityTag::create_many(
 			app.db(),
-			tag_ids
-				.into_iter()
-				.map(|tag_id| EntityTag::new_model(entity_id, tag_id))
-				.collect(),
+			tag_ids.into_iter().map(|tag_id| EntityTag::new_model(entity_id, tag_id)).collect(),
 		)
 		.await?;
 	}

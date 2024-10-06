@@ -7,10 +7,7 @@ use ethers::{
 use eyre::Result;
 
 use crate::{
-	chain::{
-		evm::modules::EvmModuleTrait, Evm, ModuleId, ModuleTrait,
-		WarehouseData, U256,
-	},
+	chain::{evm::modules::EvmModuleTrait, Evm, ModuleId, ModuleTrait, WarehouseData, U256},
 	models::{PrimaryId, Transfer},
 	BlockHeight,
 };

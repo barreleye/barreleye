@@ -6,12 +6,8 @@ pub use entity::{
 	LabeledEntityActiveModel as EntityActiveModel, SanitizedEntity,
 };
 pub use entity_tag::{Column as EntityTagColumn, EntityTag};
-pub use network::{
-	Column as NetworkColumn, Network, NetworkActiveModel, SanitizedNetwork,
-};
-pub use tag::{
-	Column as TagColumn, JoinedTag, SanitizedTag, Tag, TagActiveModel,
-};
+pub use network::{Column as NetworkColumn, Network, NetworkActiveModel, SanitizedNetwork};
+pub use tag::{Column as TagColumn, JoinedTag, SanitizedTag, Tag, TagActiveModel};
 pub use token::{Column as TokenColumn, Token, TokenActiveModel};
 
 mod address;

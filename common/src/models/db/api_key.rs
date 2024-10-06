@@ -11,9 +11,7 @@ use crate::{
 	utils, IdPrefix,
 };
 
-#[derive(
-	Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel,
-)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
 #[sea_orm(table_name = "api_keys")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -67,10 +65,7 @@ impl Model {
 		Ok(Entity::find().count(c).await?)
 	}
 
-	pub async fn get_by_hashing<C>(
-		c: &C,
-		secret_key: &str,
-	) -> Result<Option<Self>>
+	pub async fn get_by_hashing<C>(c: &C, secret_key: &str) -> Result<Option<Self>>
 	where
 		C: ConnectionTrait,
 	{
@@ -81,10 +76,7 @@ impl Model {
 
 		let secret_key_hash = utils::sha256(secret_key_postfix);
 
-		Ok(Entity::find()
-			.filter(Column::SecretKeyHash.eq(secret_key_hash))
-			.one(c)
-			.await?)
+		Ok(Entity::find().filter(Column::SecretKeyHash.eq(secret_key_hash)).one(c).await?)
 	}
 
 	pub fn format(&self) -> Self {

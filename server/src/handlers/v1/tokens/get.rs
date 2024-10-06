@@ -23,18 +23,15 @@ pub async fn handler(
 	Path(token_id): Path<String>,
 ) -> ServerResult<Json<Response>> {
 	if let Some(token) = Token::get_by_id(app.db(), &token_id).await? {
-		let networks = Network::get_all_by_network_ids(
-			app.db(),
-			token.network_id.into(),
-			Some(false),
-		)
-		.await?
-		.into_iter()
-		.map(|mut n| {
-			n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
-			n
-		})
-		.collect::<Vec<Network>>();
+		let networks =
+			Network::get_all_by_network_ids(app.db(), token.network_id.into(), Some(false))
+				.await?
+				.into_iter()
+				.map(|mut n| {
+					n.rpc_endpoint = utils::with_masked_auth(&n.rpc_endpoint);
+					n
+				})
+				.collect::<Vec<Network>>();
 
 		Ok(Response { token, networks }.into())
 	} else {

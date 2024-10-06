@@ -51,11 +51,8 @@ pub trait ChainTrait: Send + Sync {
 		modules: Vec<ModuleId>,
 	) -> Result<Option<WarehouseData>>;
 
-	async fn extract_block(
-		&self,
-		storage: Arc<Storage>,
-		block_height: BlockHeight,
-	) -> Result<bool>;
+	async fn extract_block(&self, storage: Arc<Storage>, block_height: BlockHeight)
+		-> Result<bool>;
 
 	async fn rate_limit(&self) {
 		if let Some(rate_limiter) = &self.get_rate_limiter() {
@@ -97,10 +94,8 @@ impl WarehouseData {
 		let (min_secs, max_secs) = (1, 10);
 
 		let manually_required = force && !self.is_empty();
-		let lengthy_break =
-			utils::ago_in_seconds(max_secs) > self.saved_at && !self.is_empty();
-		let buffer_is_full = utils::ago_in_seconds(min_secs) > self.saved_at &&
-			self.len() > 50_000;
+		let lengthy_break = utils::ago_in_seconds(max_secs) > self.saved_at && !self.is_empty();
+		let buffer_is_full = utils::ago_in_seconds(min_secs) > self.saved_at && self.len() > 50_000;
 
 		manually_required || lengthy_break || buffer_is_full
 	}

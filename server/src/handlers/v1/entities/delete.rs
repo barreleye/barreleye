@@ -6,8 +6,8 @@ use std::{collections::HashSet, sync::Arc};
 use crate::ServerResult;
 use barreleye_common::{
 	models::{
-		set, Address, AddressActiveModel, AddressColumn, BasicModel, Entity,
-		EntityActiveModel, EntityColumn, PrimaryId,
+		set, Address, AddressActiveModel, AddressColumn, BasicModel, Entity, EntityActiveModel,
+		EntityColumn, PrimaryId,
 	},
 	App,
 };
@@ -28,11 +28,8 @@ pub async fn handler(
 	}
 
 	// get all entities
-	let all_entities = Entity::get_all_where(
-		app.db(),
-		EntityColumn::Id.is_in(payload.entities),
-	)
-	.await?;
+	let all_entities =
+		Entity::get_all_where(app.db(), EntityColumn::Id.is_in(payload.entities)).await?;
 
 	// proceed only when there's something to delete
 	if all_entities.is_empty() {
@@ -40,8 +37,7 @@ pub async fn handler(
 	}
 
 	// soft-delete all associated addresses
-	let all_entity_ids =
-		all_entities.iter().map(|e| e.entity_id).collect::<Vec<PrimaryId>>();
+	let all_entity_ids = all_entities.iter().map(|e| e.entity_id).collect::<Vec<PrimaryId>>();
 	Address::update_all_where(
 		app.db(),
 		AddressColumn::EntityId.is_in(all_entity_ids.clone()),

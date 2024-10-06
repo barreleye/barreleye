@@ -19,44 +19,14 @@ impl MigrationTrait for Migration {
 							.auto_increment()
 							.primary_key(),
 					)
-					.col(
-						ColumnDef::new(Networks::Id)
-							.unique_key()
-							.string()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Networks::Name)
-							.unique_key()
-							.string()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Networks::Architecture)
-							.small_integer()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Networks::ChainId)
-							.big_integer()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Networks::BlockTime)
-							.big_integer()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(Networks::RpcEndpoint)
-							.string()
-							.not_null(),
-					)
+					.col(ColumnDef::new(Networks::Id).unique_key().string().not_null())
+					.col(ColumnDef::new(Networks::Name).unique_key().string().not_null())
+					.col(ColumnDef::new(Networks::Architecture).small_integer().not_null())
+					.col(ColumnDef::new(Networks::ChainId).big_integer().not_null())
+					.col(ColumnDef::new(Networks::BlockTime).big_integer().not_null())
+					.col(ColumnDef::new(Networks::RpcEndpoint).string().not_null())
 					.col(ColumnDef::new(Networks::Rps).integer().not_null())
-					.col(
-						ColumnDef::new(Networks::IsDeleted)
-							.boolean()
-							.not_null(),
-					)
+					.col(ColumnDef::new(Networks::IsDeleted).boolean().not_null())
 					.col(ColumnDef::new(Networks::UpdatedAt).date_time().null())
 					.col(
 						ColumnDef::new(Networks::CreatedAt)
@@ -81,9 +51,7 @@ impl MigrationTrait for Migration {
 	}
 
 	async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-		manager
-			.drop_table(Table::drop().table(Networks::Table).to_owned())
-			.await
+		manager.drop_table(Table::drop().table(Networks::Table).to_owned()).await
 	}
 }
 

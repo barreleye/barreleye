@@ -28,23 +28,17 @@ pub async fn handler(
 
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
-		if !is_valid_id(&id, IdPrefix::Token) ||
-			Token::get_by_id(app.db(), &id).await?.is_some()
-		{
-			return Err(ServerError::InvalidParam {
-				field: "id".to_string(),
-				value: id,
-			});
+		if !is_valid_id(&id, IdPrefix::Token) || Token::get_by_id(app.db(), &id).await?.is_some() {
+			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
 		}
 	}
 
 	// fetch network
-	let network = Network::get_by_id(app.db(), &payload.network).await?.ok_or(
-		ServerError::InvalidParam {
+	let network =
+		Network::get_by_id(app.db(), &payload.network).await?.ok_or(ServerError::InvalidParam {
 			field: "network".to_string(),
 			value: payload.network,
-		},
-	)?;
+		})?;
 
 	// check for duplicate network + address
 	if !Token::get_all_where(
@@ -56,10 +50,7 @@ pub async fn handler(
 	.await?
 	.is_empty()
 	{
-		return Err(ServerError::Duplicate {
-			field: "address".to_string(),
-			value: address,
-		});
+		return Err(ServerError::Duplicate { field: "address".to_string(), value: address });
 	}
 
 	// create new

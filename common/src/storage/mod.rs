@@ -18,17 +18,8 @@ impl Storage {
 		Ok(Self { settings })
 	}
 
-	pub fn get(
-		&self,
-		network_id: PrimaryId,
-		block_height: BlockHeight,
-	) -> Result<StorageDb> {
-		Ok(StorageDb::new(
-			self.settings.clone(),
-			self.get_db()?,
-			network_id,
-			block_height,
-		))
+	pub fn get(&self, network_id: PrimaryId, block_height: BlockHeight) -> Result<StorageDb> {
+		Ok(StorageDb::new(self.settings.clone(), self.get_db()?, network_id, block_height))
 	}
 
 	fn get_db(&self) -> Result<Connection> {
@@ -51,21 +42,11 @@ impl Storage {
 				commands.push(format!("SET s3_endpoint='{domain}';"));
 			}
 
-			if let Some(s3_access_key_id) =
-				self.settings.s3_access_key_id.clone()
-			{
-				commands.push(format!(
-					"SET s3_access_key_id='{}';",
-					s3_access_key_id
-				));
+			if let Some(s3_access_key_id) = self.settings.s3_access_key_id.clone() {
+				commands.push(format!("SET s3_access_key_id='{}';", s3_access_key_id));
 			}
-			if let Some(s3_secret_access_key) =
-				self.settings.s3_secret_access_key.clone()
-			{
-				commands.push(format!(
-					"SET s3_secret_access_key='{}';",
-					s3_secret_access_key
-				));
+			if let Some(s3_secret_access_key) = self.settings.s3_secret_access_key.clone() {
+				commands.push(format!("SET s3_secret_access_key='{}';", s3_secret_access_key));
 			}
 
 			if !commands.is_empty() {
@@ -106,10 +87,10 @@ impl StorageDb {
 
 		for file in files.into_iter() {
 			if let Some(path) = self.get_path(&file)? {
-				commands.push(format!(
-					"COPY {file} TO '{}' (FORMAT PARQUET, COMPRESSION GZIP);",
-					path,
-				));
+				commands
+					.push(
+						format!("COPY {file} TO '{}' (FORMAT PARQUET, COMPRESSION GZIP);", path,),
+					);
 			}
 		}
 

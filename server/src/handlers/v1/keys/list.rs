@@ -26,12 +26,11 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Query(payload): Query<Payload>,
 ) -> ServerResult<Json<Response>> {
-	let keys =
-		ApiKey::get_all_paginated(app.db(), payload.offset, payload.limit)
-			.await?
-			.iter()
-			.map(|k| k.format())
-			.collect::<Vec<ApiKey>>();
+	let keys = ApiKey::get_all_paginated(app.db(), payload.offset, payload.limit)
+		.await?
+		.iter()
+		.map(|k| k.format())
+		.collect::<Vec<ApiKey>>();
 
 	Ok(Response { keys }.into())
 }

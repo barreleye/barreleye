@@ -9,9 +9,8 @@ use std::{
 use url::Url;
 
 use crate::{
-	banner, db::Driver as DatabaseDriver, utils,
-	warehouse::Driver as WarehouseDriver, AppError, Mode, S3Service, Warnings,
-	S3,
+	banner, db::Driver as DatabaseDriver, utils, warehouse::Driver as WarehouseDriver, AppError,
+	Mode, S3Service, Warnings, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -94,44 +93,19 @@ pub struct Settings {
 	#[arg(skip)]
 	pub database_driver: DatabaseDriver,
 
-	#[arg(
-		help_heading = "Database options",
-		long,
-		default_value_t = 5,
-		value_name = "NUMBER"
-	)]
+	#[arg(help_heading = "Database options", long, default_value_t = 5, value_name = "NUMBER")]
 	pub database_min_connections: u32,
 
-	#[arg(
-		help_heading = "Database options",
-		long,
-		default_value_t = 100,
-		value_name = "NUMBER"
-	)]
+	#[arg(help_heading = "Database options", long, default_value_t = 100, value_name = "NUMBER")]
 	pub database_max_connections: u32,
 
-	#[arg(
-		help_heading = "Database options",
-		long,
-		default_value_t = 8,
-		value_name = "SECONDS"
-	)]
+	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_connect_timeout: u64,
 
-	#[arg(
-		help_heading = "Database options",
-		long,
-		default_value_t = 8,
-		value_name = "SECONDS"
-	)]
+	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_idle_timeout: u64,
 
-	#[arg(
-		help_heading = "Database options",
-		long,
-		default_value_t = 8,
-		value_name = "SECONDS"
-	)]
+	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
 	/// Warehouse for storing analytical data. Supports DuckDB and ClickHouse.
@@ -160,12 +134,7 @@ pub struct Settings {
 	#[arg(skip)]
 	pub ip_addr: Option<IpAddr>,
 
-	#[arg(
-		help_heading = "Server options",
-		long,
-		default_value_t = 80,
-		value_name = "PORT"
-	)]
+	#[arg(help_heading = "Server options", long, default_value_t = 80, value_name = "PORT")]
 	pub port: u16,
 }
 
@@ -191,16 +160,11 @@ impl Settings {
 		banner::show(settings.is_indexer, settings.is_server)?;
 
 		// set driver for db
-		let test_scheme =
-			settings.database.split(':').next().unwrap_or_default();
+		let test_scheme = settings.database.split(':').next().unwrap_or_default();
 		if let Ok(driver) = DatabaseDriver::from_str(test_scheme) {
 			settings.database_driver = driver;
 		} else {
-			return Err(AppError::Config {
-				config: "database",
-				error: "invalid URL scheme",
-			}
-			.into());
+			return Err(AppError::Config { config: "database", error: "invalid URL scheme" }.into());
 		}
 
 		// test db database name
@@ -219,18 +183,14 @@ impl Settings {
 
 		// test db url
 		if Url::parse(&settings.database).is_err() {
-			return Err(AppError::Config {
-				config: "database",
-				error: "could not parse URL",
-			}
-			.into());
+			return Err(
+				AppError::Config { config: "database", error: "could not parse URL" }.into()
+			);
 		}
 
 		// test warehouse database name
 		match settings.warehouse_driver {
-			WarehouseDriver::ClickHouse
-				if !utils::has_pathname(&settings.warehouse) =>
-			{
+			WarehouseDriver::ClickHouse if !utils::has_pathname(&settings.warehouse) => {
 				return Err(AppError::Config {
 					config: "warehouse",
 					error: "missing database name in the URL",
@@ -242,20 +202,16 @@ impl Settings {
 
 		// test warehouse url
 		if Url::parse(&settings.warehouse).is_err() {
-			return Err(AppError::Config {
-				config: "warehouse",
-				error: "could not parse URL",
-			}
-			.into());
+			return Err(
+				AppError::Config { config: "warehouse", error: "could not parse URL" }.into()
+			);
 		}
 
 		// parse ip address
 		settings.ip_addr =
-			Some(IpAddr::V4(settings.ip.parse().map_err(|_| {
-				AppError::Config {
-					config: "ip",
-					error: "could not parse IP v4.",
-				}
+			Some(IpAddr::V4(settings.ip.parse().map_err(|_| AppError::Config {
+				config: "ip",
+				error: "could not parse IP v4.",
 			})?));
 
 		// test storage
@@ -263,13 +219,11 @@ impl Settings {
 		if settings.storage.starts_with('/') ||
 			settings.storage.to_lowercase().starts_with(folder_prefix)
 		{
-			let storage =
-				if settings.storage.to_lowercase().starts_with(folder_prefix) {
-					settings.storage[folder_prefix.to_string().len()..]
-						.to_string()
-				} else {
-					settings.storage.clone()
-				};
+			let storage = if settings.storage.to_lowercase().starts_with(folder_prefix) {
+				settings.storage[folder_prefix.to_string().len()..].to_string()
+			} else {
+				settings.storage.clone()
+			};
 
 			let path = Path::new(&storage);
 			if fs::create_dir_all(path).is_err() ||
@@ -284,16 +238,9 @@ impl Settings {
 				settings.storage_path = Some(PathBuf::from(path));
 			}
 		} else if Url::parse(&settings.storage).is_err() {
-			return Err(AppError::Config {
-				config: "storage",
-				error: "invalid storage URL",
-			}
-			.into());
+			return Err(AppError::Config { config: "storage", error: "invalid storage URL" }.into());
 		} else {
-			let err = AppError::Config {
-				config: "storage",
-				error: "invalid storage URL",
-			};
+			let err = AppError::Config { config: "storage", error: "invalid storage URL" };
 
 			// check url
 			if Url::parse(&settings.storage).is_err() {
@@ -302,9 +249,7 @@ impl Settings {
 
 			// check that service is known
 			let storage_url = S3::from_str(&settings.storage)?;
-			if storage_url.service == S3Service::Unknown ||
-				storage_url.bucket.is_none()
-			{
+			if storage_url.service == S3Service::Unknown || storage_url.bucket.is_none() {
 				return Err(err.into());
 			}
 

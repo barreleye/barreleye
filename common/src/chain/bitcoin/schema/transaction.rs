@@ -22,12 +22,9 @@ impl Transaction {
 	pub fn get_all(storage_db: &StorageDb) -> Result<Vec<Transaction>> {
 		let mut ret = vec![];
 
-		if let Some(path) =
-			storage_db.get_path(&ParquetFile::Transactions.to_string())?
-		{
-			let mut statement = storage_db
-				.db
-				.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
+		if let Some(path) = storage_db.get_path(&ParquetFile::Transactions.to_string())? {
+			let mut statement =
+				storage_db.db.prepare(&format!("SELECT * FROM read_parquet('{path}')"))?;
 			let mut rows = statement.query([])?;
 
 			while let Some(row) = rows.next()? {

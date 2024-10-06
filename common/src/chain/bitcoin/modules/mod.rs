@@ -3,10 +3,7 @@ use eyre::Result;
 use std::collections::HashMap;
 
 use crate::{
-	chain::{
-		bitcoin::schema::Transaction as ParquetTransaction, ModuleTrait,
-		WarehouseData,
-	},
+	chain::{bitcoin::schema::Transaction as ParquetTransaction, ModuleTrait, WarehouseData},
 	BlockHeight,
 };
 pub use balance::BitcoinBalance;

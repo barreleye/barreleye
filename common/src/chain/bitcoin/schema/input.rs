@@ -13,15 +13,10 @@ pub struct Input {
 }
 
 impl Input {
-	pub fn get_all(
-		storage_db: &StorageDb,
-		tx_hash: Option<Hash>,
-	) -> Result<Vec<Input>> {
+	pub fn get_all(storage_db: &StorageDb, tx_hash: Option<Hash>) -> Result<Vec<Input>> {
 		let mut ret = vec![];
 
-		if let Some(path) =
-			storage_db.get_path(&ParquetFile::Inputs.to_string())?
-		{
+		if let Some(path) = storage_db.get_path(&ParquetFile::Inputs.to_string())? {
 			let mut query = format!("SELECT * FROM read_parquet('{path}')");
 			if let Some(hash) = tx_hash {
 				query.push_str(&format!(" WHERE tx_hash='{hash}'"));
@@ -36,9 +31,7 @@ impl Input {
 
 				ret.push(Input {
 					tx_hash: hashes::Hash::from_slice(&tx_hash)?,
-					previous_output_tx_hash: hashes::Hash::from_slice(
-						&previous_output_tx_hash,
-					)?,
+					previous_output_tx_hash: hashes::Hash::from_slice(&previous_output_tx_hash)?,
 					previous_output_vout: row.get(2)?,
 				});
 			}

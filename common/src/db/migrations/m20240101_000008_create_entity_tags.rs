@@ -12,16 +12,8 @@ impl MigrationTrait for Migration {
 				Table::create()
 					.table(EntityTags::Table)
 					.if_not_exists()
-					.col(
-						ColumnDef::new(EntityTags::EntityId)
-							.big_integer()
-							.not_null(),
-					)
-					.col(
-						ColumnDef::new(EntityTags::TagId)
-							.big_integer()
-							.not_null(),
-					)
+					.col(ColumnDef::new(EntityTags::EntityId).big_integer().not_null())
+					.col(ColumnDef::new(EntityTags::TagId).big_integer().not_null())
 					.col(
 						ColumnDef::new(EntityTags::CreatedAt)
 							.date_time()
@@ -29,9 +21,7 @@ impl MigrationTrait for Migration {
 							.extra("DEFAULT CURRENT_TIMESTAMP".to_owned()),
 					)
 					.primary_key(
-						sea_query::Index::create()
-							.col(EntityTags::EntityId)
-							.col(EntityTags::TagId),
+						sea_query::Index::create().col(EntityTags::EntityId).col(EntityTags::TagId),
 					)
 					.foreign_key(
 						&mut sea_query::ForeignKey::create()
@@ -55,9 +45,7 @@ impl MigrationTrait for Migration {
 	}
 
 	async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-		manager
-			.drop_table(Table::drop().table(EntityTags::Table).to_owned())
-			.await
+		manager.drop_table(Table::drop().table(EntityTags::Table).to_owned()).await
 	}
 }
 

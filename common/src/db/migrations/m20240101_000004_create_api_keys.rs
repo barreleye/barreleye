@@ -21,19 +21,9 @@ impl MigrationTrait for Migration {
 							.auto_increment()
 							.primary_key(),
 					)
-					.col(
-						ColumnDef::new(ApiKeys::Id)
-							.unique_key()
-							.string()
-							.not_null(),
-					)
+					.col(ColumnDef::new(ApiKeys::Id).unique_key().string().not_null())
 					.col(ColumnDef::new(ApiKeys::SecretKey).string().null())
-					.col(
-						ColumnDef::new(ApiKeys::SecretKeyHash)
-							.unique_key()
-							.binary()
-							.not_null(),
-					)
+					.col(ColumnDef::new(ApiKeys::SecretKeyHash).unique_key().binary().not_null())
 					.col(ColumnDef::new(ApiKeys::IsActive).boolean().not_null())
 					.col(ColumnDef::new(ApiKeys::UpdatedAt).date_time().null())
 					.col(
@@ -63,11 +53,7 @@ impl MigrationTrait for Migration {
 						secret_key_hash.into(),
 						true.into(),
 					])
-					.on_conflict(
-						OnConflict::columns([ApiKeys::Id])
-							.do_nothing()
-							.to_owned(),
-					)
+					.on_conflict(OnConflict::columns([ApiKeys::Id]).do_nothing().to_owned())
 					.to_owned(),
 			)
 			.await

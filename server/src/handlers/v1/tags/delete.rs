@@ -25,8 +25,7 @@ pub async fn handler(
 	}
 
 	// get all tags
-	let all_tags =
-		Tag::get_all_where(app.db(), TagColumn::Id.is_in(payload.tags)).await?;
+	let all_tags = Tag::get_all_where(app.db(), TagColumn::Id.is_in(payload.tags)).await?;
 
 	// proceed only when there's something to delete
 	if all_tags.is_empty() {
@@ -36,9 +35,7 @@ pub async fn handler(
 	// delete all associated tags
 	Tag::delete_all_where(
 		app.db(),
-		TagColumn::TagId.is_in(
-			all_tags.iter().map(|t| t.tag_id).collect::<Vec<PrimaryId>>(),
-		),
+		TagColumn::TagId.is_in(all_tags.iter().map(|t| t.tag_id).collect::<Vec<PrimaryId>>()),
 	)
 	.await?;
 

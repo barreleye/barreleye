@@ -16,13 +16,11 @@ use uuid::Uuid;
 
 use barreleye_common::{
 	models::{
-		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity,
-		Link, Network, NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel,
-		Transfer,
+		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
+		NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
 	},
-	utils, App, AppError, BlockHeight, Progress, ProgressReadyType,
-	ProgressStep, Warnings, INDEXER_HEARTBEAT_INTERVAL,
-	INDEXER_PROMOTION_TIMEOUT,
+	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Warnings,
+	INDEXER_HEARTBEAT_INTERVAL, INDEXER_PROMOTION_TIMEOUT,
 };
 
 mod link;
@@ -39,16 +37,9 @@ impl Indexer {
 		Self { app }
 	}
 
-	pub async fn start(
-		&self,
-		warnings: Warnings,
-		progress: Progress,
-	) -> Result<()> {
+	pub async fn start(&self, warnings: Warnings, progress: Progress) -> Result<()> {
 		if self.app.settings.is_indexer && !self.app.settings.is_server {
-			progress.show(ProgressStep::Ready(
-				ProgressReadyType::Indexer,
-				warnings,
-			));
+			progress.show(ProgressStep::Ready(ProgressReadyType::Indexer, warnings));
 		}
 
 		loop {
@@ -90,9 +81,7 @@ impl Indexer {
 			};
 
 			if let Err(err) = ret {
-				return Err(
-					AppError::Indexing { error: err.to_string() }.into()
-				);
+				return Err(AppError::Indexing { error: err.to_string() }.into());
 			}
 		}
 	}
@@ -102,47 +91,25 @@ impl Indexer {
 		let uuid = self.app.uuid;
 
 		loop {
-			let cool_down_period =
-				utils::ago_in_seconds(INDEXER_PROMOTION_TIMEOUT / 2);
+			let cool_down_period = utils::ago_in_seconds(INDEXER_PROMOTION_TIMEOUT / 2);
 
-			let last_primary =
-				Config::get::<_, Uuid>(db, ConfigKey::Primary).await?;
+			let last_primary = Config::get::<_, Uuid>(db, ConfigKey::Primary).await?;
 			match last_primary {
 				None => {
 					// first run ever
-					Config::set::<_, Uuid>(db, ConfigKey::Primary, uuid)
-						.await?;
+					Config::set::<_, Uuid>(db, ConfigKey::Primary, uuid).await?;
 				}
-				Some(hit)
-					if hit.value == uuid &&
-						hit.updated_at >= cool_down_period =>
-				{
+				Some(hit) if hit.value == uuid && hit.updated_at >= cool_down_period => {
 					// if primary, check-in only if cool-down period has not
 					// started yet ↑
-					if Config::set_where::<_, Uuid>(
-						db,
-						ConfigKey::Primary,
-						uuid,
-						hit,
-					)
-					.await?
-					{
+					if Config::set_where::<_, Uuid>(db, ConfigKey::Primary, uuid, hit).await? {
 						self.app.set_is_primary(true).await?;
 					}
 				}
-				Some(hit)
-					if utils::ago_in_seconds(INDEXER_PROMOTION_TIMEOUT) >
-						hit.updated_at =>
-				{
+				Some(hit) if utils::ago_in_seconds(INDEXER_PROMOTION_TIMEOUT) > hit.updated_at => {
 					// attempt to upgrade to primary (set is_primary on the next
 					// iteration)
-					Config::set_where::<_, Uuid>(
-						db,
-						ConfigKey::Primary,
-						uuid,
-						hit,
-					)
-					.await?;
+					Config::set_where::<_, Uuid>(db, ConfigKey::Primary, uuid, hit).await?;
 				}
 				_ => {
 					// either cool-down period has started or this is a
@@ -155,10 +122,7 @@ impl Indexer {
 		}
 	}
 
-	async fn networks_check(
-		&self,
-		tx: watch::Sender<SystemTime>,
-	) -> Result<()> {
+	async fn networks_check(&self, tx: watch::Sender<SystemTime>) -> Result<()> {
 		let mut networks_updated_at =
 			Config::get::<_, u8>(self.app.db(), ConfigKey::NetworksUpdated)
 				.await?
@@ -166,12 +130,7 @@ impl Indexer {
 				.unwrap_or_else(utils::now);
 
 		loop {
-			match Config::get::<_, u8>(
-				self.app.db(),
-				ConfigKey::NetworksUpdated,
-			)
-			.await?
-			{
+			match Config::get::<_, u8>(self.app.db(), ConfigKey::NetworksUpdated).await? {
 				Some(value) if value.updated_at != networks_updated_at => {
 					networks_updated_at = value.updated_at;
 					tx.send(SystemTime::now())?;
@@ -229,22 +188,17 @@ impl Indexer {
 			// delete all addresses
 			Address::prune_all_where(
 				self.app.db(),
-				AddressColumn::AddressId
-					.is_in(Into::<PrimaryIds>::into(addresses.clone())),
+				AddressColumn::AddressId.is_in(Into::<PrimaryIds>::into(addresses.clone())),
 			)
 			.await?;
 
 			// delete links from warehouse
-			let mut sources: HashMap<PrimaryId, HashSet<String>> =
-				HashMap::new();
+			let mut sources: HashMap<PrimaryId, HashSet<String>> = HashMap::new();
 			for address in addresses.into_iter() {
 				if let Some(set) = sources.get_mut(&address.network_id) {
 					set.insert(address.address);
 				} else {
-					sources.insert(
-						address.network_id,
-						HashSet::from([address.address]),
-					);
+					sources.insert(address.network_id, HashSet::from([address.address]));
 				}
 			}
 			Link::delete_all_by_sources(&self.app.warehouse, sources).await?;
@@ -254,19 +208,14 @@ impl Indexer {
 		Entity::prune_all(self.app.db()).await?;
 
 		// prune all soft-deleted networks
-		let deleted_networks =
-			Network::get_all_existing(self.app.db(), Some(true)).await?;
+		let deleted_networks = Network::get_all_existing(self.app.db(), Some(true)).await?;
 		if !deleted_networks.is_empty() {
 			let network_ids: PrimaryIds = deleted_networks.clone().into();
 
 			// delete all associated configs
 			Config::delete_all_by_keywords(
 				self.app.db(),
-				deleted_networks
-					.clone()
-					.iter()
-					.map(|n| format!("n{}", n.network_id))
-					.collect(),
+				deleted_networks.clone().iter().map(|n| format!("n{}", n.network_id)).collect(),
 			)
 			.await?;
 
@@ -278,41 +227,18 @@ impl Indexer {
 			.await?;
 
 			// delete from warehouse
-			let (
-				transfers_deleted,
-				balances_deleted,
-				amounts_deleted,
-				links_deleted,
-			) = tokio::join!(
-				Transfer::delete_all_by_network_id(
-					&self.app.warehouse,
-					network_ids.clone()
-				),
-				Balance::delete_all_by_network_id(
-					&self.app.warehouse,
-					network_ids.clone()
-				),
-				Amount::delete_all_by_network_id(
-					&self.app.warehouse,
-					network_ids.clone()
-				),
-				Link::delete_all_by_network_id(
-					&self.app.warehouse,
-					network_ids.clone()
-				),
+			let (transfers_deleted, balances_deleted, amounts_deleted, links_deleted) = tokio::join!(
+				Transfer::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
+				Balance::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
+				Amount::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
+				Link::delete_all_by_network_id(&self.app.warehouse, network_ids.clone()),
 			);
 
-			transfers_deleted
-				.and(balances_deleted)
-				.and(amounts_deleted)
-				.and(links_deleted)?;
+			transfers_deleted.and(balances_deleted).and(amounts_deleted).and(links_deleted)?;
 
 			// finally delete only the networks we grabbed earlier
-			Network::prune_all_where(
-				self.app.db(),
-				NetworkColumn::NetworkId.is_in(network_ids),
-			)
-			.await?;
+			Network::prune_all_where(self.app.db(), NetworkColumn::NetworkId.is_in(network_ids))
+				.await?;
 		}
 
 		Ok(())
@@ -327,23 +253,12 @@ impl Indexer {
 
 		if let Some(chain) = self.app.networks.read().await.get(&network_id) {
 			let config_key = ConfigKey::BlockHeight(network_id);
-			ret = match Config::get::<_, BlockHeight>(self.app.db(), config_key)
-				.await?
-			{
-				Some(hit)
-					if hit.value > last_known_block_height.unwrap_or(0) =>
-				{
-					hit.value
-				}
+			ret = match Config::get::<_, BlockHeight>(self.app.db(), config_key).await? {
+				Some(hit) if hit.value > last_known_block_height.unwrap_or(0) => hit.value,
 				_ => {
 					let block_height = chain.get_block_height().await?;
 
-					Config::set::<_, BlockHeight>(
-						self.app.db(),
-						config_key,
-						block_height,
-					)
-					.await?;
+					Config::set::<_, BlockHeight>(self.app.db(), config_key, block_height).await?;
 
 					block_height
 				}
@@ -360,8 +275,7 @@ impl Indexer {
 		let mut ret = vec![];
 
 		let chunks = self.app.cpu_count - 1; // always leave 1 for tail sync
-		let chunk_size =
-			((block_height - 1) as f64 / chunks as f64).floor() as u64;
+		let chunk_size = ((block_height - 1) as f64 / chunks as f64).floor() as u64;
 
 		let mut block_height_min = 0;
 		let mut block_height_max = chunk_size;

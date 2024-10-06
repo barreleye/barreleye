@@ -64,9 +64,7 @@ impl Pipe {
 		warehouse_data: WarehouseData,
 		force_commit: bool,
 	) -> Result<()> {
-		self.sender
-			.send((self.config_key, config_value, warehouse_data, force_commit))
-			.await?;
+		self.sender.send((self.config_key, config_value, warehouse_data, force_commit)).await?;
 
 		tokio::select! {
 			_ = self.receipt.recv() => {}
@@ -78,10 +76,7 @@ impl Pipe {
 }
 
 impl Indexer {
-	pub async fn process(
-		&self,
-		mut networks_updated: Receiver<SystemTime>,
-	) -> Result<()> {
+	pub async fn process(&self, mut networks_updated: Receiver<SystemTime>) -> Result<()> {
 		let mut warehouse_data = WarehouseData::new();
 		let mut config_key_map = HashMap::<ConfigKey, serde_json::Value>::new();
 		let mut blocked_and_notified = false;
@@ -105,13 +100,12 @@ impl Indexer {
                     self.app.db(),
                     ConfigKey::IndexerSyncTail(nid),
                 ).await?, Some(hit) if hit.value > 0);
-				let copy_step_synced =
-					Config::get_many::<_, (BlockHeight, BlockHeight)>(
-						self.app.db(),
-						vec![ConfigKey::IndexerSyncChunk(nid, 0)],
-					)
-					.await?
-					.is_empty();
+				let copy_step_synced = Config::get_many::<_, (BlockHeight, BlockHeight)>(
+					self.app.db(),
+					vec![ConfigKey::IndexerSyncChunk(nid, 0)],
+				)
+				.await?
+				.is_empty();
 				if !copy_step_started || !copy_step_synced {
 					continue;
 				}
@@ -137,25 +131,19 @@ impl Indexer {
 				{
 					// tip should be at wherever sync step is (not network's
 					// block height)
-					let last_synced_block_height =
-						Config::get::<_, BlockHeight>(
-							self.app.db(),
-							ConfigKey::IndexerSyncTail(nid),
-						)
-						.await?
-						.map(|h| h.value)
-						.unwrap_or(0);
+					let last_synced_block_height = Config::get::<_, BlockHeight>(
+						self.app.db(),
+						ConfigKey::IndexerSyncTail(nid),
+					)
+					.await?
+					.map(|h| h.value)
+					.unwrap_or(0);
 
 					// get initial chunk ranges
 					let block_sync_ranges = self
 						.get_block_chunk_ranges(last_synced_block_height)?
 						.into_iter()
-						.map(|(min, max)| {
-							(
-								ConfigKey::IndexerProcessChunk(nid, max),
-								(min, max),
-							)
-						})
+						.map(|(min, max)| (ConfigKey::IndexerProcessChunk(nid, max), (min, max)))
 						.collect::<HashMap<_, _>>();
 
 					// create chunk sync indexes
@@ -183,12 +171,7 @@ impl Indexer {
 							.into_iter()
 							.map(|module_id| {
 								let mid = module_id as u16;
-								(
-									ConfigKey::IndexerProcessModuleDone(
-										nid, mid,
-									),
-									1u8,
-								)
+								(ConfigKey::IndexerProcessModuleDone(nid, mid), 1u8)
 							})
 							.collect::<HashMap<_, _>>(),
 					)
@@ -198,21 +181,15 @@ impl Indexer {
 				// push tail index to process latest blocks (incl all modules)
 				network_params_map.insert(
 					ConfigKey::IndexerProcessTail(nid),
-					NetworkRange::new(
-						nid,
-						last_processed_block,
-						None,
-						&chain.get_module_ids(),
-					),
+					NetworkRange::new(nid, last_processed_block, None, &chain.get_module_ids()),
 				);
 
 				// push all fast-sync block ranges
-				for (config_key, block_range) in
-					Config::get_many::<_, (BlockHeight, BlockHeight)>(
-						self.app.db(),
-						vec![ConfigKey::IndexerProcessChunk(nid, 0)],
-					)
-					.await?
+				for (config_key, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+					self.app.db(),
+					vec![ConfigKey::IndexerProcessChunk(nid, 0)],
+				)
+				.await?
 				{
 					network_params_map.insert(
 						config_key,
@@ -229,20 +206,13 @@ impl Indexer {
 				for module_id in chain.get_module_ids().into_iter() {
 					let mid = module_id as u16;
 
-					let ck_synced =
-						ConfigKey::IndexerProcessModuleDone(nid, mid);
-					if Config::get::<_, u8>(self.app.db(), ck_synced)
-						.await?
-						.is_none()
-					{
-						let ck_block_range =
-							ConfigKey::IndexerProcessModule(nid, mid);
+					let ck_synced = ConfigKey::IndexerProcessModuleDone(nid, mid);
+					if Config::get::<_, u8>(self.app.db(), ck_synced).await?.is_none() {
+						let ck_block_range = ConfigKey::IndexerProcessModule(nid, mid);
 
-						let block_range = match Config::get::<
-							_,
-							(BlockHeight, BlockHeight),
-						>(
-							self.app.db(), ck_block_range
+						let block_range = match Config::get::<_, (BlockHeight, BlockHeight)>(
+							self.app.db(),
+							ck_block_range,
 						)
 						.await?
 						{
@@ -289,10 +259,8 @@ impl Indexer {
 				blocked_and_notified = false;
 			}
 
-			let (pipe_sender, mut pipe_receiver) =
-				mpsc::channel(network_params_map.len());
-			let (abort_sender, _) =
-				broadcast::channel(network_params_map.len());
+			let (pipe_sender, mut pipe_receiver) = mpsc::channel(network_params_map.len());
+			let (abort_sender, _) = broadcast::channel(network_params_map.len());
 			let should_keep_going = Arc::new(AtomicBool::new(true));
 			let mut receipts = HashMap::<ConfigKey, Sender<()>>::new();
 
@@ -300,9 +268,7 @@ impl Indexer {
 			debug!("Launching {thread_count} thread(s)…");
 
 			let mut futures = JoinSet::new();
-			for (config_key, network_params) in
-				network_params_map.clone().into_iter()
-			{
+			for (config_key, network_params) in network_params_map.clone().into_iter() {
 				let (rtx, receipt) = mpsc::channel(1);
 				receipts.insert(config_key, rtx);
 
@@ -341,9 +307,7 @@ impl Indexer {
 
 						while should_keep_going.load(Ordering::SeqCst) {
 							match block_height_max {
-								Some(block_height_max)
-									if block_height + 1 > block_height_max =>
-								{
+								Some(block_height_max) if block_height + 1 > block_height_max => {
 									// push no matter what (even if no warehouse
 									// data) so that config keys get updated
 									pipe.push(
@@ -356,18 +320,15 @@ impl Indexer {
 									break;
 								}
 								None => {
-									let last_synced_block_height =
-										Config::get::<_, BlockHeight>(
-											&db,
-											ConfigKey::IndexerSyncTail(nid),
-										)
-										.await?
-										.map(|v| v.value)
-										.unwrap_or(0);
+									let last_synced_block_height = Config::get::<_, BlockHeight>(
+										&db,
+										ConfigKey::IndexerSyncTail(nid),
+									)
+									.await?
+									.map(|v| v.value)
+									.unwrap_or(0);
 
-									if block_height + 1 >
-										last_synced_block_height
-									{
+									if block_height + 1 > last_synced_block_height {
 										// push only if have some warehouse
 										// data; otherwise, it's ok
 										// if config keys get updated later
@@ -381,14 +342,9 @@ impl Indexer {
 										}
 
 										// wait a bit
-										let timeout = cmp::min(
-											chain.get_network().block_time,
-											5_000,
-										);
-										sleep(Duration::from_millis(
-											timeout as u64,
-										))
-										.await;
+										let timeout =
+											cmp::min(chain.get_network().block_time, 5_000);
+										sleep(Duration::from_millis(timeout as u64)).await;
 										continue;
 									}
 								}
@@ -557,19 +513,15 @@ impl Indexer {
 		loop {
 			sleep(Duration::from_secs(secs)).await;
 
-			for (network_id, chain) in
-				self.app.networks.read().await.clone().into_iter()
-			{
+			for (network_id, chain) in self.app.networks.read().await.clone().into_iter() {
 				let nid = network_id;
 				let mut scores = vec![];
 
-				let block_height = Config::get::<_, BlockHeight>(
-					self.app.db(),
-					ConfigKey::BlockHeight(nid),
-				)
-				.await?
-				.map(|v| v.value)
-				.unwrap_or(0);
+				let block_height =
+					Config::get::<_, BlockHeight>(self.app.db(), ConfigKey::BlockHeight(nid))
+						.await?
+						.map(|v| v.value)
+						.unwrap_or(0);
 
 				if block_height == 0 {
 					scores.push(0.0);
@@ -583,15 +535,13 @@ impl Indexer {
 					.unwrap_or(0);
 
 					let mut done_blocks = tail_block;
-					for (_, block_range) in
-						Config::get_many::<_, (BlockHeight, BlockHeight)>(
-							self.app.db(),
-							vec![ConfigKey::IndexerProcessChunk(nid, 0)],
-						)
-						.await?
+					for (_, block_range) in Config::get_many::<_, (BlockHeight, BlockHeight)>(
+						self.app.db(),
+						vec![ConfigKey::IndexerProcessChunk(nid, 0)],
+					)
+					.await?
 					{
-						done_blocks -=
-							block_range.value.1 - block_range.value.0;
+						done_blocks -= block_range.value.1 - block_range.value.0;
 					}
 
 					scores.push(done_blocks as f64 / block_height as f64);

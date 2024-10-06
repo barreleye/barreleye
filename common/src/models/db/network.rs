@@ -12,16 +12,7 @@ use crate::{
 	utils, Architecture, IdPrefix,
 };
 
-#[derive(
-	Default,
-	Clone,
-	Debug,
-	PartialEq,
-	Eq,
-	Serialize,
-	Deserialize,
-	DeriveEntityModel,
-)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, DeriveEntityModel)]
 #[sea_orm(table_name = "networks")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -120,20 +111,14 @@ impl Model {
 		Ok(q.all(c).await?)
 	}
 
-	pub async fn get_by_name<C>(
-		c: &C,
-		name: &str,
-		is_deleted: Option<bool>,
-	) -> Result<Option<Self>>
+	pub async fn get_by_name<C>(c: &C, name: &str, is_deleted: Option<bool>) -> Result<Option<Self>>
 	where
 		C: ConnectionTrait,
 	{
-		let mut q = Entity::find().filter(
-			Condition::all().add(
-				Expr::expr(Func::lower(Expr::col(Column::Name)))
-					.eq(name.trim().to_lowercase()),
-			),
-		);
+		let mut q =
+			Entity::find().filter(Condition::all().add(
+				Expr::expr(Func::lower(Expr::col(Column::Name))).eq(name.trim().to_lowercase()),
+			));
 
 		if let Some(is_deleted) = is_deleted {
 			q = q.filter(Column::IsDeleted.eq(is_deleted))

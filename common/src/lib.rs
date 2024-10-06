@@ -29,9 +29,7 @@ use crate::{
 };
 pub use db::Db;
 pub use errors::AppError;
-pub use progress::{
-	Progress, ReadyType as ProgressReadyType, Step as ProgressStep,
-};
+pub use progress::{Progress, ReadyType as ProgressReadyType, Step as ProgressStep};
 pub use s3::{Service as S3Service, S3};
 pub use settings::Settings;
 pub use storage::Storage;
@@ -61,8 +59,7 @@ pub const INDEXER_HEARTBEAT_INTERVAL: u64 = 2;
 
 pub type Warnings = Vec<String>;
 pub type BlockHeight = u64;
-pub type RateLimiter =
-	GovernorRateLimiter<NotKeyed, InMemoryState, DefaultClock>;
+pub type RateLimiter = GovernorRateLimiter<NotKeyed, InMemoryState, DefaultClock>;
 
 #[derive(Clone)]
 pub struct App {
@@ -111,14 +108,10 @@ impl App {
 		Ok(self.db().begin().await?)
 	}
 
-	pub async fn get_networks(
-		&self,
-	) -> Result<HashMap<PrimaryId, Arc<BoxedChain>>> {
+	pub async fn get_networks(&self) -> Result<HashMap<PrimaryId, Arc<BoxedChain>>> {
 		let mut ret = HashMap::new();
 
-		for n in
-			Network::get_all_existing(self.db(), Some(false)).await?.into_iter()
-		{
+		for n in Network::get_all_existing(self.db(), Some(false)).await?.into_iter() {
 			let network_id = n.network_id;
 
 			let boxed_chain: BoxedChain = match n.architecture {
@@ -152,16 +145,13 @@ impl App {
 			"       {{spinner}}  {} {{prefix:.bold}}: {{wide_msg:.bold.dim}}",
 			style("↳").bold().dim()
 		);
-		let spinner_style = ProgressStyle::with_template(&template)
-			.unwrap()
-			.tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+		let spinner_style =
+			ProgressStyle::with_template(&template).unwrap().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
 
 		let m = MultiProgress::new();
 
 		let mut threads = vec![];
-		for n in
-			Network::get_all_existing(self.db(), Some(false)).await?.into_iter()
-		{
+		for n in Network::get_all_existing(self.db(), Some(false)).await?.into_iter() {
 			let pb = m.add(ProgressBar::new(1_000_000));
 			pb.set_style(spinner_style.clone());
 			pb.set_prefix(n.name.clone());
@@ -170,9 +160,7 @@ impl App {
 			threads.push({
 				tokio::spawn({
 					let mut boxed_chain: BoxedChain = match n.architecture {
-						Architecture::Bitcoin => {
-							Box::new(Bitcoin::new(n.clone()))
-						}
+						Architecture::Bitcoin => Box::new(Bitcoin::new(n.clone())),
 						Architecture::Evm => Box::new(Evm::new(n.clone())),
 					};
 
@@ -185,9 +173,7 @@ impl App {
 							if !silent {
 								pb.finish_with_message(format!(
 									"connected to {}",
-									utils::with_masked_auth(
-										&boxed_chain.get_rpc().unwrap()
-									)
+									utils::with_masked_auth(&boxed_chain.get_rpc().unwrap())
 								));
 							}
 
@@ -197,10 +183,7 @@ impl App {
 								pb.finish_with_message("could not connect");
 							}
 
-							Err(eyre!(
-								"{}: Could not connect to an RPC endpoint.",
-								n.name
-							))
+							Err(eyre!("{}: Could not connect to an RPC endpoint.", n.name))
 						}
 					}
 				})
@@ -208,14 +191,12 @@ impl App {
 		}
 
 		let (connected_networks, failures): (HashMap<_, _>, Vec<_>) =
-			join_all(threads).await.into_iter().partition_map(|r| {
-				match r.unwrap() {
-					Ok(chain) => {
-						let network_id = chain.get_network().network_id;
-						Either::Left((network_id, chain))
-					}
-					Err(e) => Either::Right(e),
+			join_all(threads).await.into_iter().partition_map(|r| match r.unwrap() {
+				Ok(chain) => {
+					let network_id = chain.get_network().network_id;
+					Either::Left((network_id, chain))
 				}
+				Err(e) => Either::Right(e),
 			});
 
 		if !failures.is_empty() {
@@ -244,9 +225,7 @@ impl App {
 				networks
 					.iter()
 					.filter_map(|(_, chain)| {
-						if self.settings.is_indexer &&
-							chain.get_network().rps == 0
-						{
+						if self.settings.is_indexer && chain.get_network().rps == 0 {
 							Some(format!(
 								"{} rpc requests are not rate-limited",
 								chain.get_network().name
@@ -298,9 +277,7 @@ impl App {
 	}
 }
 
-#[derive(
-	Clone, Display, Debug, Serialize, Deserialize, Hash, Eq, PartialEq,
-)]
+#[derive(Clone, Display, Debug, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub enum IdPrefix {
 	#[display("net")]
 	Network,
@@ -354,17 +331,7 @@ pub enum RiskReason {
 	Source,
 }
 
-#[derive(
-	Default,
-	Debug,
-	DeriveActiveEnum,
-	Copy,
-	Clone,
-	PartialEq,
-	Eq,
-	Serialize,
-	Deserialize,
-)]
+#[derive(Default, Debug, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
 #[serde(rename_all = "camelCase")]
 pub enum Architecture {
@@ -403,17 +370,10 @@ impl ValueEnum for Mode {
 }
 
 pub fn quit(app_error: AppError) -> ! {
-	println!(
-		"{} {}Shutting down…\n\n› {}",
-		style("[err]").bold().dim(),
-		EMOJI_QUIT,
-		app_error
-	);
+	println!("{} {}Shutting down…\n\n› {}", style("[err]").bold().dim(), EMOJI_QUIT, app_error);
 
 	process::exit(match app_error {
-		AppError::SignalHandler | AppError::ServerStartup { .. } => {
-			exitcode::OSERR
-		}
+		AppError::SignalHandler | AppError::ServerStartup { .. } => exitcode::OSERR,
 		AppError::Config { .. } => exitcode::CONFIG,
 		_ => exitcode::UNAVAILABLE,
 	})

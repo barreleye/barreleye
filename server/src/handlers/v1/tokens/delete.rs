@@ -25,9 +25,7 @@ pub async fn handler(
 	}
 
 	// get all tokens
-	let all_tokens =
-		Token::get_all_where(app.db(), TokenColumn::Id.is_in(payload.tokens))
-			.await?;
+	let all_tokens = Token::get_all_where(app.db(), TokenColumn::Id.is_in(payload.tokens)).await?;
 
 	// proceed only when there's something to delete
 	if all_tokens.is_empty() {
@@ -37,9 +35,8 @@ pub async fn handler(
 	// delete all associated tokens
 	Token::delete_all_where(
 		app.db(),
-		TokenColumn::TokenId.is_in(
-			all_tokens.iter().map(|t| t.token_id).collect::<Vec<PrimaryId>>(),
-		),
+		TokenColumn::TokenId
+			.is_in(all_tokens.iter().map(|t| t.token_id).collect::<Vec<PrimaryId>>()),
 	)
 	.await?;
 

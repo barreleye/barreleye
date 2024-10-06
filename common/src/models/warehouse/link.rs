@@ -5,9 +5,7 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::{
-	models::{
-		warehouse::transfer::TABLE as TRANSFERS_TABLE, PrimaryId, PrimaryIds,
-	},
+	models::{warehouse::transfer::TABLE as TRANSFERS_TABLE, PrimaryId, PrimaryIds},
 	warehouse::Warehouse,
 	BlockHeight,
 };
@@ -49,10 +47,7 @@ impl Model {
 		}
 	}
 
-	pub async fn create_many(
-		warehouse: &Warehouse,
-		models: Vec<Self>,
-	) -> Result<()> {
+	pub async fn create_many(warehouse: &Warehouse, models: Vec<Self>) -> Result<()> {
 		let mut insert = warehouse.get().insert(TABLE)?;
 		for model in models.into_iter() {
 			insert.write(&model).await?;
@@ -148,10 +143,7 @@ impl Model {
 						SET allow_experimental_lightweight_delete = true;
 						DELETE FROM {TABLE} WHERE {}
 					"#,
-					Self::get_network_id_address_tuples(
-						sources,
-						"from_address"
-					),
+					Self::get_network_id_address_tuples(sources, "from_address"),
 				))
 				.execute()
 				.await?;
@@ -195,11 +187,10 @@ impl Model {
 		// steps:
 		// 1. find all links where `to_address` is in (targets)
 		// 2. gather the last elements of those `transfer_uuids` into an array
-		// 3. delete all link records that contain those uuids in the middle of
-		//    `transfer_uuids` meaning not first, because it's ok if target is
-		//    in the `from_address` but also not last, because it's ok if target
-		//    is in the `to_address` (in the middle = labeled entity is in the
-		//    middle of the links chain)
+		// 3. delete all link records that contain those uuids in the middle of `transfer_uuids`
+		//    meaning not first, because it's ok if target is in the `from_address` but also not
+		//    last, because it's ok if target is in the `to_address` (in the middle = labeled entity
+		//    is in the middle of the links chain)
 
 		if !targets.is_empty() {
 			warehouse
@@ -236,12 +227,7 @@ impl Model {
 			.map(|(network_id, addresses)| {
 				let escaped_addresses = addresses
 					.into_iter()
-					.map(|a| {
-						format!(
-							"'{}'",
-							a.replace('\\', "\\\\").replace('\'', "\\'")
-						)
-					})
+					.map(|a| format!("'{}'", a.replace('\\', "\\\\").replace('\'', "\\'")))
 					.collect::<Vec<String>>()
 					.join(",");
 

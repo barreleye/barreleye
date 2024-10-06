@@ -6,8 +6,8 @@ use std::{collections::HashSet, sync::Arc};
 use crate::ServerResult;
 use barreleye_common::{
 	models::{
-		set, Address, AddressActiveModel, BasicModel, Config, ConfigKey,
-		Network, NetworkActiveModel, NetworkColumn, PrimaryId,
+		set, Address, AddressActiveModel, BasicModel, Config, ConfigKey, Network,
+		NetworkActiveModel, NetworkColumn, PrimaryId,
 	},
 	App,
 };
@@ -28,11 +28,8 @@ pub async fn handler(
 	}
 
 	// get all networks
-	let all_networks = Network::get_all_where(
-		app.db(),
-		NetworkColumn::Id.is_in(payload.networks),
-	)
-	.await?;
+	let all_networks =
+		Network::get_all_where(app.db(), NetworkColumn::Id.is_in(payload.networks)).await?;
 
 	// proceed only when there's something to delete
 	if all_networks.is_empty() {
@@ -40,8 +37,7 @@ pub async fn handler(
 	}
 
 	// soft-delete all associated addresses
-	let all_network_ids =
-		all_networks.iter().map(|n| n.network_id).collect::<Vec<PrimaryId>>();
+	let all_network_ids = all_networks.iter().map(|n| n.network_id).collect::<Vec<PrimaryId>>();
 	Address::update_all_where(
 		app.db(),
 		NetworkColumn::NetworkId.is_in(all_network_ids.clone()),

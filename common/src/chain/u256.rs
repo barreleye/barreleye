@@ -4,10 +4,7 @@ use serde::{
 	ser::{Serialize, Serializer},
 };
 
-pub fn serialize<S: Serializer>(
-	u: &U256,
-	serializer: S,
-) -> Result<S::Ok, S::Error> {
+pub fn serialize<S: Serializer>(u: &U256, serializer: S) -> Result<S::Ok, S::Error> {
 	let mut buf: [u8; 32] = [0; 32];
 	u.to_little_endian(&mut buf);
 	buf.serialize(serializer)

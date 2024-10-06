@@ -57,21 +57,11 @@ pub struct Client {
 
 impl Client {
 	pub fn new(url: &str, auth: Auth) -> Self {
-		Self {
-			url: url.to_string(),
-			auth,
-			id: AtomicUsize::new(1),
-			with_retry: true,
-		}
+		Self { url: url.to_string(), auth, id: AtomicUsize::new(1), with_retry: true }
 	}
 
 	pub fn new_without_retry(url: &str, auth: Auth) -> Self {
-		Self {
-			url: url.to_string(),
-			auth,
-			id: AtomicUsize::new(1),
-			with_retry: false,
-		}
+		Self { url: url.to_string(), auth, id: AtomicUsize::new(1), with_retry: false }
 	}
 
 	pub async fn get_blockchain_info(&self) -> Result<GetBlockchainInfoResult> {
@@ -85,30 +75,22 @@ impl Client {
 	}
 
 	pub async fn get_block_hash(&self, block_height: u64) -> Result<BlockHash> {
-		let result = self
-			.request("getblockhash", &[JsonValue::from(block_height)])
-			.await?;
+		let result = self.request("getblockhash", &[JsonValue::from(block_height)]).await?;
 		Ok(serde_json::from_value(result)?)
 	}
 
 	pub async fn get_block(&self, hash: &BlockHash) -> Result<Block> {
-		let result = self
-			.request("getblock", &[JsonValue::from(hash.to_string()), 0.into()])
-			.await?;
+		let result =
+			self.request("getblock", &[JsonValue::from(hash.to_string()), 0.into()]).await?;
 		Ok(encode::deserialize_hex(result.as_str().unwrap())?)
 	}
 
-	async fn request(
-		&self,
-		method: &str,
-		params: &[JsonValue],
-	) -> Result<JsonValue> {
+	async fn request(&self, method: &str, params: &[JsonValue]) -> Result<JsonValue> {
 		let client = reqwest::Client::new();
 		let mut req = client.post(&self.url);
 
 		if let Auth::UserPass(username, password) = &self.auth {
-			let token = general_purpose::STANDARD
-				.encode(format!("{username}:{password}"));
+			let token = general_purpose::STANDARD.encode(format!("{username}:{password}"));
 			req = req.header(AUTHORIZATION, format!("Basic {token}"));
 		}
 
@@ -116,8 +98,7 @@ impl Client {
 
 		for attempt in 0..retry_attempts {
 			let id = self.id.fetch_add(1, Ordering::Relaxed).to_string();
-			let timeout =
-				Duration::from_millis(RPC_TIMEOUT * 2_i32.pow(attempt) as u64);
+			let timeout = Duration::from_millis(RPC_TIMEOUT * 2_i32.pow(attempt) as u64);
 
 			let body = json!({
 				"jsonrpc": "2.0",
@@ -135,10 +116,7 @@ impl Client {
 							continue;
 						}
 						Some(error) => {
-							return Err(ClientError::Rpc {
-								message: error.message,
-							}
-							.into())
+							return Err(ClientError::Rpc { message: error.message }.into())
 						}
 						None if json.id.is_none() || json.id.unwrap() != id => {
 							return Err(ClientError::NonceMismatch.into())
@@ -150,11 +128,7 @@ impl Client {
 					sleep(timeout).await;
 					continue;
 				}
-				Err(e) => {
-					return Err(
-						ClientError::General { message: e.to_string() }.into()
-					)
-				}
+				Err(e) => return Err(ClientError::General { message: e.to_string() }.into()),
 			}
 		}
 

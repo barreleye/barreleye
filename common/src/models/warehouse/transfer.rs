@@ -61,10 +61,7 @@ impl Model {
 		}
 	}
 
-	pub async fn create_many(
-		warehouse: &Warehouse,
-		models: Vec<Self>,
-	) -> Result<()> {
+	pub async fn create_many(warehouse: &Warehouse, models: Vec<Self>) -> Result<()> {
 		let mut insert = warehouse.get().insert(TABLE)?;
 		for model in models.into_iter() {
 			insert.write(&model).await?;

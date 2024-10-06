@@ -30,10 +30,7 @@ pub async fn handler(
 		if let Some(name) = payload.name.clone() {
 			if let Some(other_tag) = Tag::get_by_name(app.db(), &name).await? {
 				if other_tag.id != tag.id {
-					return Err(ServerError::Duplicate {
-						field: "name".to_string(),
-						value: name,
-					});
+					return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
 				}
 			}
 		}

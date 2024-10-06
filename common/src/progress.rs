@@ -1,9 +1,7 @@
 use console::style;
 use tracing::warn;
 
-use crate::{
-	Warnings, EMOJI_MIGRATIONS, EMOJI_NETWORKS, EMOJI_READY, EMOJI_SETUP,
-};
+use crate::{Warnings, EMOJI_MIGRATIONS, EMOJI_NETWORKS, EMOJI_READY, EMOJI_SETUP};
 
 pub enum ReadyType {
 	All(String),
@@ -32,12 +30,7 @@ impl Progress {
 		let total_steps = if self.with_indexer { 4 } else { 3 };
 
 		let out = |step, emoji, text| {
-			println!(
-				"{} {}{}",
-				style(format!("[{step}/{total_steps}]")).bold().dim(),
-				emoji,
-				text
-			)
+			println!("{} {}{}", style(format!("[{step}/{total_steps}]")).bold().dim(), emoji, text)
 		};
 
 		match step {

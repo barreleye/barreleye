@@ -4,10 +4,7 @@ use std::collections::HashMap;
 
 use crate::{
 	chain::{
-		bitcoin::{
-			modules::BitcoinModuleTrait,
-			schema::Transaction as ParquetTransaction,
-		},
+		bitcoin::{modules::BitcoinModuleTrait, schema::Transaction as ParquetTransaction},
 		ModuleId, ModuleTrait, WarehouseData, U256,
 	},
 	models::{PrimaryId, Transfer},
@@ -47,19 +44,15 @@ impl BitcoinModuleTrait for BitcoinTransfer {
 		let tx_hash = tx.hash.to_string();
 		let input_amount_total: u64 = inputs.clone().into_values().sum();
 		let output_amount_total: u64 = outputs.clone().into_values().sum();
-		let batch_amount =
-			U256::from_str_radix(&output_amount_total.to_string(), 10)?;
+		let batch_amount = U256::from_str_radix(&output_amount_total.to_string(), 10)?;
 
 		for input in inputs.iter() {
 			for output in outputs.iter() {
 				let (from, to) = (input.0.clone(), output.0.clone());
 				if from != to {
 					let amount = match input_amount_total > 0 {
-						true => {
-							((*input.1 as f64 / input_amount_total as f64) *
-								*output.1 as f64)
-								.round()
-						}
+						true => ((*input.1 as f64 / input_amount_total as f64) * *output.1 as f64)
+							.round(),
 						_ => 0.0,
 					};
 
