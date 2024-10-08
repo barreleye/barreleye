@@ -6,8 +6,6 @@ version = 2
 ignore = [
     # Marvin Attack: potential key recovery through timing sidechannels; https://rustsec.org/advisories/RUSTSEC-2023-0071
     "RUSTSEC-2023-0071",
-    # Multiple soundness issues; https://rustsec.org/advisories/RUSTSEC-2023-0086
-    "RUSTSEC-2023-0086",
     # Binary Protocol Misinterpretation caused by Truncating or Overflowing Casts; https://rustsec.org/advisories/RUSTSEC-2024-0363
     "RUSTSEC-2024-0363",
     # proc-macro-error is unmaintained; https://rustsec.org/advisories/RUSTSEC-2024-0370
