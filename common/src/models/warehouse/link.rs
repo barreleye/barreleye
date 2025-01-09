@@ -47,15 +47,6 @@ impl Model {
 		}
 	}
 
-	pub async fn create_many(warehouse: &Warehouse, models: Vec<Self>) -> Result<()> {
-		let mut insert = warehouse.get().insert(TABLE)?;
-		for model in models.into_iter() {
-			insert.write(&model).await?;
-		}
-
-		Ok(insert.end().await?)
-	}
-
 	pub async fn get_all_by_addresses(
 		warehouse: &Warehouse,
 		mut addresses: Vec<String>,
@@ -63,18 +54,18 @@ impl Model {
 		addresses.sort_unstable();
 		addresses.dedup();
 
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let formatted_addresses =
+			addresses.iter().map(|addr| format!("'{}'", addr)).collect::<Vec<_>>().join(", ");
+
+		warehouse
+			.select(&format!(
 				r#"
 					SELECT *
 					FROM {TABLE}
-					WHERE to_address IN ?
-                "#
+					WHERE to_address IN ({formatted_addresses})
+				"#
 			))
-			.bind(addresses)
-			.fetch_all::<Model>()
-			.await?)
+			.await
 	}
 
 	pub async fn get_all_disinct_by_addresses(
@@ -84,19 +75,19 @@ impl Model {
 		addresses.sort_unstable();
 		addresses.dedup();
 
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let formatted_addresses =
+			addresses.iter().map(|addr| format!("'{}'", addr)).collect::<Vec<_>>().join(", ");
+
+		warehouse
+			.select(&format!(
 				r#"
 					SELECT DISTINCT ON (network_id, from_address) *
 					FROM {TABLE}
-					WHERE to_address IN ?
+					WHERE to_address IN ({formatted_addresses})
 					ORDER BY LENGTH(transfer_uuids) ASC
-                "#
+				"#
 			))
-			.bind(addresses)
-			.fetch_all::<Model>()
-			.await?)
+			.await
 	}
 
 	pub async fn get_all_to_seed_blocks(
@@ -104,30 +95,24 @@ impl Model {
 		network_id: PrimaryId,
 		(block_height_min, block_height_max): (BlockHeight, BlockHeight),
 	) -> Result<Vec<Self>> {
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		warehouse
+			.select(&format!(
 				r#"
 					SELECT *
 					FROM {TABLE}
-					WHERE network_id = ? AND to_address IN (
+					WHERE network_id = {network_id} AND to_address IN (
 					    SELECT from_address
 					    FROM {TRANSFERS_TABLE}
 					    WHERE
-							network_id = ? AND
+							network_id = {network_id} AND
 							length(from_address) > 0 AND
 							length(to_address) > 0 AND
-							block_height >= ? AND
-							block_height <= ?
+							block_height >= {block_height_min} AND
+							block_height <= {block_height_max}
 					)
-                "#
+				"#
 			))
-			.bind(network_id)
-			.bind(network_id)
-			.bind(block_height_min)
-			.bind(block_height_max)
-			.fetch_all::<Model>()
-			.await?)
+			.await
 	}
 
 	pub async fn delete_all_by_sources(
@@ -137,15 +122,13 @@ impl Model {
 	) -> Result<()> {
 		if !sources.is_empty() {
 			warehouse
-				.get()
-				.query(&format!(
+				.delete(&format!(
 					r#"
 						SET allow_experimental_lightweight_delete = true;
 						DELETE FROM {TABLE} WHERE {}
 					"#,
 					Self::get_network_id_address_tuples(sources, "from_address"),
 				))
-				.execute()
 				.await?;
 		}
 
@@ -156,17 +139,17 @@ impl Model {
 		warehouse: &Warehouse,
 		network_ids: PrimaryIds,
 	) -> Result<()> {
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let network_ids_string =
+			network_ids.into_iter().map(|id| id.to_string()).collect::<Vec<String>>().join(",");
+
+		warehouse
+			.delete(&format!(
 				r#"
 					SET allow_experimental_lightweight_delete = true;
-					DELETE FROM {TABLE} WHERE network_id IN ?
+					DELETE FROM {TABLE} WHERE network_id IN ({network_ids_string})
                 "#
 			))
-			.bind(network_ids.into_iter().collect::<Vec<PrimaryId>>())
-			.execute()
-			.await?)
+			.await
 	}
 
 	pub async fn delete_all_by_newly_added_addresses(
@@ -194,8 +177,7 @@ impl Model {
 
 		if !targets.is_empty() {
 			warehouse
-				.get()
-				.query(&format!(
+				.delete(&format!(
 					r#"
 						SET allow_experimental_lightweight_delete = true;
 						DELETE FROM {TABLE}
@@ -212,7 +194,6 @@ impl Model {
 					"#,
 					Self::get_network_id_address_tuples(targets, "to_address"),
 				))
-				.execute()
 				.await?;
 		}
 

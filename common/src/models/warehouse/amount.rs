@@ -52,15 +52,6 @@ impl Model {
 		}
 	}
 
-	pub async fn create_many(warehouse: &Warehouse, models: Vec<Self>) -> Result<()> {
-		let mut insert = warehouse.get().insert(TABLE)?;
-		for model in models.into_iter() {
-			insert.write(&model).await?;
-		}
-
-		Ok(insert.end().await?)
-	}
-
 	pub async fn get_all_network_ids_by_addresses(
 		warehouse: &Warehouse,
 		mut addresses: Vec<String>,
@@ -73,20 +64,20 @@ impl Model {
 		addresses.sort_unstable();
 		addresses.dedup();
 
+		let formatted_addresses =
+			addresses.iter().map(|addr| format!("'{}'", addr)).collect::<Vec<_>>().join(", ");
+
 		Ok(warehouse
-			.get()
-			.query(&format!(
+			.select(&format!(
 				r#"
 					SELECT DISTINCT network_id
 					FROM {TABLE}
-					WHERE address IN ?
+					WHERE address IN ({formatted_addresses})
                 "#
 			))
-			.bind(addresses)
-			.fetch_all::<Data>()
 			.await?
 			.into_iter()
-			.map(|d| d.network_id as PrimaryId)
+			.map(|d: Self| d.network_id as PrimaryId)
 			.collect::<Vec<PrimaryId>>()
 			.into())
 	}
@@ -95,16 +86,16 @@ impl Model {
 		warehouse: &Warehouse,
 		network_ids: PrimaryIds,
 	) -> Result<()> {
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let network_ids_string =
+			network_ids.into_iter().map(|id| id.to_string()).collect::<Vec<String>>().join(",");
+
+		warehouse
+			.delete(&format!(
 				r#"
 					SET allow_experimental_lightweight_delete = true;
-					DELETE FROM {TABLE} WHERE network_id IN ?
+					DELETE FROM {TABLE} WHERE network_id IN ({network_ids_string})
                 "#
 			))
-			.bind(network_ids.into_iter().collect::<Vec<PrimaryId>>())
-			.execute()
-			.await?)
+			.await
 	}
 }

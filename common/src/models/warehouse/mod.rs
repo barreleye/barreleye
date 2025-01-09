@@ -1,7 +1,7 @@
-pub use amount::Amount;
-pub use balance::Balance;
-pub use link::{Link, LinkUuid};
-pub use transfer::Transfer;
+pub use amount::{Amount, TABLE as AmountTable};
+pub use balance::{Balance, TABLE as BalanceTable};
+pub use link::{Link, LinkUuid, TABLE as LinkTable};
+pub use transfer::{Transfer, TABLE as TransferTable};
 
 mod amount;
 mod balance;

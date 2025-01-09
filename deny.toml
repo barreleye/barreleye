@@ -6,10 +6,8 @@ version = 2
 ignore = [
     # Marvin Attack: potential key recovery through timing sidechannels; https://rustsec.org/advisories/RUSTSEC-2023-0071
     "RUSTSEC-2023-0071",
-    # Binary Protocol Misinterpretation caused by Truncating or Overflowing Casts; https://rustsec.org/advisories/RUSTSEC-2024-0363
-    "RUSTSEC-2024-0363",
-    # proc-macro-error is unmaintained; https://rustsec.org/advisories/RUSTSEC-2024-0370
-    "RUSTSEC-2024-0370",
+    # `instant` is unmaintained; https://rustsec.org/advisories/RUSTSEC-2024-0384
+    "RUSTSEC-2024-0384",
 ]
 
 [licenses]
@@ -26,7 +24,7 @@ allow = [
     "MIT",
     "MIT-0",
     "MITNFA",
-    "Unicode-DFS-2016",
+    "Unicode-3.0",
     "Unlicense",
     "Zlib",
     # https://github.com/briansmith/ring/issues/902

@@ -61,34 +61,21 @@ impl Model {
 		}
 	}
 
-	pub async fn create_many(warehouse: &Warehouse, models: Vec<Self>) -> Result<()> {
-		let mut insert = warehouse.get().insert(TABLE)?;
-		for model in models.into_iter() {
-			insert.write(&model).await?;
-		}
-
-		Ok(insert.end().await?)
-	}
-
 	pub async fn get_first_by_source(
 		warehouse: &Warehouse,
 		network_id: PrimaryId,
 		address: &str,
 	) -> Result<Option<Self>> {
-		let results = warehouse
-			.get()
-			.query(&format!(
+		let results: Vec<Self> = warehouse
+			.select(&format!(
 				r#"
 					SELECT *
 					FROM {TABLE}
-					WHERE network_id = ? AND from_address = ?
+					WHERE network_id = {network_id} AND from_address = {address}
 					ORDER BY created_at ASC
 					LIMIT 1
                 "#
 			))
-			.bind(network_id)
-			.bind(address.to_string())
-			.fetch_all::<Model>()
 			.await?;
 
 		Ok(match results.len() {
@@ -102,61 +89,35 @@ impl Model {
 		network_id: PrimaryId,
 		(block_height_min, block_height_max): (BlockHeight, BlockHeight),
 	) -> Result<Vec<Self>> {
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		warehouse
+			.select(&format!(
 				r#"
 					SELECT *
 					FROM {TABLE}
 					WHERE
-						network_id = ? AND
-						block_height >= ? AND
-						block_height <= ?
+						network_id = {network_id} AND
+						block_height >= {block_height_min} AND
+						block_height <= {block_height_max}
 					ORDER BY block_height ASC
                 "#
 			))
-			.bind(network_id)
-			.bind(block_height_min)
-			.bind(block_height_max)
-			.fetch_all::<Model>()
-			.await?)
-	}
-
-	pub async fn get_all_by_uuids(
-		warehouse: &Warehouse,
-		mut uuids: Vec<Uuid>,
-	) -> Result<Vec<Self>> {
-		uuids.sort_unstable();
-		uuids.dedup();
-
-		Ok(warehouse
-			.get()
-			.query(&format!(
-				r#"
-					SELECT *
-					FROM {TABLE}
-					WHERE uuid IN ?
-                "#
-			))
-			.bind(uuids)
-			.fetch_all::<Model>()
-			.await?)
+			.await
 	}
 
 	pub async fn delete_all_by_network_id(
 		warehouse: &Warehouse,
 		network_ids: PrimaryIds,
 	) -> Result<()> {
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let network_ids_string =
+			network_ids.into_iter().map(|id| id.to_string()).collect::<Vec<String>>().join(",");
+
+		warehouse
+			.delete(&format!(
 				r#"
 					SET allow_experimental_lightweight_delete = true;
-					DELETE FROM {TABLE} WHERE network_id IN ?
+					DELETE FROM {TABLE} WHERE network_id IN ({network_ids_string})
                 "#
 			))
-			.bind(network_ids.into_iter().collect::<Vec<PrimaryId>>())
-			.execute()
-			.await?)
+			.await
 	}
 }

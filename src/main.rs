@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
 	dotenv().ok();
 	log::setup()?;
 
-	let (raw_settings, mut warnings) = Settings::new().unwrap_or_else(|e| {
+	let (raw_settings, mut warnings) = Settings::new().await.unwrap_or_else(|e| {
 		quit(match e.downcast_ref::<AppError>() {
 			Some(app_error) => app_error.clone(),
 			None => AppError::Unexpected { error: e.to_string() },

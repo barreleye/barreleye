@@ -110,7 +110,7 @@ pub struct Settings {
 
 	/// Warehouse for storing analytical data. Supports DuckDB and ClickHouse.
 	///
-	/// DuckDB eg: @TODO
+	/// DuckDB eg: /path/to/your/database.db
 	/// ClickHouse eg: http://username:password@localhost:8123/database_name
 	#[arg(
 		help_heading = "Warehouse options",
@@ -139,7 +139,7 @@ pub struct Settings {
 }
 
 impl Settings {
-	pub fn new() -> Result<(Self, Warnings)> {
+	pub async fn new() -> Result<(Self, Warnings)> {
 		let mut settings = Self::parse();
 		let warnings = Warnings::new();
 
@@ -188,6 +188,19 @@ impl Settings {
 			);
 		}
 
+		// test warehouse
+		if let Ok(url) = Url::parse(&settings.warehouse) {
+			if url.scheme() == "http" || url.scheme() == "https" {
+				settings.warehouse_driver = WarehouseDriver::ClickHouse;
+			} else {
+				return Err(
+					AppError::Config { config: "warehouse", error: "could not parse URL" }.into()
+				);
+			}
+		} else {
+			settings.warehouse_driver = WarehouseDriver::DuckDB;
+		}
+
 		// test warehouse database name
 		match settings.warehouse_driver {
 			WarehouseDriver::ClickHouse if !utils::has_pathname(&settings.warehouse) => {
@@ -198,13 +211,6 @@ impl Settings {
 				.into());
 			}
 			_ => {}
-		}
-
-		// test warehouse url
-		if Url::parse(&settings.warehouse).is_err() {
-			return Err(
-				AppError::Config { config: "warehouse", error: "could not parse URL" }.into()
-			);
 		}
 
 		// parse ip address

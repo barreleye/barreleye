@@ -7,7 +7,7 @@ use tokio::task::JoinSet;
 
 pub use crate::chain::bitcoin::Bitcoin;
 use crate::{
-	models::{Amount, Link, Network, Transfer},
+	models::{Amount, AmountTable, Link, LinkTable, Network, Transfer, TransferTable},
 	utils, BlockHeight, PrimaryId, RateLimiter, Storage, Warehouse,
 };
 pub use evm::Evm;
@@ -106,22 +106,34 @@ impl WarehouseData {
 		if !self.transfers.is_empty() {
 			set.spawn({
 				let w = warehouse.clone();
-				let t = self.transfers.clone().into_iter().collect();
-				async move { Transfer::create_many(&w, t).await }
+				let t: Vec<_> = self.transfers.clone().into_iter().collect();
+
+				async move {
+					w.insert(TransferTable, &t).await?;
+					Ok::<_, eyre::Error>(())
+				}
 			});
 		}
 		if !self.amounts.is_empty() {
 			set.spawn({
 				let w = warehouse.clone();
-				let a = self.amounts.clone().into_iter().collect();
-				async move { Amount::create_many(&w, a).await }
+				let a: Vec<_> = self.amounts.clone().into_iter().collect();
+
+				async move {
+					w.insert(AmountTable, &a).await?;
+					Ok::<_, eyre::Error>(())
+				}
 			});
 		}
 		if !self.links.is_empty() {
 			set.spawn({
 				let w = warehouse.clone();
-				let l = self.links.clone().into_iter().collect();
-				async move { Link::create_many(&w, l).await }
+				let l: Vec<_> = self.links.clone().into_iter().collect();
+
+				async move {
+					w.insert(LinkTable, &l).await?;
+					Ok::<_, eyre::Error>(())
+				}
 			});
 		}
 

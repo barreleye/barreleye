@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	chain::{u256, U256},
-	models::{PrimaryId, PrimaryIds},
+	models::PrimaryIds,
 	warehouse::Warehouse,
 };
 
@@ -32,9 +32,11 @@ impl Model {
 		addresses.sort_unstable();
 		addresses.dedup();
 
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let formatted_addresses =
+			addresses.iter().map(|addr| format!("'{}'", addr)).collect::<Vec<_>>().join(", ");
+
+		warehouse
+			.select(&format!(
 				r#"
 					SELECT *
 					FROM (
@@ -44,31 +46,29 @@ impl Model {
 	                        asset_address,
 	                        SUM(balance) as balance
 	                    FROM {TABLE}
-	                    WHERE address IN ?
+	                    WHERE address IN ({formatted_addresses})
 	                    GROUP BY (network_id, address, asset_address)
 					)
 					WHERE balance >= 0
                 "#
 			))
-			.bind(addresses)
-			.fetch_all::<Model>()
-			.await?)
+			.await
 	}
 
 	pub async fn delete_all_by_network_id(
 		warehouse: &Warehouse,
 		network_ids: PrimaryIds,
 	) -> Result<()> {
-		Ok(warehouse
-			.get()
-			.query(&format!(
+		let network_ids_string =
+			network_ids.into_iter().map(|id| id.to_string()).collect::<Vec<String>>().join(",");
+
+		warehouse
+			.delete(&format!(
 				r#"
 					SET allow_experimental_lightweight_delete = true;
-					DELETE FROM {TABLE} WHERE network_id IN ?
+					DELETE FROM {TABLE} WHERE network_id IN ({network_ids_string})
                 "#
 			))
-			.bind(network_ids.into_iter().collect::<Vec<PrimaryId>>())
-			.execute()
-			.await?)
+			.await
 	}
 }
