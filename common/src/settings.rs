@@ -116,6 +116,7 @@ pub struct Settings {
 		help_heading = "Warehouse options",
 		short,
 		long,
+		verbatim_doc_comment,
 		env = "BARRELEYE_WAREHOUSE",
 		default_value = "http://localhost:8123/barreleye",
 		value_name = "URI"

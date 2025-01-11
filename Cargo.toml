@@ -7,7 +7,7 @@ homepage = "https://barreleye.org"
 version = "0.2.0"
 license = "MIT OR Apache-2.0"
 edition = "2021"
-rust-version = "1.81"
+rust-version = "1.83"
 readme = "README.md"
 keywords = ["blockchain", "cryptocurrency", "indexer", "explorer"]
 
@@ -25,7 +25,7 @@ normal = ["color-eyre"]
 barreleye-common = { path = "./common", version = "0.2.0" }
 barreleye-indexer = { path = "./indexer", version = "0.2.0" }
 barreleye-server = { path = "./server", version = "0.2.0" }
-log = "0.4.22"
+log = "0.4.24"
 color-eyre = "0.6.3"
 eyre = "0.6.12"
 dotenvy = "0.15.7"
