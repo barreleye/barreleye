@@ -5,14 +5,14 @@
 
 **Barreleye** is an open-source multi-chain blockchain indexer and explorer.
 
-> [!IMPORTANT]
-> This is a work-in-progress and not yet ready for use or production.
-
 Features:
 
 - **Easy to use** — start on a single machine, scale up as needed
 - **Scalable** — optimized for handling lots of data
 - **Multi-chain** — designed to support multiple blockchain architectures
+
+> [!IMPORTANT]
+> This is a work-in-progress and not yet ready for use or production.
 
 ## Requirements
 
@@ -30,7 +30,7 @@ cargo build
 cargo install
 ```
 
-Run locally (pointing to your [ClickHouse](https://github.com/ClickHouse/ClickHouse) instance):
+Run locally:
 
 ```sh
 cargo run
@@ -48,36 +48,43 @@ For production you'll probably want to store extracted blockchain data in the cl
 
 ```sh
 cargo run -- \
-  --warehouse http://example.clickhouse.cloud:8123/database_name \
   --storage http://s3.us-east-1.amazonaws.com/bucket_name/
 ```
 
-You can also use a hosted RDBMS like [PostgreSQL](https://www.postgresql.org/) or [MySQL](https://www.mysql.com/) instead of SQLite:
+And structured data in RDBMS like [PostgreSQL](https://www.postgresql.org/) or [MySQL](https://www.mysql.com/), instead of SQLite:
 
 ```sh
 cargo run -- \
-  --warehouse http://example.clickhouse.cloud:8123/database_name \
   --storage http://s3.us-east-1.amazonaws.com/bucket_name/ \
   --database postgres://postgres-host:5432/database_name
+```
+
+As well as analytics data in [ClickHouse](https://github.com/ClickHouse/ClickHouse), instead of DuckDB:
+
+```sh
+cargo run -- \
+  --storage http://s3.us-east-1.amazonaws.com/bucket_name/ \
+  --database postgres://postgres-host:5432/database_name \
+  --warehouse http://example.clickhouse.cloud:8123/database_name
 ```
 
 ## Modes
 
 Barreleye operates two parallel components: the indexer and the server. The indexer retrieves blockchain data, while the server manages API requests, handling data and address information.
 
-Barreleye automatically runs both the indexer and server in parallel by default:
+Barreleye automatically runs both the indexer and server in parallel:
 
 ```sh
 cargo run
 ```
 
-To run only the indexer:
+Run only the indexer:
 
 ```sh
 cargo run -- --mode indexer
 ```
 
-To run only the server:
+Run only the server:
 
 ```sh
 cargo run -- --mode http
@@ -125,7 +132,7 @@ curl -X POST \
 
 **Add Tokens**
 
-To add native Bitcoin currency:
+Add native Bitcoin currency:
 
 ```sh
 curl -X POST \
@@ -139,7 +146,7 @@ curl -X POST \
   http://localhost:4000/v1/tokens
 ```
 
-To add native Ethereum currency:
+Add native Ethereum currency:
 
 ```sh
 curl -X POST \
@@ -153,7 +160,7 @@ curl -X POST \
   http://localhost:4000/v1/tokens
 ```
 
-To add an ERC-20 token:
+Add an ERC-20 token:
 
 ```sh
 curl -X POST \
@@ -197,7 +204,7 @@ curl -X POST \
   http://localhost:4000/v1/entities
 ```
 
-To add addresses:
+Add addresses:
 
 ```sh
 curl -X POST \
@@ -220,7 +227,7 @@ curl -X POST \
 
 ## Address Info
 
-To query information about a particular blockchain address:
+Query information about a particular blockchain address:
 
 ```sh
 curl -X GET \
@@ -228,7 +235,7 @@ curl -X GET \
   http://localhost:4000/v1/info?q=<BLOCKCHAIN_ADDRESS>
 ```
 
-## Random Notes
+## Notes
 
 - Be aware of your RPC node limits. Indexer makes a significant amount of RPC calls to index historical and new blocks.
 - For indexing, you might have to set ClickHouse's `max_server_memory_usage_to_ram_ratio` to `2` ([read more](https://github.com/ClickHouse/ClickHouse/issues/17631))
@@ -240,9 +247,6 @@ Except where noted (below and/or in individual files), all code in this reposito
 
 * MIT License ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
 * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
-
-at your option.
-This means you can select the license you prefer.
 
 **Your contributions**
 
