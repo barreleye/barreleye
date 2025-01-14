@@ -28,7 +28,7 @@ data management and analysis."#),
 pub struct Settings {
 	/// Specify the operation mode
 	#[arg(
-		help_heading = "Runtime options",
+		help_heading = "Runtime Options",
 		long,
 		num_args = 1..,
 		value_delimiter = ',',
@@ -49,7 +49,7 @@ pub struct Settings {
 	/// - BARRELEYE_S3_ACCESS_KEY_ID: S3 access key ID for cloud storage
 	/// - BARRELEYE_S3_SECRET_ACCESS_KEY: S3 secret access key for cloud storage
 	#[arg(
-		help_heading = "Storage options",
+		help_heading = "Storage Options",
 		short,
 		long,
 		verbatim_doc_comment,
@@ -81,7 +81,7 @@ pub struct Settings {
 	/// - BARRELEYE_DB_USER: PostgreSQL and MySQL user
 	/// - BARRELEYE_DB_PASSWORD: PostgreSQL and MySQL password
 	#[arg(
-		help_heading = "Database options",
+		help_heading = "Database Options",
 		short,
 		long,
 		verbatim_doc_comment,
@@ -95,19 +95,19 @@ pub struct Settings {
 	#[arg(skip)]
 	pub database_driver: DatabaseDriver,
 
-	#[arg(help_heading = "Database options", long, default_value_t = 5, value_name = "NUMBER")]
+	#[arg(help_heading = "Database Options", long, default_value_t = 5, value_name = "NUMBER")]
 	pub database_min_connections: u32,
 
-	#[arg(help_heading = "Database options", long, default_value_t = 100, value_name = "NUMBER")]
+	#[arg(help_heading = "Database Options", long, default_value_t = 100, value_name = "NUMBER")]
 	pub database_max_connections: u32,
 
-	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
+	#[arg(help_heading = "Database Options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_connect_timeout: u64,
 
-	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
+	#[arg(help_heading = "Database Options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_idle_timeout: u64,
 
-	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
+	#[arg(help_heading = "Database Options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
 	/// Specify the warehouse for storing analytical data
@@ -119,7 +119,7 @@ pub struct Settings {
 	/// - BARRELEYE_WAREHOUSE_USER: ClickHouse user
 	/// - BARRELEYE_WAREHOUSE_PASSWORD: ClickHouse password
 	#[arg(
-		help_heading = "Warehouse options",
+		help_heading = "Warehouse Options",
 		short,
 		long,
 		verbatim_doc_comment,
@@ -133,7 +133,7 @@ pub struct Settings {
 	pub warehouse_driver: WarehouseDriver,
 
 	#[arg(
-		help_heading = "Server options",
+		help_heading = "Server Options",
 		long,
 		default_value = "127.0.0.1",
 		value_name = "IP_ADDRESS"
@@ -144,7 +144,7 @@ pub struct Settings {
 	pub ip_addr: Option<IpAddr>,
 
 	/// Port number for the HTTP server
-	#[arg(help_heading = "Server options", long, default_value_t = 2277, value_name = "PORT")]
+	#[arg(help_heading = "Server Options", long, default_value_t = 2277, value_name = "PORT")]
 	pub port: u16,
 }
 
