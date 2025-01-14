@@ -179,7 +179,7 @@ impl Settings {
 		}
 
 		// show banner
-		banner::show(settings.is_indexer, settings.is_server)?;
+		banner::show()?;
 
 		// set driver for db
 		let test_scheme = settings.database.split(':').next().unwrap_or_default();

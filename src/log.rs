@@ -1,16 +1,19 @@
 use eyre::Result;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use tracing_subscriber::{fmt, prelude::*};
 
 pub fn setup() -> Result<()> {
 	color_eyre::install()?;
 
-	let filter = EnvFilter::new("none")
-		.add_directive("barreleye_indexer=trace".parse()?)
-		.add_directive("barreleye_server=trace".parse()?)
-		.add_directive("barreleye=trace".parse()?)
-		.add_directive("tower_http::trace=debug".parse()?);
+	let fmt_layer = fmt::layer()
+		.with_target(false)
+		.with_level(true)
+		.with_line_number(false)
+		.with_file(false)
+		.with_thread_ids(false)
+		.compact()
+		.with_writer(std::io::stdout);
 
-	tracing_subscriber::registry().with(fmt::layer().compact()).with(filter).init();
+	tracing_subscriber::registry().with(fmt_layer).init();
 
 	Ok(())
 }

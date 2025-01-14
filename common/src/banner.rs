@@ -1,6 +1,8 @@
-use console::style;
 use eyre::Result;
 use std::{env, str};
+use tracing::Level;
+
+use crate::log;
 
 static BANNER_ANSI: &[u8] = &[
 	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 59, 95, 63, 42, 63, 59, 32, 32, 32, 32,
@@ -756,7 +758,7 @@ static BANNER_TRUECOLOR: &[u8] = &[
 	91, 51, 56, 59, 50, 59, 48, 59, 48, 59, 48, 109, 32, 27, 91, 48, 109,
 ];
 
-pub fn show(is_indexer: bool, is_server: bool) -> Result<()> {
+pub fn show() -> Result<()> {
 	let banner = format!(
 		"\n{}\n\n",
 		if env::var("COLORTERM").is_ok() {
@@ -766,33 +768,11 @@ pub fn show(is_indexer: bool, is_server: bool) -> Result<()> {
 		}
 	);
 
-	let name = "Barreleye".to_string();
-	let tags = {
-		let s = |s| style(s).bright().bold();
+	println!("{}", banner);
 
-		let mut t = vec![];
-		if is_indexer {
-			t.push(s("Indexer ✔").cyan().to_string())
-		}
-		if is_server {
-			t.push(s("Server ✔").green().to_string())
-		}
-
-		let tags = t.join(&s(", ").dim().to_string());
-		if tags.is_empty() {
-			tags
-		} else {
-			format!(" [{tags}]")
-		}
-	};
-
-	println!(
-		"{}› {} v{}{}\n› https://barreleye.org\n",
-		banner,
-		style(name).bold(),
-		env!("CARGO_PKG_VERSION"),
-		tags,
-	);
+	let version =
+		format!("Barreleye v{} <{}>", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_HOMEPAGE"));
+	log(Level::INFO, &version, None);
 
 	Ok(())
 }
