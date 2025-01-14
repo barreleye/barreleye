@@ -67,7 +67,6 @@ pub struct Settings {
 
 	#[arg(long, env = "BARRELEYE_S3_ACCESS_KEY_ID", hide = true)]
 	pub s3_access_key_id: Option<String>,
-
 	#[arg(long, env = "BARRELEYE_S3_SECRET_ACCESS_KEY", hide = true)]
 	pub s3_secret_access_key: Option<String>,
 
@@ -94,6 +93,11 @@ pub struct Settings {
 	pub database: String,
 	#[arg(skip)]
 	pub database_driver: DatabaseDriver,
+
+	#[arg(long, env = "BARRELEYE_DB_USER", hide = true)]
+	pub db_user: Option<String>,
+	#[arg(long, env = "BARRELEYE_DB_PASSWORD", hide = true)]
+	pub db_password: Option<String>,
 
 	#[arg(help_heading = "Database Options", long, default_value_t = 5, value_name = "NUMBER")]
 	pub database_min_connections: u32,
@@ -131,6 +135,11 @@ pub struct Settings {
 	pub warehouse: String,
 	#[arg(skip)]
 	pub warehouse_driver: WarehouseDriver,
+
+	#[arg(long, env = "BARRELEYE_WAREHOUSE_USER", hide = true)]
+	pub warehouse_user: Option<String>,
+	#[arg(long, env = "BARRELEYE_WAREHOUSE_PASSWORD", hide = true)]
+	pub warehouse_password: Option<String>,
 
 	#[arg(
 		help_heading = "Server Options",
