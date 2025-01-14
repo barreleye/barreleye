@@ -349,20 +349,23 @@ impl strum::IntoEnumIterator for Architecture {
 	}
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Mode {
+	#[default]
+	Both,
 	Indexer,
 	Http,
 }
 
 impl ValueEnum for Mode {
 	fn value_variants<'a>() -> &'a [Self] {
-		&[Self::Indexer, Self::Http]
+		&[Self::Both, Self::Indexer, Self::Http]
 	}
 
 	fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
 		match self {
+			Self::Both => Some(PossibleValue::new("both")),
 			Self::Indexer => Some(PossibleValue::new("indexer")),
 			Self::Http => Some(PossibleValue::new("http")),
 		}

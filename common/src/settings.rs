@@ -18,34 +18,44 @@ use crate::{
 	author = "Barreleye",
 	version,
 	about,
-	long_about = None
+	long_about = Some(r#"Barreleye: multi-chain blockchain indexer and explorer
+
+Barreleye is a powerful tool for indexing and exploring data from multiple blockchains.
+It provides a flexible storage system and supports various database options for efficient
+data management and analysis."#),
+	after_help = "For more information and examples, visit: https://barreleye.org"
 )]
 pub struct Settings {
-	/// Mode can be used to run either the server or the indexer. By default
-	/// both are run in parallel.
-	#[arg(help_heading = "Runtime options", long, num_args = 1.., value_delimiter = ',')]
+	/// Specify the operation mode
+	#[arg(
+		help_heading = "Runtime options",
+		long,
+		num_args = 1..,
+		value_delimiter = ',',
+		default_value = "both"
+	)]
 	mode: Vec<Mode>,
 	#[arg(skip)]
 	pub is_indexer: bool,
 	#[arg(skip)]
 	pub is_server: bool,
 
-	/// Where to store extracted blockchain data.
-	/// Can be either a folder or S3-compatible storage.
+	/// Specify the storage location for blockchain data:
+	/// - Local folder: /path/to/your/storage/folder
+	/// - Amazon S3: https://s3.<region>.amazonaws.com/bucket_name/
+	/// - Cloudflare R2: https://<account_id>.r2.cloudflarestorage.com/bucket_name/
 	///
-	/// Folder eg: file:///path_to_folder
-	/// Amazon S3 eg: https://s3.<region>.amazonaws.com/bucket_name/
-	/// Cloudflare R2 eg: https://<account_id>.r2.cloudflarestorage.com/bucket_name/
+	/// The following environment variables can be used to configure S3 credentials:
+	/// - BARRELEYE_S3_ACCESS_KEY_ID: S3 access key ID for cloud storage
+	/// - BARRELEYE_S3_SECRET_ACCESS_KEY: S3 secret access key for cloud storage
 	#[arg(
 		help_heading = "Storage options",
 		short,
 		long,
 		verbatim_doc_comment,
 		env = "BARRELEYE_STORAGE",
-		default_value_t = format!(
-			"file://{}",
-			utils::project_dir(Some("storage")).display().to_string(),
-		),
+		hide_env_values = true,
+		default_value = "file://${HOME}/.barreleye/storage",
         value_hint = ValueHint::DirPath,
 		value_name = "URL"
 	)]
@@ -55,37 +65,29 @@ pub struct Settings {
 	#[arg(skip)]
 	pub storage_url: Option<S3>,
 
-	#[arg(
-		help_heading = "Storage options",
-		long,
-		env = "BARRELEYE_S3_ACCESS_KEY_ID",
-		value_name = "ACCESS_KEY"
-	)]
+	#[arg(long, env = "BARRELEYE_S3_ACCESS_KEY_ID", hide = true)]
 	pub s3_access_key_id: Option<String>,
 
-	#[arg(
-		help_heading = "Storage options",
-		long,
-		env = "BARRELEYE_S3_SECRET_ACCESS_KEY",
-		value_name = "SECRET"
-	)]
+	#[arg(long, env = "BARRELEYE_S3_SECRET_ACCESS_KEY", hide = true)]
 	pub s3_secret_access_key: Option<String>,
 
-	/// Database to connect to. Supports SQLite, PostgreSQL and MySQL.
+	/// Specify the database connection URL
+	/// Supported databases: SQLite, PostgreSQL, MySQL:
+	/// - SQLite: sqlite:///path/to/your/data.db?mode=rwc
+	/// - PostgreSQL: postgres://localhost:5432/database_name
+	/// - MySQL: mysql://localhost:3306/database_name
 	///
-	/// SQLite eg: sqlite://database_path?mode=rwc
-	/// Postgres eg: postgres://username:password@localhost:5432/database_name
-	/// MySQL eg: mysql://username:password@localhost:3306/database_name
+	/// The following environment variables can be used to configure credentials
+	/// - BARRELEYE_DB_USER: PostgreSQL and MySQL user
+	/// - BARRELEYE_DB_PASSWORD: PostgreSQL and MySQL password
 	#[arg(
 		help_heading = "Database options",
 		short,
 		long,
 		verbatim_doc_comment,
 		env = "BARRELEYE_DATABASE",
-		default_value_t = format!(
-			"sqlite://{}?mode=rwc",
-			utils::project_dir(Some("db")).display().to_string(),
-		),
+		hide_env_values = true,
+		default_value = "sqlite://${HOME}/.barreleye/data.db?mode=rwc",
         value_hint = ValueHint::DirPath,
 		value_name = "URL"
 	)]
@@ -108,17 +110,22 @@ pub struct Settings {
 	#[arg(help_heading = "Database options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
-	/// Warehouse for storing analytical data. Supports DuckDB and ClickHouse.
+	/// Specify the warehouse for storing analytical data
+	/// Supported warehouses: DuckDB, ClickHouse:
+	/// - DuckDB: /path/to/your/database.db
+	/// - ClickHouse: http://localhost:8123/database_name
 	///
-	/// DuckDB eg: /path/to/your/database.db
-	/// ClickHouse eg: http://username:password@localhost:8123/database_name
+	/// The following environment variables can be used to configure credentials
+	/// - BARRELEYE_WAREHOUSE_USER: ClickHouse user
+	/// - BARRELEYE_WAREHOUSE_PASSWORD: ClickHouse password
 	#[arg(
 		help_heading = "Warehouse options",
 		short,
 		long,
 		verbatim_doc_comment,
 		env = "BARRELEYE_WAREHOUSE",
-		default_value = "http://localhost:8123/barreleye",
+		hide_env_values = true,
+		default_value = "file://${HOME}/.barreleye/analytics.db",
 		value_name = "URI"
 	)]
 	pub warehouse: String,
@@ -131,11 +138,13 @@ pub struct Settings {
 		default_value = "127.0.0.1",
 		value_name = "IP_ADDRESS"
 	)]
+	/// IP address for the HTTP server
 	ip: String,
 	#[arg(skip)]
 	pub ip_addr: Option<IpAddr>,
 
-	#[arg(help_heading = "Server options", long, default_value_t = 80, value_name = "PORT")]
+	/// Port number for the HTTP server
+	#[arg(help_heading = "Server options", long, default_value_t = 2277, value_name = "PORT")]
 	pub port: u16,
 }
 
@@ -149,6 +158,9 @@ impl Settings {
 			if *mode == Mode::Indexer {
 				settings.is_indexer = true;
 			} else if *mode == Mode::Http {
+				settings.is_server = true;
+			} else if *mode == Mode::Both {
+				settings.is_indexer = true;
 				settings.is_server = true;
 			}
 		}

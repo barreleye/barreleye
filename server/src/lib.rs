@@ -123,8 +123,8 @@ impl Server {
 		if let Some(ip_addr) = settings.ip_addr {
 			let mut listener = None;
 
-			let ports_to_try: Vec<u16> = if settings.port == 80 {
-				let mut ports = vec![80, 2277];
+			let ports_to_try: Vec<u16> = if settings.port == 2277 {
+				let mut ports = vec![2277];
 				ports.extend(2278..2300);
 				ports
 			} else {

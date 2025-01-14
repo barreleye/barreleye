@@ -14,7 +14,7 @@ workspace = ".."
 [dependencies]
 barreleye-common = { path = "../common", version = "0.2.0" }
 tokio = { version = "1.43.0", features = ["full"] }
-log = "0.4.24"
+log = "0.4.22"
 eyre = "0.6.12"
 axum = "0.8.1"
 axum-extra = { version = "0.10.0", features = ["query"] }
