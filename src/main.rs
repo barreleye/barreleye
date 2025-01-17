@@ -3,7 +3,7 @@ extern crate dotenvy;
 use console::style;
 use dotenvy::dotenv;
 use eyre::Result;
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 use tokio::{signal, task::JoinSet};
 
 use barreleye_common::{
@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
 	let (raw_settings, mut warnings) = Settings::new().await.unwrap_or_else(|e| {
 		quit(match e.downcast_ref::<AppError>() {
 			Some(app_error) => app_error.clone(),
-			None => AppError::Unexpected { error: e.to_string() },
+			None => AppError::Unexpected { error: Cow::Owned(e.to_string()) },
 		})
 	});
 
@@ -31,16 +31,25 @@ async fn main() -> Result<()> {
 	let progress = Progress::new(settings.is_indexer);
 	progress.show(ProgressStep::Setup);
 
-	let warehouse = Arc::new(Warehouse::new(settings.clone()).await.unwrap_or_else(|url| {
-		quit(AppError::WarehouseConnection { url: url.to_string() });
+	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
+		quit(AppError::Connection {
+			service: Cow::Borrowed("database"),
+			url: Cow::Owned(url.to_string()),
+		});
 	}));
 
 	let storage = Arc::new(Storage::new(settings.clone()).unwrap_or_else(|url| {
-		quit(AppError::StorageConnection { url: url.to_string() });
+		quit(AppError::Connection {
+			service: Cow::Borrowed("storage"),
+			url: Cow::Owned(url.to_string()),
+		});
 	}));
 
-	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
-		quit(AppError::DatabaseConnection { url: url.to_string() });
+	let warehouse = Arc::new(Warehouse::new(settings.clone()).await.unwrap_or_else(|url| {
+		quit(AppError::Connection {
+			service: Cow::Borrowed("warehouse"),
+			url: Cow::Owned(url.to_string()),
+		});
 	}));
 
 	// show connection settings
@@ -102,7 +111,7 @@ async fn main() -> Result<()> {
 	if settings.is_indexer {
 		progress.show(ProgressStep::Networks);
 		if let Err(e) = app.connect_networks(false).await {
-			quit(AppError::Network { error: e.to_string() });
+			quit(AppError::Network { error: Cow::Owned(e.to_string()) });
 		}
 
 		set.spawn({
@@ -136,7 +145,7 @@ async fn main() -> Result<()> {
 		if let Err(e) = res? {
 			quit(match e.downcast_ref::<AppError>() {
 				Some(app_error) => app_error.clone(),
-				None => AppError::Unexpected { error: e.to_string() },
+				None => AppError::Unexpected { error: Cow::Owned(e.to_string()) },
 			});
 		}
 	}

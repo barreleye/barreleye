@@ -1,9 +1,8 @@
 use chrono::{offset::Utc, Duration, NaiveDateTime};
-use directories::ProjectDirs;
 use governor::Quota;
 use nanoid::nanoid;
 use sha2::{Digest, Sha256};
-use std::{num::NonZeroU32, path::PathBuf, sync::Arc};
+use std::{num::NonZeroU32, sync::Arc};
 use url::Url;
 use uuid::Uuid;
 
@@ -13,20 +12,6 @@ pub fn sha256(input: &str) -> Vec<u8> {
 	let mut hasher = Sha256::new();
 	hasher.update(input.as_bytes());
 	hasher.finalize().to_vec()
-}
-
-pub fn project_dir(folder: Option<&str>) -> PathBuf {
-	// @TODO will panic on systems with no home directory
-	ProjectDirs::from("org", "barreleye", "barreleye")
-		.map(|d| {
-			let mut ret = PathBuf::from(d.data_dir());
-			if let Some(folder) = folder {
-				ret = ret.join(folder);
-			}
-
-			ret
-		})
-		.unwrap()
 }
 
 pub fn get_rate_limiter(rps: u32) -> Option<Arc<RateLimiter>> {

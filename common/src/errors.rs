@@ -1,4 +1,5 @@
 use derive_more::{Display, Error};
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Display, Error)]
 pub enum AppError<'a> {
@@ -6,26 +7,20 @@ pub enum AppError<'a> {
 	SignalHandler,
 
 	#[display("Invalid config @ `{config}`: {error}")]
-	Config { config: &'a str, error: &'a str },
+	Config { config: Cow<'a, str>, error: Cow<'a, str> },
 
 	#[display("Could not start server @ `{url}`: {error}")]
-	ServerStartup { url: String, error: String },
+	ServerStartup { url: Cow<'a, str>, error: Cow<'a, str> },
 
-	#[display("Could not connect to storage @ `{url}`")]
-	StorageConnection { url: String },
-
-	#[display("Could not connect to database @ `{url}`")]
-	DatabaseConnection { url: String },
-
-	#[display("Could not connect to warehouse @ `{url}`")]
-	WarehouseConnection { url: String },
+	#[display("Could not connect to {service} @ `{url}`")]
+	Connection { service: Cow<'a, str>, url: Cow<'a, str> },
 
 	#[display("Could not complete network setup:\n{error}")]
-	Network { error: String },
+	Network { error: Cow<'a, str> },
 
 	#[display("Indexing failed: {error}")]
-	Indexing { error: String },
+	Indexing { error: Cow<'a, str> },
 
 	#[display("Unexpected error: {error}")]
-	Unexpected { error: String },
+	Unexpected { error: Cow<'a, str> },
 }

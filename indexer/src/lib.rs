@@ -1,6 +1,7 @@
 use eyre::Result;
 use sea_orm::ColumnTrait;
 use std::{
+	borrow::Cow,
 	collections::{HashMap, HashSet},
 	sync::Arc,
 	time::SystemTime,
@@ -81,7 +82,7 @@ impl Indexer {
 			};
 
 			if let Err(err) = ret {
-				return Err(AppError::Indexing { error: err.to_string() }.into());
+				return Err(AppError::Indexing { error: Cow::Owned(err.to_string()) }.into());
 			}
 		}
 	}

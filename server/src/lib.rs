@@ -9,7 +9,7 @@ use axum::{
 use console::style;
 use eyre::{Report, Result};
 use signal::unix::SignalKind;
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use std::{borrow::Cow, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::{trace, trace::TraceLayer, LatencyUnit};
@@ -138,8 +138,8 @@ impl Server {
 					Err(_) => {
 						if *port == *ports_to_try.last().unwrap() {
 							quit(AppError::ServerStartup {
-								url: ip_addr.to_string(),
-								error: "Ran out of ports to try".to_string(),
+								url: Cow::Borrowed(&ip_addr.to_string()),
+								error: Cow::Borrowed("Ran out of ports to try"),
 							});
 						}
 					}

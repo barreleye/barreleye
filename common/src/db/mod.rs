@@ -7,8 +7,9 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use std::{str::FromStr, sync::Arc, time::Duration};
+use tracing::Level;
 
-use crate::{utils, Settings};
+use crate::{log, utils, Settings};
 use migrations::{Migrator, MigratorTrait};
 
 mod migrations;
@@ -46,6 +47,18 @@ pub struct Db {
 
 impl Db {
 	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
+		log(
+			Level::INFO,
+			format!("{} configuration", settings.database_driver),
+			Some(vec![(
+				"uri".to_string(),
+				match &settings.database_uri {
+					Some(uri) => uri.as_str().to_string(),
+					_ => "".to_string(),
+				},
+			)]),
+		);
+
 		let url = settings.database.clone();
 
 		let with_options = |url: String| -> ConnectOptions {

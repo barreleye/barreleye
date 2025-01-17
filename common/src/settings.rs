@@ -1,6 +1,9 @@
 use clap::{Parser, ValueHint};
+use dirs::home_dir;
 use eyre::Result;
+use regex::Regex;
 use std::{
+	borrow::Cow,
 	fs,
 	net::IpAddr,
 	path::{Path, PathBuf},
@@ -27,52 +30,16 @@ data management and analysis."#),
 )]
 pub struct Settings {
 	/// Specify the operation mode
-	#[arg(
-		help_heading = "Runtime Options",
-		long,
-		num_args = 1..,
-		value_delimiter = ',',
-		default_value = "both"
-	)]
-	mode: Vec<Mode>,
+	#[arg(help_heading = "Runtime Options", long, default_value = "both")]
+	mode: Mode,
 	#[arg(skip)]
 	pub is_indexer: bool,
 	#[arg(skip)]
 	pub is_server: bool,
 
-	/// Specify the storage location for blockchain data:
-	/// - Local folder: /path/to/your/storage/folder
-	/// - Amazon S3: https://s3.<region>.amazonaws.com/bucket_name/
-	/// - Cloudflare R2: https://<account_id>.r2.cloudflarestorage.com/bucket_name/
-	///
-	/// The following environment variables can be used to configure S3 credentials:
-	/// - BARRELEYE_S3_ACCESS_KEY_ID: S3 access key ID for cloud storage
-	/// - BARRELEYE_S3_SECRET_ACCESS_KEY: S3 secret access key for cloud storage
-	#[arg(
-		help_heading = "Storage Options",
-		short,
-		long,
-		verbatim_doc_comment,
-		env = "BARRELEYE_STORAGE",
-		hide_env_values = true,
-		default_value = "file://${HOME}/.barreleye/storage",
-        value_hint = ValueHint::DirPath,
-		value_name = "URL"
-	)]
-	storage: String,
-	#[arg(skip)]
-	pub storage_path: Option<PathBuf>,
-	#[arg(skip)]
-	pub storage_url: Option<S3>,
-
-	#[arg(long, env = "BARRELEYE_S3_ACCESS_KEY_ID", hide = true)]
-	pub s3_access_key_id: Option<String>,
-	#[arg(long, env = "BARRELEYE_S3_SECRET_ACCESS_KEY", hide = true)]
-	pub s3_secret_access_key: Option<String>,
-
-	/// Specify the database connection URL
+	/// Specify the database connection URI
 	/// Supported databases: SQLite, PostgreSQL, MySQL:
-	/// - SQLite: sqlite:///path/to/your/data.db?mode=rwc
+	/// - SQLite: sqlite:///path/to/your/database.db
 	/// - PostgreSQL: postgres://localhost:5432/database_name
 	/// - MySQL: mysql://localhost:3306/database_name
 	///
@@ -86,13 +53,15 @@ pub struct Settings {
 		verbatim_doc_comment,
 		env = "BARRELEYE_DATABASE",
 		hide_env_values = true,
-		default_value = "sqlite://${HOME}/.barreleye/data.db?mode=rwc",
+		default_value = "sqlite://${HOME}/.barreleye/data.db",
         value_hint = ValueHint::DirPath,
-		value_name = "URL"
+		value_name = "URI"
 	)]
 	pub database: String,
 	#[arg(skip)]
 	pub database_driver: DatabaseDriver,
+	#[arg(skip)]
+	pub database_uri: Option<Url>,
 
 	#[arg(long, env = "BARRELEYE_DB_USER", hide = true)]
 	pub db_user: Option<String>,
@@ -114,6 +83,36 @@ pub struct Settings {
 	#[arg(help_heading = "Database Options", long, default_value_t = 8, value_name = "SECONDS")]
 	pub database_max_lifetime: u64,
 
+	/// Specify the storage location for blockchain data:
+	/// - Local folder: /path/to/your/storage/folder
+	/// - Amazon S3: https://s3.<region>.amazonaws.com/bucket_name/
+	/// - Cloudflare R2: https://<account_id>.r2.cloudflarestorage.com/bucket_name/
+	///
+	/// The following environment variables can be used to configure S3 credentials:
+	/// - BARRELEYE_S3_ACCESS_KEY_ID: S3 access key ID for cloud storage
+	/// - BARRELEYE_S3_SECRET_ACCESS_KEY: S3 secret access key for cloud storage
+	#[arg(
+		help_heading = "Storage Options",
+		short,
+		long,
+		verbatim_doc_comment,
+		env = "BARRELEYE_STORAGE",
+		hide_env_values = true,
+		default_value = "file://${HOME}/.barreleye/storage",
+        value_hint = ValueHint::DirPath,
+		value_name = "LOCATION"
+	)]
+	storage: String,
+	#[arg(skip)]
+	pub storage_path: Option<PathBuf>,
+	#[arg(skip)]
+	pub storage_url: Option<S3>,
+
+	#[arg(long, env = "BARRELEYE_S3_ACCESS_KEY_ID", hide = true)]
+	pub s3_access_key_id: Option<String>,
+	#[arg(long, env = "BARRELEYE_S3_SECRET_ACCESS_KEY", hide = true)]
+	pub s3_secret_access_key: Option<String>,
+
 	/// Specify the warehouse for storing analytical data
 	/// Supported warehouses: DuckDB, ClickHouse:
 	/// - DuckDB: /path/to/your/database.db
@@ -129,7 +128,7 @@ pub struct Settings {
 		verbatim_doc_comment,
 		env = "BARRELEYE_WAREHOUSE",
 		hide_env_values = true,
-		default_value = "file://${HOME}/.barreleye/analytics.db",
+		default_value = "${HOME}/.barreleye/analytics.db",
 		value_name = "URI"
 	)]
 	pub warehouse: String,
@@ -162,73 +161,152 @@ impl Settings {
 		let mut settings = Self::parse();
 		let warnings = Warnings::new();
 
-		// set is_indexer and is_server
-		for mode in settings.mode.iter() {
-			if *mode == Mode::Indexer {
-				settings.is_indexer = true;
-			} else if *mode == Mode::Http {
-				settings.is_server = true;
-			} else if *mode == Mode::Both {
-				settings.is_indexer = true;
-				settings.is_server = true;
-			}
-		}
-		if !settings.is_indexer && !settings.is_server {
-			settings.is_indexer = true;
-			settings.is_server = true;
-		}
-
 		// show banner
 		banner::show()?;
 
-		// set driver for db
-		let test_scheme = settings.database.split(':').next().unwrap_or_default();
-		if let Ok(driver) = DatabaseDriver::from_str(test_scheme) {
-			settings.database_driver = driver;
-		} else {
-			return Err(AppError::Config { config: "database", error: "invalid URL scheme" }.into());
+		// set mode
+		match settings.mode {
+			Mode::Indexer => {
+				settings.is_indexer = true;
+			}
+			Mode::Http => {
+				settings.is_server = true;
+			}
+			_ => {
+				settings.is_indexer = true;
+				settings.is_server = true;
+			}
 		}
 
-		// test db database name
+		// clean the database path
+		let database_path = Self::clean_path("database", settings.database.trim())?;
+		let database_path_str = database_path.to_str().ok_or(AppError::Config {
+			config: Cow::Borrowed("database"),
+			error: Cow::Borrowed("invalid path"),
+		})?;
+
+		// parse the database URI
+		let mut database_parsed_uri =
+			Url::parse(database_path_str).map_err(|_| AppError::Config {
+				config: Cow::Borrowed("database"),
+				error: Cow::Borrowed("invalid connection URI"),
+			})?;
+
+		// set the database driver
+		settings.database_driver =
+			database_parsed_uri.scheme().to_ascii_lowercase().parse::<DatabaseDriver>().map_err(
+				|_| AppError::Config {
+					config: Cow::Borrowed("database"),
+					error: Cow::Borrowed("invalid connection URI"),
+				},
+			)?;
+
 		match settings.database_driver {
-			DatabaseDriver::PostgreSQL | DatabaseDriver::MySQL
-				if !utils::has_pathname(&settings.database) =>
-			{
+			DatabaseDriver::SQLite => {
+				// ensure the directories exist, creating them if necessary
+				if let Some(parent) = database_path.parent() {
+					fs::create_dir_all(parent).map_err(|_| AppError::Config {
+						config: Cow::Borrowed("database"),
+						error: Cow::Borrowed("invalid path or could not create"),
+					})?;
+				}
+
+				// overwrite query params
+				database_parsed_uri.set_query(Some("mode=rwc"));
+
+				// store the processed URI
+				settings.database_uri = Some(database_parsed_uri);
+			}
+			DatabaseDriver::PostgreSQL | DatabaseDriver::MySQL => {
+				// check if "database_name" is set in the path
+				let database_name = database_parsed_uri
+					.path_segments()
+					.and_then(|segments| segments.last())
+					.filter(|name| !name.is_empty());
+
+				if database_name.is_none() {
+					return Err(AppError::Config {
+						config: Cow::Borrowed("database"),
+						error: Cow::Borrowed("missing database name in the connection URI"),
+					}
+					.into());
+				}
+
+				// store the valid URI
+				settings.database_uri = Some(database_parsed_uri);
+			}
+		}
+
+		// test if storage is a folder
+		if Path::new(&settings.storage).is_absolute() ||
+			Path::new(&settings.storage).components().next().is_some()
+		{
+			// clean path
+			let path = Self::clean_path("storage", &settings.storage.clone())?;
+
+			// check if the folder exists, create if not
+			if !path.exists() && fs::create_dir_all(&path).is_err() {
 				return Err(AppError::Config {
-					config: "database",
-					error: "missing database name in the URL",
+					config: Cow::Borrowed("storage"),
+					error: Cow::Borrowed("invalid folder path or could not create"),
 				}
 				.into());
 			}
-			_ => {}
-		}
 
-		// test db url
-		if Url::parse(&settings.database).is_err() {
-			return Err(
-				AppError::Config { config: "database", error: "could not parse URL" }.into()
-			);
+			// store the folder path
+			settings.storage_path = Some(path.to_path_buf());
+		} else if let Ok(parsed_url) = Url::parse(&settings.storage) {
+			// ensure the URL has a bucket name
+			let has_bucket_name =
+				parsed_url.path_segments().and_then(|segments| segments.last()).is_some();
+
+			if !has_bucket_name {
+				return Err(AppError::Config {
+					config: Cow::Borrowed("storage"),
+					error: Cow::Borrowed("missing bucket name in the URI"),
+				}
+				.into());
+			} else {
+				// check that service is known
+				let storage_url = S3::from_str(&settings.storage)?;
+				if storage_url.service == S3Service::Unknown || storage_url.bucket.is_none() {
+					return Err(AppError::Config {
+						config: Cow::Borrowed("storage"),
+						error: Cow::Borrowed("invalid storage URL"),
+					}
+					.into());
+				}
+
+				settings.storage_url = Some(storage_url);
+			}
+		} else {
+			return Err(AppError::Config {
+				config: Cow::Borrowed("storage"),
+				error: Cow::Borrowed("invalid storage URL or folder path"),
+			}
+			.into());
 		}
 
 		// test warehouse
+		settings.warehouse_driver = WarehouseDriver::DuckDB;
 		if let Ok(url) = Url::parse(&settings.warehouse) {
 			if url.scheme() == "http" || url.scheme() == "https" {
 				settings.warehouse_driver = WarehouseDriver::ClickHouse;
 			} else {
-				return Err(
-					AppError::Config { config: "warehouse", error: "could not parse URL" }.into()
-				);
+				return Err(AppError::Config {
+					config: Cow::Borrowed("warehouse"),
+					error: Cow::Borrowed("could not parse connection URI"),
+				}
+				.into());
 			}
-		} else {
-			settings.warehouse_driver = WarehouseDriver::DuckDB;
 		}
 
 		// test warehouse database name
 		match settings.warehouse_driver {
 			WarehouseDriver::ClickHouse if !utils::has_pathname(&settings.warehouse) => {
 				return Err(AppError::Config {
-					config: "warehouse",
-					error: "missing database name in the URL",
+					config: Cow::Borrowed("warehouse"),
+					error: Cow::Borrowed("missing database name in the connection URI"),
 				}
 				.into());
 			}
@@ -236,54 +314,43 @@ impl Settings {
 		}
 
 		// parse ip address
-		settings.ip_addr =
-			Some(IpAddr::V4(settings.ip.parse().map_err(|_| AppError::Config {
-				config: "ip",
-				error: "could not parse IP v4.",
-			})?));
-
-		// test storage
-		let folder_prefix = "file://";
-		if settings.storage.starts_with('/') ||
-			settings.storage.to_lowercase().starts_with(folder_prefix)
-		{
-			let storage = if settings.storage.to_lowercase().starts_with(folder_prefix) {
-				settings.storage[folder_prefix.to_string().len()..].to_string()
-			} else {
-				settings.storage.clone()
-			};
-
-			let path = Path::new(&storage);
-			if fs::create_dir_all(path).is_err() ||
-				PathBuf::from(path).into_os_string().into_string().is_err()
-			{
-				return Err(AppError::Config {
-					config: "storage",
-					error: "invalid storage directory",
-				}
-				.into());
-			} else {
-				settings.storage_path = Some(PathBuf::from(path));
-			}
-		} else if Url::parse(&settings.storage).is_err() {
-			return Err(AppError::Config { config: "storage", error: "invalid storage URL" }.into());
-		} else {
-			let err = AppError::Config { config: "storage", error: "invalid storage URL" };
-
-			// check url
-			if Url::parse(&settings.storage).is_err() {
-				return Err(err.into());
-			}
-
-			// check that service is known
-			let storage_url = S3::from_str(&settings.storage)?;
-			if storage_url.service == S3Service::Unknown || storage_url.bucket.is_none() {
-				return Err(err.into());
-			}
-
-			settings.storage_url = Some(storage_url);
-		}
+		settings.ip_addr = Some(IpAddr::V4(settings.ip.parse().map_err(|_| AppError::Config {
+			config: Cow::Borrowed("ip"),
+			error: Cow::Borrowed("could not parse IPv4"),
+		})?));
 
 		Ok((settings, warnings))
+	}
+
+	fn clean_path(config: &str, path_str: &str) -> Result<PathBuf, AppError<'static>> {
+		let home_path = home_dir().ok_or(AppError::Config {
+			config: Cow::Owned(config.to_string()),
+			error: Cow::Borrowed("could not resolve home directory"),
+		})?;
+
+		// resolve home path as a string
+		let home_str = home_path
+			.to_str()
+			.ok_or(AppError::Config {
+				config: Cow::Owned(config.to_string()),
+				error: Cow::Borrowed("invalid home path"),
+			})?
+			.to_string();
+
+		// replace `${HOME}` with the home directory path, case-insensitively
+		let home_regex = Regex::new(r"(?i)\$\{home\}").map_err(|_| AppError::Config {
+			config: Cow::Owned(config.to_string()),
+			error: Cow::Borrowed("failed to compile regex for ${HOME}"),
+		})?;
+		let replaced = home_regex.replace_all(path_str, home_str).to_string();
+
+		// remove "file://" prefix, case-insensitively, if exists
+		let file_regex = Regex::new(r"(?i)^file://").map_err(|_| AppError::Config {
+			config: Cow::Owned(config.to_string()),
+			error: Cow::Borrowed("failed to compile regex for file://"),
+		})?;
+		let database_path = file_regex.replace_all(&replaced, "").to_string();
+
+		Ok(Path::new(&database_path).to_path_buf())
 	}
 }
