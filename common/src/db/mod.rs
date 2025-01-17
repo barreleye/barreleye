@@ -1,3 +1,4 @@
+use console::style;
 use derive_more::Display;
 use eyre::{Result, WrapErr};
 use log::LevelFilter;
@@ -49,14 +50,16 @@ impl Db {
 	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
 		log(
 			Level::INFO,
-			format!("{} configuration", settings.database_driver),
-			Some(vec![(
-				"uri".to_string(),
-				match &settings.database_uri {
+			format!(
+				"{} is configured to {}",
+				settings.database_driver,
+				style(match &settings.database_uri {
 					Some(uri) => uri.as_str().to_string(),
 					_ => "".to_string(),
-				},
-			)]),
+				})
+				.bold()
+			),
+			None,
 		);
 
 		let url = settings.database.clone();
