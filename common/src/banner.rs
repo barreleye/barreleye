@@ -772,7 +772,7 @@ pub fn show() -> Result<()> {
 
 	let version =
 		format!("Barreleye v{} <{}>", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_HOMEPAGE"));
-	log(Level::INFO, &version, None);
+	log(Level::DEBUG, &version, None);
 
 	Ok(())
 }

@@ -20,8 +20,8 @@ pub fn get_routes() -> Router<Arc<App>> {
 	Router::new()
 		.route("/", post(create::handler))
 		.route("/", get(list::handler))
-		.route("/:id", get(get::handler))
-		.route("/:id", put(update::handler))
+		.route("/{id}", get(get::handler))
+		.route("/{id}", put(update::handler))
 		.route("/", delete(delete::handler))
 }
 

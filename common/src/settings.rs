@@ -12,8 +12,8 @@ use std::{
 use url::Url;
 
 use crate::{
-	banner, db::Driver as DatabaseDriver, utils, warehouse::Driver as WarehouseDriver, AppError,
-	Mode, S3Service, Warnings, S3,
+	banner, db::Driver as DatabaseDriver, warehouse::Driver as WarehouseDriver, AppError, Mode,
+	S3Service, S3,
 };
 
 #[derive(Parser, Debug)]
@@ -134,6 +134,10 @@ pub struct Settings {
 	pub warehouse: String,
 	#[arg(skip)]
 	pub warehouse_driver: WarehouseDriver,
+	#[arg(skip)]
+	pub warehouse_path: Option<PathBuf>,
+	#[arg(skip)]
+	pub warehouse_url: Option<Url>,
 
 	#[arg(long, env = "BARRELEYE_WAREHOUSE_USER", hide = true)]
 	pub warehouse_user: Option<String>,
@@ -157,9 +161,8 @@ pub struct Settings {
 }
 
 impl Settings {
-	pub async fn new() -> Result<(Self, Warnings)> {
+	pub async fn new() -> Result<Self> {
 		let mut settings = Self::parse();
-		let warnings = Warnings::new();
 
 		// show banner
 		banner::show()?;
@@ -189,7 +192,7 @@ impl Settings {
 		let mut database_parsed_uri =
 			Url::parse(database_path_str).map_err(|_| AppError::Config {
 				config: Cow::Borrowed("database"),
-				error: Cow::Borrowed("invalid connection URI"),
+				error: Cow::Borrowed("invalid URI"),
 			})?;
 
 		// set the database driver
@@ -197,7 +200,7 @@ impl Settings {
 			database_parsed_uri.scheme().to_ascii_lowercase().parse::<DatabaseDriver>().map_err(
 				|_| AppError::Config {
 					config: Cow::Borrowed("database"),
-					error: Cow::Borrowed("invalid connection URI"),
+					error: Cow::Borrowed("invalid URI"),
 				},
 			)?;
 
@@ -227,7 +230,7 @@ impl Settings {
 				if database_name.is_none() {
 					return Err(AppError::Config {
 						config: Cow::Borrowed("database"),
-						error: Cow::Borrowed("missing database name in the connection URI"),
+						error: Cow::Borrowed("missing database name in the URI"),
 					}
 					.into());
 				}
@@ -248,7 +251,7 @@ impl Settings {
 			if !path.exists() && fs::create_dir_all(&path).is_err() {
 				return Err(AppError::Config {
 					config: Cow::Borrowed("storage"),
-					error: Cow::Borrowed("invalid folder path or could not create"),
+					error: Cow::Borrowed("invalid path or could not create"),
 				}
 				.into());
 			}
@@ -272,7 +275,7 @@ impl Settings {
 				if storage_url.service == S3Service::Unknown || storage_url.bucket.is_none() {
 					return Err(AppError::Config {
 						config: Cow::Borrowed("storage"),
-						error: Cow::Borrowed("invalid storage URL"),
+						error: Cow::Borrowed("invalid URL"),
 					}
 					.into());
 				}
@@ -282,12 +285,12 @@ impl Settings {
 		} else {
 			return Err(AppError::Config {
 				config: Cow::Borrowed("storage"),
-				error: Cow::Borrowed("invalid storage URL or folder path"),
+				error: Cow::Borrowed("invalid URL or folder path"),
 			}
 			.into());
 		}
 
-		// test warehouse
+		// set warehouse driver
 		settings.warehouse_driver = WarehouseDriver::DuckDB;
 		if let Ok(url) = Url::parse(&settings.warehouse) {
 			if url.scheme() == "http" || url.scheme() == "https" {
@@ -295,22 +298,50 @@ impl Settings {
 			} else {
 				return Err(AppError::Config {
 					config: Cow::Borrowed("warehouse"),
-					error: Cow::Borrowed("could not parse connection URI"),
+					error: Cow::Borrowed("invalid URI"),
 				}
 				.into());
 			}
 		}
 
-		// test warehouse database name
+		// test warehouse
 		match settings.warehouse_driver {
-			WarehouseDriver::ClickHouse if !utils::has_pathname(&settings.warehouse) => {
-				return Err(AppError::Config {
-					config: Cow::Borrowed("warehouse"),
-					error: Cow::Borrowed("missing database name in the connection URI"),
+			WarehouseDriver::DuckDB => {
+				let clean_path = Self::clean_path("warehouse", settings.warehouse.trim())?;
+				let path = Path::new(&clean_path);
+
+				// check if file exists, create if it doesn't
+				if !path.exists() {
+					if let Some(parent) = path.parent() {
+						fs::create_dir_all(parent).map_err(|_| AppError::Config {
+							config: Cow::Borrowed("warehouse"),
+							error: Cow::Borrowed("invalid path or could not create"),
+						})?;
+					}
 				}
-				.into());
+
+				// store the file path
+				settings.warehouse_path = Some(PathBuf::from(path));
 			}
-			_ => {}
+			WarehouseDriver::ClickHouse => {
+				let warehouse_url =
+					Url::parse(&settings.warehouse).map_err(|_| AppError::Config {
+						config: Cow::Borrowed("warehouse"),
+						error: Cow::Borrowed("invalid URI"),
+					})?;
+
+				// check that "database_name" is included in the URL
+				if warehouse_url.path().trim_start_matches('/').is_empty() {
+					return Err(AppError::Config {
+						config: Cow::Borrowed("warehouse"),
+						error: Cow::Borrowed("missing database name in the URI"),
+					}
+					.into());
+				}
+
+				// store the valid URL
+				settings.warehouse_url = Some(warehouse_url);
+			}
 		}
 
 		// parse ip address
@@ -319,7 +350,7 @@ impl Settings {
 			error: Cow::Borrowed("could not parse IPv4"),
 		})?));
 
-		Ok((settings, warnings))
+		Ok(settings)
 	}
 
 	fn clean_path(config: &str, path_str: &str) -> Result<PathBuf, AppError<'static>> {

@@ -51,7 +51,7 @@ impl Db {
 		log(
 			Level::INFO,
 			format!(
-				"{} is configured to {}",
+				"{} is connected to {}",
 				settings.database_driver,
 				style(match &settings.database_uri {
 					Some(uri) => uri.as_str().to_string(),
@@ -61,8 +61,6 @@ impl Db {
 			),
 			None,
 		);
-
-		let url = settings.database.clone();
 
 		let with_options = |url: String| -> ConnectOptions {
 			let mut opt = ConnectOptions::new(url);
@@ -85,6 +83,7 @@ impl Db {
 			opt
 		};
 
+		let url = settings.database_uri.as_ref().unwrap().as_str().to_string();
 		let (url_without_database, db_name) = match settings.database_driver {
 			Driver::SQLite => (url.clone(), "".to_string()),
 			_ => utils::without_pathname(&url),

@@ -1,8 +1,10 @@
+use console::style;
 use duckdb::Connection;
 use eyre::Result;
 use std::{fs, sync::Arc};
+use tracing::Level;
 
-use crate::{models::PrimaryId, BlockHeight, Settings};
+use crate::{log, models::PrimaryId, BlockHeight, Settings};
 
 pub trait StorageModelTrait {
 	fn create_table(&self, db: &Connection) -> Result<()>;
@@ -15,6 +17,36 @@ pub struct Storage {
 
 impl Storage {
 	pub fn new(settings: Arc<Settings>) -> Result<Self> {
+		let log_message = if let Some(storage_path) = &settings.storage_path {
+			Some((storage_path.display().to_string(), None))
+		} else if let Some(storage_url) = &settings.storage_url {
+			let mut context = vec![("url".to_string(), storage_url.url.clone())];
+
+			if let Some(region) = &storage_url.region {
+				context.push(("region".to_string(), region.clone()));
+			}
+
+			if let Some(domain) = &storage_url.domain {
+				context.push(("domain".to_string(), domain.clone()));
+			}
+
+			if let Some(bucket) = &storage_url.bucket {
+				context.push(("bucket".to_string(), bucket.clone()));
+			}
+
+			Some((storage_url.service.to_string(), Some(context)))
+		} else {
+			None
+		};
+
+		if let Some((location, context)) = log_message {
+			log(
+				Level::INFO,
+				format!("Transaction data will be stored in {}", style(location).bold()),
+				context,
+			);
+		}
+
 		Ok(Self { settings })
 	}
 

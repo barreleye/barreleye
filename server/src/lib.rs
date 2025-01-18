@@ -6,7 +6,6 @@ use axum::{
 	response::Response,
 	BoxError, Router,
 };
-use console::style;
 use eyre::{Report, Result};
 use signal::unix::SignalKind;
 use std::{borrow::Cow, net::SocketAddr, sync::Arc, time::Duration};
@@ -16,9 +15,7 @@ use tower_http::{trace, trace::TraceLayer, LatencyUnit};
 use tracing::Level;
 
 use crate::errors::ServerError;
-use barreleye_common::{
-	models::ApiKey, quit, App, AppError, Progress, ProgressReadyType, ProgressStep, Warnings,
-};
+use barreleye_common::{log, models::ApiKey, quit, App, AppError};
 
 mod errors;
 mod handlers;
@@ -73,7 +70,7 @@ impl Server {
 		}
 	}
 
-	pub async fn start(&self, warnings: Warnings, progress: Progress) -> Result<()> {
+	pub async fn start(&self) -> Result<()> {
 		let settings = self.app.settings.clone();
 
 		async fn handle_404() -> ServerResult<StatusCode> {
@@ -89,7 +86,7 @@ impl Server {
 		}
 
 		let app = Router::new()
-			.nest("/", handlers::get_routes())
+			.merge(handlers::get_routes())
 			.route_layer(middleware::from_fn_with_state(self.app.clone(), Self::auth))
 			.fallback(handle_404)
 			.layer(
@@ -109,17 +106,6 @@ impl Server {
 			)
 			.with_state(self.app.clone());
 
-		let show_progress = |addr: &str| {
-			progress.show(ProgressStep::Ready(
-				if self.app.settings.is_indexer && self.app.settings.is_server {
-					ProgressReadyType::All(addr.to_string())
-				} else {
-					ProgressReadyType::Server(addr.to_string())
-				},
-				warnings,
-			))
-		};
-
 		if let Some(ip_addr) = settings.ip_addr {
 			let mut listener = None;
 
@@ -136,16 +122,18 @@ impl Server {
 
 				match TcpListener::bind(&ip_addr).await {
 					Err(_) => {
+						log(Level::WARN, format!("Server tried listening on port {}", *port), None);
+
 						if *port == *ports_to_try.last().unwrap() {
 							quit(AppError::ServerStartup {
-								url: Cow::Borrowed(&ip_addr.to_string()),
 								error: Cow::Borrowed("Ran out of ports to try"),
 							});
 						}
 					}
 					Ok(l) => {
+						log(Level::INFO, format!("Server listening on {ip_addr}…"), None);
+
 						listener = Some(l);
-						show_progress(&style(ip_addr).bold().to_string());
 						break;
 					}
 				}

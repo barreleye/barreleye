@@ -1,14 +1,12 @@
 extern crate dotenvy;
 
-use console::style;
 use dotenvy::dotenv;
 use eyre::Result;
 use std::{borrow::Cow, sync::Arc};
 use tokio::{signal, task::JoinSet};
+use tracing::Level;
 
-use barreleye_common::{
-	quit, utils, App, AppError, Db, Progress, ProgressStep, Settings, Storage, Warehouse,
-};
+use barreleye_common::{log, quit, App, AppError, Db, Settings, Storage, Warehouse, Warnings};
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
 
@@ -19,7 +17,7 @@ async fn main() -> Result<()> {
 	dotenv().ok();
 	log::setup()?;
 
-	let (raw_settings, mut warnings) = Settings::new().await.unwrap_or_else(|e| {
+	let raw_settings = Settings::new().await.unwrap_or_else(|e| {
 		quit(match e.downcast_ref::<AppError>() {
 			Some(app_error) => app_error.clone(),
 			None => AppError::Unexpected { error: Cow::Owned(e.to_string()) },
@@ -28,12 +26,9 @@ async fn main() -> Result<()> {
 
 	let settings = Arc::new(raw_settings);
 
-	let progress = Progress::new(settings.is_indexer);
-	progress.show(ProgressStep::Setup);
-
 	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
 		quit(AppError::Connection {
-			service: Cow::Borrowed("database"),
+			service: Cow::Borrowed(&settings.database_driver.to_string()),
 			url: Cow::Owned(url.to_string()),
 		});
 	}));
@@ -52,53 +47,13 @@ async fn main() -> Result<()> {
 		});
 	}));
 
-	// show connection settings
-	fn show_setting(driver: &str, url: &str, tag: &str) {
-		println!(
-			"          {} {} {}{}",
-			style("↳").bold().dim(),
-			style(format!("{tag}:")).bold().dim(),
-			if !driver.is_empty() {
-				format!(
-					"{}{}{} ",
-					style("[").bold().dim(),
-					style(driver).bold(),
-					style("]").bold().dim()
-				)
-			} else {
-				"".to_string()
-			},
-			style(url.to_string()).bold().dim(),
-		);
-	}
-	let storage_type;
-	let storage_path;
-	if let Some(path) = settings.storage_path.clone() {
-		storage_type = "".to_string();
-		storage_path = format!("{}", path.display());
-	} else if let Some(s3) = settings.storage_url.clone() {
-		storage_type = s3.service.to_string();
-		storage_path = s3.url;
-	} else {
-		panic!("storage setting must be set");
-	}
-	show_setting(&storage_type, &storage_path, "Storage");
-	show_setting(
-		&settings.database_driver.to_string(),
-		&utils::with_masked_auth(&settings.database),
-		"Database",
-	);
-	show_setting(
-		&settings.warehouse_driver.to_string(),
-		&utils::with_masked_auth(&settings.warehouse),
-		"Warehouse",
-	);
-
-	progress.show(ProgressStep::Migrations);
-	warehouse.run_migrations().await?;
+	log(Level::DEBUG, "Running database migrations", None);
 	db.run_migrations().await?;
+	log(Level::DEBUG, "Running warehouse migrations", None);
+	warehouse.run_migrations().await?;
 
 	let app = Arc::new(App::new(settings.clone(), storage, db, warehouse).await?);
+	let mut warnings = Warnings::new();
 	warnings.extend(app.get_warnings().await?);
 
 	let mut set = JoinSet::new();
@@ -109,19 +64,17 @@ async fn main() -> Result<()> {
 	});
 
 	if settings.is_indexer {
-		progress.show(ProgressStep::Networks);
+		log(Level::DEBUG, "Checking blockchain nodes connectivity", None);
 		if let Err(e) = app.connect_networks(false).await {
 			quit(AppError::Network { error: Cow::Owned(e.to_string()) });
 		}
 
 		set.spawn({
 			let a = app.clone();
-			let w = warnings.clone();
-			let p = progress.clone();
 
 			async move {
 				let indexer = Indexer::new(a);
-				indexer.start(w, p).await
+				indexer.start().await
 			}
 		});
 	}
@@ -129,12 +82,10 @@ async fn main() -> Result<()> {
 	if settings.is_server {
 		set.spawn({
 			let a = app.clone();
-			let w = warnings.clone();
-			let p = progress.clone();
 
 			async move {
 				let server = Server::new(a);
-				server.start(w, p).await
+				server.start().await
 			}
 		});
 	} else {

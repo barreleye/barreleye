@@ -6,13 +6,13 @@ pub enum AppError<'a> {
 	#[display("Failed to install signal handler")]
 	SignalHandler,
 
-	#[display("Invalid config @ `{config}`: {error}")]
+	#[display("Configuration for `{config}`: {error}")]
 	Config { config: Cow<'a, str>, error: Cow<'a, str> },
 
-	#[display("Could not start server @ `{url}`: {error}")]
-	ServerStartup { url: Cow<'a, str>, error: Cow<'a, str> },
+	#[display("Server startup: {error}")]
+	ServerStartup { error: Cow<'a, str> },
 
-	#[display("Could not connect to {service} @ `{url}`")]
+	#[display("Could not connect to {service} at \"{url}\"")]
 	Connection { service: Cow<'a, str>, url: Cow<'a, str> },
 
 	#[display("Could not complete network setup:\n{error}")]

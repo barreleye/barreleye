@@ -34,7 +34,7 @@ fn json_value_to_sql(value: &JsonValue) -> Box<dyn ToSql> {
 impl DriverTrait for DuckDB {
 	async fn new(settings: Arc<Settings>) -> Result<Self> {
 		let connection = spawn_blocking(move || {
-			Connection::open(&settings.warehouse)
+			Connection::open(settings.warehouse_path.as_ref().unwrap())
 				.map_err(|e| eyre!("Failed to open DuckDB connection: {}", e))
 		})
 		.await??;

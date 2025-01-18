@@ -1,5 +1,5 @@
 use eyre::Result;
-use tracing_subscriber::{fmt, prelude::*};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub fn setup() -> Result<()> {
 	color_eyre::install()?;
@@ -13,7 +13,11 @@ pub fn setup() -> Result<()> {
 		.compact()
 		.with_writer(std::io::stdout);
 
-	tracing_subscriber::registry().with(fmt_layer).init();
+	let filter_layer = EnvFilter::try_from_default_env()
+		.or_else(|_| EnvFilter::try_new("info"))?
+		.add_directive("sea_orm=off".parse()?);
+
+	tracing_subscriber::registry().with(filter_layer).with(fmt_layer).init();
 
 	Ok(())
 }

@@ -12,16 +12,16 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
-use tracing::debug;
+use tracing::{debug, Level};
 use uuid::Uuid;
 
 use barreleye_common::{
+	log,
 	models::{
 		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
 		NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
 	},
-	utils, App, AppError, BlockHeight, Progress, ProgressReadyType, ProgressStep, Warnings,
-	INDEXER_HEARTBEAT_INTERVAL, INDEXER_PROMOTION_TIMEOUT,
+	utils, App, AppError, BlockHeight, INDEXER_HEARTBEAT_INTERVAL, INDEXER_PROMOTION_TIMEOUT,
 };
 
 mod link;
@@ -35,14 +35,12 @@ pub struct Indexer {
 
 impl Indexer {
 	pub fn new(app: Arc<App>) -> Self {
+		log(Level::INFO, "Indexer started…", None);
+
 		Self { app }
 	}
 
-	pub async fn start(&self, warnings: Warnings, progress: Progress) -> Result<()> {
-		if self.app.settings.is_indexer && !self.app.settings.is_server {
-			progress.show(ProgressStep::Ready(ProgressReadyType::Indexer, warnings));
-		}
-
+	pub async fn start(&self) -> Result<()> {
 		loop {
 			self.prune_data().await?;
 

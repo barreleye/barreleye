@@ -1,10 +1,13 @@
 use async_trait::async_trait;
+use console::style;
 use derive_more::Display;
 use eyre::{eyre, Result};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tracing::Level;
 
 use crate::{
+	log,
 	warehouse::{clickhouse::ClickHouse, duckdb::DuckDB},
 	Settings,
 };
@@ -40,6 +43,25 @@ pub struct Warehouse {
 
 impl Warehouse {
 	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
+		let log_message = settings
+			.warehouse_path
+			.as_ref()
+			.map(|warehouse_path| warehouse_path.display().to_string())
+			.or_else(|| {
+				settings
+					.warehouse_url
+					.as_ref()
+					.map(|warehouse_url| warehouse_url.as_str().to_string())
+			});
+
+		if let Some(url) = log_message {
+			log(
+				Level::INFO,
+				format!("{} is connected to {}", settings.warehouse_driver, style(url).bold()),
+				None,
+			);
+		}
+
 		let driver: Box<dyn DriverTrait> = match settings.warehouse_driver {
 			Driver::DuckDB => Box::new(DuckDB::new(settings).await?),
 			Driver::ClickHouse => Box::new(ClickHouse::new(settings).await?),

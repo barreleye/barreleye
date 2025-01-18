@@ -34,6 +34,7 @@ Run locally:
 
 ```sh
 cargo run
+# or `RUST_LOG=trace cargo run` for more info
 ```
 
 This will do the following:
@@ -111,7 +112,7 @@ curl -X POST \
     "blockTime": 600000,
     "rpcEndpoint": "http://username:password@127.0.0.1:8332"
   }' \
-  http://localhost:4000/v1/networks
+  http://localhost:2277/v1/networks
 ```
 
 Add an EVM-based RPC node (archive node is required):
@@ -127,7 +128,7 @@ curl -X POST \
     "blockTime": 12000,
     "rpcEndpoint": "http://127.0.0.1:8545"
   }' \
-  http://localhost:4000/v1/networks
+  http://localhost:2277/v1/networks
 ```
 
 **Add Tokens**
@@ -143,7 +144,7 @@ curl -X POST \
     "symbol": "BTC",
     "decimals": 8
   }' \
-  http://localhost:4000/v1/tokens
+  http://localhost:2277/v1/tokens
 ```
 
 Add native Ethereum currency:
@@ -157,7 +158,7 @@ curl -X POST \
     "symbol": "ETH",
     "decimals": 18
   }' \
-  http://localhost:4000/v1/tokens
+  http://localhost:2277/v1/tokens
 ```
 
 Add an ERC-20 token:
@@ -172,7 +173,7 @@ curl -X POST \
     "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     "decimals": 6
   }' \
-  http://localhost:4000/v1/tokens
+  http://localhost:2277/v1/tokens
 ```
 
 **Add Tags**
@@ -185,7 +186,7 @@ curl -X POST \
     "name": "Exchange",
     "riskLevel": "low"
   }' \
-  http://localhost:4000/v1/tags
+  http://localhost:2277/v1/tags
 ```
 
 **Add Entities**
@@ -201,7 +202,7 @@ curl -X POST \
     "description": "",
     "tags": ["tag_exchange"]
   }' \
-  http://localhost:4000/v1/entities
+  http://localhost:2277/v1/entities
 ```
 
 Add addresses:
@@ -222,7 +223,7 @@ curl -X POST \
       }
     ]
   }' \
-  http://localhost:4000/v1/addresses
+  http://localhost:2277/v1/addresses
 ```
 
 ## Address Info
@@ -232,7 +233,7 @@ Query information about a particular blockchain address:
 ```sh
 curl -X GET \
   -H 'Content-Type: application/json' \
-  http://localhost:4000/v1/info?q=<BLOCKCHAIN_ADDRESS>
+  http://localhost:2277/v1/info?q=<BLOCKCHAIN_ADDRESS>
 ```
 
 ## Notes

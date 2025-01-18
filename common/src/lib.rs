@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use clap::{builder::PossibleValue, ValueEnum};
-use console::{style, Emoji};
+use console::style;
 use derive_more::Display;
 use eyre::{bail, eyre, Result};
 use futures::future::join_all;
@@ -31,7 +31,6 @@ use crate::{
 };
 pub use db::Db;
 pub use errors::AppError;
-pub use progress::{Progress, ReadyType as ProgressReadyType, Step as ProgressStep};
 pub use s3::{Service as S3Service, S3};
 pub use settings::Settings;
 pub use storage::Storage;
@@ -41,7 +40,6 @@ pub mod chain;
 pub mod db;
 pub mod errors;
 pub mod models;
-pub mod progress;
 pub mod s3;
 pub mod settings;
 pub mod storage;
@@ -49,11 +47,6 @@ pub mod utils;
 pub mod warehouse;
 
 mod banner;
-
-static EMOJI_SETUP: Emoji<'_, '_> = Emoji("🚀  ", "");
-static EMOJI_MIGRATIONS: Emoji<'_, '_> = Emoji("📦  ", "");
-static EMOJI_NETWORKS: Emoji<'_, '_> = Emoji("📡  ", "");
-static EMOJI_READY: Emoji<'_, '_> = Emoji("🟢  ", "");
 
 pub const INDEXER_PROMOTION_TIMEOUT: u64 = 20;
 pub const INDEXER_HEARTBEAT_INTERVAL: u64 = 2;
@@ -141,6 +134,7 @@ impl App {
 		})
 	}
 
+	// @TODO rework all this to use tracing logging
 	pub async fn connect_networks(&self, silent: bool) -> Result<()> {
 		let template = format!(
 			"       {{spinner}}  {} {{prefix:.bold}}: {{wide_msg:.bold.dim}}",
