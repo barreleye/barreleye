@@ -8,9 +8,9 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use std::{str::FromStr, sync::Arc, time::Duration};
-use tracing::Level;
+use tracing::info;
 
-use crate::{log, utils, Settings};
+use crate::{utils, Settings};
 use migrations::{Migrator, MigratorTrait};
 
 mod migrations;
@@ -48,8 +48,8 @@ pub struct Db {
 
 impl Db {
 	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
-		log(
-			Level::INFO,
+		info!(
+			"{}",
 			format!(
 				"{} is connected to {}",
 				settings.database_driver,
@@ -58,8 +58,7 @@ impl Db {
 					_ => "".to_string(),
 				})
 				.bold()
-			),
-			None,
+			)
 		);
 
 		let with_options = |url: String| -> ConnectOptions {

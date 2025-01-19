@@ -12,10 +12,10 @@ use std::{borrow::Cow, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::{trace, trace::TraceLayer, LatencyUnit};
-use tracing::Level;
+use tracing::{info, span, warn, Level, Span};
 
 use crate::errors::ServerError;
-use barreleye_common::{log, models::ApiKey, quit, App, AppError};
+use barreleye_common::{models::ApiKey, quit, App, AppError};
 
 mod errors;
 mod handlers;
@@ -25,11 +25,14 @@ pub type ServerResult<T> = Result<T, ServerError>;
 
 pub struct Server {
 	app: Arc<App>,
+	span: Arc<Span>,
 }
 
 impl Server {
 	pub fn new(app: Arc<App>) -> Self {
-		Self { app }
+		let span = span!(Level::TRACE, "server");
+
+		Self { app, span: Arc::new(span) }
 	}
 
 	async fn auth(State(app): State<Arc<App>>, req: Request, next: Next) -> ServerResult<Response> {
@@ -71,6 +74,8 @@ impl Server {
 	}
 
 	pub async fn start(&self) -> Result<()> {
+		let _enter = self.span.enter();
+
 		let settings = self.app.settings.clone();
 
 		async fn handle_404() -> ServerResult<StatusCode> {
@@ -122,7 +127,7 @@ impl Server {
 
 				match TcpListener::bind(&ip_addr).await {
 					Err(_) => {
-						log(Level::WARN, format!("Server tried listening on port {}", *port), None);
+						warn!("{}", format!("tried listening on port {}", *port));
 
 						if *port == *ports_to_try.last().unwrap() {
 							quit(AppError::ServerStartup {
@@ -131,7 +136,7 @@ impl Server {
 						}
 					}
 					Ok(l) => {
-						log(Level::INFO, format!("Server listening on {ip_addr}…"), None);
+						info!("{}", format!("listening on {ip_addr}…"));
 
 						listener = Some(l);
 						break;

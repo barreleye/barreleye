@@ -63,6 +63,8 @@ impl Indexer {
 		let mut blocked_and_notified = false;
 
 		'indexing: loop {
+			let _enter = self.span.enter();
+
 			if !self.app.is_leading() {
 				sleep(Duration::from_secs(1)).await;
 				continue;
@@ -108,7 +110,7 @@ impl Indexer {
 			};
 			if block_height_map.is_empty() {
 				if !blocked_and_notified {
-					debug!("Waiting… (no fully processed networks yet)");
+					trace!(message = "waiting… (no fully processed networks yet)");
 					blocked_and_notified = true;
 				}
 				sleep(Duration::from_secs(10)).await;
@@ -131,7 +133,7 @@ impl Indexer {
 				.map(|a| (a.network_id, a.address.clone()))
 				.collect::<HashSet<(PrimaryId, String)>>();
 			if addresses.is_empty() {
-				debug!("No addresses to link");
+				debug!("no addresses to link");
 				sleep(Duration::from_secs(10)).await;
 				continue;
 			}
@@ -296,7 +298,7 @@ impl Indexer {
 			loop {
 				tokio::select! {
 					_ = networks_updated.changed() => {
-						debug!("Restarting… (networks updated)");
+						debug!("restarting… (networks updated)");
 						break 'indexing Ok(());
 					}
 					result = futures.join_next() => {

@@ -4,9 +4,9 @@ use dotenvy::dotenv;
 use eyre::Result;
 use std::{borrow::Cow, sync::Arc};
 use tokio::{signal, task::JoinSet};
-use tracing::Level;
+use tracing::debug;
 
-use barreleye_common::{log, quit, App, AppError, Db, Settings, Storage, Warehouse};
+use barreleye_common::{quit, App, AppError, Db, Settings, Storage, Warehouse};
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
 
@@ -47,9 +47,9 @@ async fn main() -> Result<()> {
 		});
 	}));
 
-	log(Level::DEBUG, "Running database migrations", None);
+	debug!("running database migrations");
 	db.run_migrations().await?;
-	log(Level::DEBUG, "Running warehouse migrations", None);
+	debug!("running warehouse migrations");
 	warehouse.run_migrations().await?;
 
 	let app = Arc::new(App::new(settings.clone(), storage, db, warehouse).await?);
@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
 	});
 
 	if settings.is_indexer {
-		log(Level::DEBUG, "Checking blockchain nodes connectivity", None);
+		debug!("checking blockchain nodes connectivity");
 		if let Err(e) = app.connect_networks(false).await {
 			quit(AppError::Network { error: Cow::Owned(e.to_string()) });
 		}

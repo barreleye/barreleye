@@ -28,6 +28,8 @@ impl NetworkRange {
 
 impl Indexer {
 	pub async fn sync(&self, mut networks_updated: watch::Receiver<SystemTime>) -> Result<()> {
+		let _enter = self.span.enter();
+
 		tokio::spawn({
 			let s = self.clone();
 			async move { s.show_sync_progress(10).await }

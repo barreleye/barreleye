@@ -23,7 +23,7 @@ use std::{
 	},
 };
 use tokio::{sync::RwLock, time::Duration};
-use tracing::{debug, error, info, trace, warn, Level};
+use tracing::{error, warn};
 
 use crate::{
 	chain::{Bitcoin, BoxedChain, Evm},
@@ -93,17 +93,16 @@ impl App {
 		// check networks and log errors
 		if networks.is_empty() {
 			if settings.is_indexer {
-				log(Level::WARN, "No active networks found (add networks via API)", None);
+				warn!("no active networks found (add networks via API)");
 			}
 		} else {
 			networks
 				.values()
 				.filter(|chain| settings.is_indexer && chain.get_network().rps == 0)
 				.for_each(|chain| {
-					log(
-						Level::WARN,
-						format!("{} rpc requests are not rate-limited", chain.get_network().name),
-						None,
+					warn!(
+						"{}",
+						format!("{} rpc requests are not rate-limited", chain.get_network().name)
 					);
 				});
 		}
@@ -358,55 +357,11 @@ impl ValueEnum for Mode {
 }
 
 pub fn quit(app_error: AppError) -> ! {
-	log(Level::ERROR, app_error.to_string(), None);
+	error!("{}", app_error.to_string());
 
 	process::exit(match app_error {
 		AppError::SignalHandler | AppError::ServerStartup { .. } => exitcode::OSERR,
 		AppError::Config { .. } => exitcode::CONFIG,
 		_ => exitcode::UNAVAILABLE,
 	})
-}
-
-pub fn log<S>(level: Level, message: S, context: Option<Vec<(String, String)>>)
-where
-	S: AsRef<str>,
-{
-	log_internal(level, message, context);
-}
-
-fn log_internal<S, K, V>(level: Level, message: S, context: Option<Vec<(K, V)>>)
-where
-	S: AsRef<str>,
-	K: AsRef<str> + derive_more::Debug,
-	V: Debug + derive_more::Display,
-{
-	let context = context.unwrap_or_default();
-	let message = message.as_ref();
-
-	let context_fields = context
-		.into_iter()
-		.map(|(key, value)| format!("{}: {}", key.as_ref(), value))
-		.collect::<Vec<String>>()
-		.join(", ");
-
-	let formatted_context =
-		if !context_fields.is_empty() { format!(" [{}]", context_fields) } else { String::new() };
-
-	match level {
-		Level::TRACE => {
-			trace!("{}{}", message, formatted_context);
-		}
-		Level::DEBUG => {
-			debug!("{}{}", message, formatted_context);
-		}
-		Level::INFO => {
-			info!("{}{}", message, formatted_context);
-		}
-		Level::WARN => {
-			warn!("{}{}", message, formatted_context);
-		}
-		Level::ERROR => {
-			error!("{}{}", message, formatted_context);
-		}
-	}
 }

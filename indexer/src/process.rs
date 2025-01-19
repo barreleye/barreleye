@@ -82,6 +82,8 @@ impl Indexer {
 		let mut blocked_and_notified = false;
 
 		'indexing: loop {
+			let _enter = self.span.enter();
+
 			if !self.app.is_leading() {
 				sleep(Duration::from_secs(1)).await;
 				continue;
@@ -250,7 +252,7 @@ impl Indexer {
 
 			if network_params_map.is_empty() {
 				if !blocked_and_notified {
-					debug!("Waiting… (no fully synced networks yet)");
+					trace!("waiting… (no fully synced networks yet)");
 					blocked_and_notified = true;
 				}
 				sleep(Duration::from_secs(10)).await;
@@ -265,7 +267,7 @@ impl Indexer {
 			let mut receipts = HashMap::<ConfigKey, Sender<()>>::new();
 
 			let thread_count = network_params_map.len();
-			debug!("Launching {thread_count} thread(s)…");
+			debug!("launching {thread_count} thread(s)…");
 
 			let mut futures = JoinSet::new();
 			for (config_key, network_params) in network_params_map.clone().into_iter() {
@@ -406,7 +408,7 @@ impl Indexer {
 			loop {
 				tokio::select! {
 					_ = networks_updated.changed() => {
-						debug!("Restarting… (networks updated)");
+						debug!("restarting… (networks updated)");
 						abort()?;
 						break 'indexing Ok(());
 					}

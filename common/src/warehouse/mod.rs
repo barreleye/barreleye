@@ -4,10 +4,9 @@ use derive_more::Display;
 use eyre::{eyre, Result};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::Level;
+use tracing::info;
 
 use crate::{
-	log,
 	warehouse::{clickhouse::ClickHouse, duckdb::DuckDB},
 	Settings,
 };
@@ -55,10 +54,9 @@ impl Warehouse {
 			});
 
 		if let Some(url) = log_message {
-			log(
-				Level::INFO,
-				format!("{} is connected to {}", settings.warehouse_driver, style(url).bold()),
-				None,
+			info!(
+				"{}",
+				format!("{} is connected to {}", settings.warehouse_driver, style(url).bold())
 			);
 		}
 

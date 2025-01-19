@@ -12,11 +12,10 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
-use tracing::{debug, Level};
+use tracing::{info, span, trace, Level, Span};
 use uuid::Uuid;
 
 use barreleye_common::{
-	log,
 	models::{
 		Address, AddressColumn, Amount, Balance, Config, ConfigKey, Entity, Link, Network,
 		NetworkColumn, PrimaryId, PrimaryIds, SoftDeleteModel, Transfer,
@@ -31,13 +30,19 @@ mod sync;
 #[derive(Clone)]
 pub struct Indexer {
 	app: Arc<App>,
+	span: Arc<Span>,
 }
 
 impl Indexer {
 	pub fn new(app: Arc<App>) -> Self {
-		log(Level::INFO, "Indexer started…", None);
+		let span = span!(Level::TRACE, "indexer");
 
-		Self { app }
+		let binding = span.clone();
+		let _enter = binding.enter();
+
+		info!("started…");
+
+		Self { app, span: Arc::new(span) }
 	}
 
 	pub async fn start(&self) -> Result<()> {
@@ -145,9 +150,11 @@ impl Indexer {
 		let mut started_indexing = false;
 
 		loop {
+			let _enter = self.span.enter();
+
 			if !self.app.is_leading() {
 				if started_indexing {
-					debug!("Stopping…");
+					trace!("stopping…");
 				}
 
 				started_indexing = false;
@@ -157,11 +164,12 @@ impl Indexer {
 
 			if !started_indexing {
 				started_indexing = true;
-				debug!("Starting…");
+
+				trace!("starting…");
 			}
 
 			if self.app.networks.read().await.is_empty() {
-				debug!("No active networks. Standing by…");
+				trace!(message = "no active networks…", rechecking = "10s");
 				sleep(Duration::from_secs(10)).await;
 				continue;
 			}

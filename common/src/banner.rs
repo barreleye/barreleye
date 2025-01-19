@@ -1,8 +1,6 @@
 use eyre::Result;
 use std::{env, str};
-use tracing::Level;
-
-use crate::log;
+use tracing::debug;
 
 static BANNER_ANSI: &[u8] = &[
 	32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 59, 95, 63, 42, 63, 59, 32, 32, 32, 32,
@@ -769,10 +767,10 @@ pub fn show() -> Result<()> {
 	);
 
 	println!("{}", banner);
-
-	let version =
-		format!("Barreleye v{} <{}>", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_HOMEPAGE"));
-	log(Level::DEBUG, &version, None);
+	debug!(
+		"{}",
+		format!("Barreleye v{} <{}>", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_HOMEPAGE"))
+	);
 
 	Ok(())
 }
