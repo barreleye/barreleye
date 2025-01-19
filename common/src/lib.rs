@@ -51,7 +51,6 @@ mod banner;
 pub const INDEXER_PROMOTION_TIMEOUT: u64 = 20;
 pub const INDEXER_HEARTBEAT_INTERVAL: u64 = 2;
 
-pub type Warnings = Vec<String>;
 pub type BlockHeight = u64;
 pub type RateLimiter = GovernorRateLimiter<NotKeyed, InMemoryState, DefaultClock>;
 
@@ -79,7 +78,7 @@ impl App {
 		let mut app = App {
 			uuid: utils::new_uuid(),
 			networks: Arc::new(RwLock::new(HashMap::new())),
-			settings,
+			settings: settings.clone(),
 			storage,
 			db,
 			warehouse,
@@ -89,7 +88,27 @@ impl App {
 			cpu_count: num_cpus::get(),
 		};
 
-		app.networks = Arc::new(RwLock::new(app.get_networks().await?));
+		let networks = app.get_networks().await?;
+
+		// check networks and log errors
+		if networks.is_empty() {
+			if settings.is_indexer {
+				log(Level::WARN, "No active networks found (add networks via API)", None);
+			}
+		} else {
+			networks
+				.values()
+				.filter(|chain| settings.is_indexer && chain.get_network().rps == 0)
+				.for_each(|chain| {
+					log(
+						Level::WARN,
+						format!("{} rpc requests are not rate-limited", chain.get_network().name),
+						None,
+					);
+				});
+		}
+
+		app.networks = Arc::new(RwLock::new(networks));
 
 		Ok(app)
 	}
@@ -205,35 +224,6 @@ impl App {
 		*connected_at = Some(utils::now());
 
 		Ok(())
-	}
-
-	pub async fn get_warnings(&self) -> Result<Warnings> {
-		let mut warnings = Warnings::new();
-
-		let networks = self.networks.read().await;
-		if networks.is_empty() {
-			if self.settings.is_indexer {
-				warnings.push("No active networks found".to_string());
-			}
-		} else {
-			warnings.extend(
-				networks
-					.iter()
-					.filter_map(|(_, chain)| {
-						if self.settings.is_indexer && chain.get_network().rps == 0 {
-							Some(format!(
-								"{} rpc requests are not rate-limited",
-								chain.get_network().name
-							))
-						} else {
-							None
-						}
-					})
-					.collect::<Warnings>(),
-			);
-		}
-
-		Ok(warnings)
 	}
 
 	pub fn is_leading(&self) -> bool {

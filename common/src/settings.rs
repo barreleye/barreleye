@@ -148,9 +148,9 @@ pub struct Settings {
 		help_heading = "Server Options",
 		long,
 		default_value = "127.0.0.1",
-		value_name = "IP_ADDRESS"
+		value_name = "IPv4_ADDRESS"
 	)]
-	/// IP address for the HTTP server
+	/// HTTP server bind address
 	ip: String,
 	#[arg(skip)]
 	pub ip_addr: Option<IpAddr>,

@@ -6,7 +6,7 @@ use std::{borrow::Cow, sync::Arc};
 use tokio::{signal, task::JoinSet};
 use tracing::Level;
 
-use barreleye_common::{log, quit, App, AppError, Db, Settings, Storage, Warehouse, Warnings};
+use barreleye_common::{log, quit, App, AppError, Db, Settings, Storage, Warehouse};
 use barreleye_indexer::Indexer;
 use barreleye_server::Server;
 
@@ -53,8 +53,6 @@ async fn main() -> Result<()> {
 	warehouse.run_migrations().await?;
 
 	let app = Arc::new(App::new(settings.clone(), storage, db, warehouse).await?);
-	let mut warnings = Warnings::new();
-	warnings.extend(app.get_warnings().await?);
 
 	let mut set = JoinSet::new();
 	set.spawn(async {
