@@ -36,5 +36,5 @@ The Barreleye core team will review your pull request and either merge it, reque
   - `rustfmt **/*.rs`
   - `cargo test --all`
   - `cargo clippy --all`
-  - `cargo +nightly udeps`
+  - `cargo install cargo-shear && cargo shear --fix`
 - If your contribution fixes an existing issue, please make sure to link it in your pull request.

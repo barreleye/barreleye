@@ -18,9 +18,6 @@ path = "src/main.rs"
 [workspace]
 members = [ "common", "indexer", "server" ]
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["color-eyre"]
-
 [dependencies]
 barreleye-common = { path = "./common", version = "0.2.0" }
 barreleye-indexer = { path = "./indexer", version = "0.2.0" }
@@ -29,8 +26,6 @@ log = "0.4.25"
 color-eyre = "0.6.3"
 eyre = "0.6.12"
 dotenvy = "0.15.7"
-chrono = { version = "0.4.39", default-features = false, features = ["clock", "std"] }
 tokio = { version = "1.43.0", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
-console = "0.15.10"
