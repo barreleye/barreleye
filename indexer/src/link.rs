@@ -57,14 +57,13 @@ impl IndexedLinks {
 }
 
 impl Indexer {
+	#[tracing::instrument(name = "indexer::link", skip_all)]
 	pub async fn link(&self, mut networks_updated: Receiver<SystemTime>) -> Result<()> {
 		let mut warehouse_data = WarehouseData::new();
 		let mut config_key_map = HashMap::<ConfigKey, BlockHeight>::new();
 		let mut blocked_and_notified = false;
 
 		'indexing: loop {
-			let _enter = self.span.enter();
-
 			if !self.app.is_leading() {
 				sleep(Duration::from_secs(1)).await;
 				continue;

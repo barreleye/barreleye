@@ -76,14 +76,13 @@ impl Pipe {
 }
 
 impl Indexer {
+	#[tracing::instrument(name = "indexer::process", skip_all)]
 	pub async fn process(&self, mut networks_updated: Receiver<SystemTime>) -> Result<()> {
 		let mut warehouse_data = WarehouseData::new();
 		let mut config_key_map = HashMap::<ConfigKey, serde_json::Value>::new();
 		let mut blocked_and_notified = false;
 
 		'indexing: loop {
-			let _enter = self.span.enter();
-
 			if !self.app.is_leading() {
 				sleep(Duration::from_secs(1)).await;
 				continue;

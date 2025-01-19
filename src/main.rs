@@ -4,7 +4,7 @@ use dotenvy::dotenv;
 use eyre::Result;
 use std::{borrow::Cow, sync::Arc};
 use tokio::{signal, task::JoinSet};
-use tracing::debug;
+use tracing::{debug, warn};
 
 use barreleye_common::{quit, App, AppError, Db, Settings, Storage, Warehouse};
 use barreleye_indexer::Indexer;
@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
 	let mut set = JoinSet::new();
 	set.spawn(async {
 		signal::ctrl_c().await.ok();
-		println!("\nSIGINT received; bye 👋");
+		warn!("SIGINT received; shutting down… 👋");
 		Ok(())
 	});
 

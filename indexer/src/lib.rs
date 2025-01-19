@@ -12,7 +12,7 @@ use tokio::{
 	task::JoinSet,
 	time::{sleep, Duration},
 };
-use tracing::{info, span, trace, Level, Span};
+use tracing::{info, span, trace, Level};
 use uuid::Uuid;
 
 use barreleye_common::{
@@ -30,19 +30,16 @@ mod sync;
 #[derive(Clone)]
 pub struct Indexer {
 	app: Arc<App>,
-	span: Arc<Span>,
 }
 
 impl Indexer {
 	pub fn new(app: Arc<App>) -> Self {
 		let span = span!(Level::TRACE, "indexer");
-
-		let binding = span.clone();
-		let _enter = binding.enter();
+		let _enter = span.enter();
 
 		info!("started…");
 
-		Self { app, span: Arc::new(span) }
+		Self { app }
 	}
 
 	pub async fn start(&self) -> Result<()> {
@@ -146,12 +143,11 @@ impl Indexer {
 		}
 	}
 
+	#[tracing::instrument(name = "indexer", skip_all)]
 	async fn show_progress(&self) -> Result<()> {
 		let mut started_indexing = false;
 
 		loop {
-			let _enter = self.span.enter();
-
 			if !self.app.is_leading() {
 				if started_indexing {
 					trace!("stopping…");
