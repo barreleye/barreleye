@@ -34,7 +34,7 @@ pub struct Indexer {
 
 impl Indexer {
 	pub fn new(app: Arc<App>) -> Self {
-		let span = span!(Level::TRACE, "indexer");
+		let span = span!(Level::INFO, "indexer");
 		let _enter = span.enter();
 
 		info!("started…");

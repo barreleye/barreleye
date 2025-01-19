@@ -20,17 +20,11 @@ impl Storage {
 		if let Some(storage_path) = &settings.storage_path {
 			info!(
 				"{}",
-				format!(
-					"storage for txs will be saved into {}",
-					style(storage_path.display().to_string()).bold()
-				),
+				format!("txs will sync to {}", style(storage_path.display().to_string()).bold()),
 			);
 		} else if let Some(storage_url) = &settings.storage_url {
 			info!(
-				message = format!(
-					"storage for txs will be saved into {}",
-					style(storage_url.service.clone()).bold()
-				),
+				message = format!("txs will sync to {}", style(storage_url.service.clone()).bold()),
 				url = storage_url.url.clone(),
 				region = storage_url.region.clone().unwrap_or_default(),
 				domain = storage_url.domain.clone().unwrap_or_default(),
