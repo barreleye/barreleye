@@ -1,16 +1,16 @@
 use console::style;
 use derive_more::Display;
-use eyre::{Result, WrapErr};
+use eyre::Result;
 use log::LevelFilter;
 use sea_orm::{
 	ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DatabaseTransaction, DbBackend,
 	Statement, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
-use std::{str::FromStr, sync::Arc, time::Duration};
+use std::{borrow::Cow, str::FromStr, sync::Arc, time::Duration};
 use tracing::info;
 
-use crate::{utils, Settings};
+use crate::{utils, AppError, Settings};
 use migrations::{Migrator, MigratorTrait};
 
 mod migrations;
@@ -47,19 +47,9 @@ pub struct Db {
 }
 
 impl Db {
-	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
-		info!(
-			"{}",
-			format!(
-				"{} is connected to {}",
-				settings.database_driver,
-				style(match &settings.database_uri {
-					Some(uri) => uri.as_str().to_string(),
-					_ => "".to_string(),
-				})
-				.bold()
-			)
-		);
+	pub async fn new(settings: Arc<Settings>) -> Result<Self, AppError<'static>> {
+		let (url_without_credentials, has_credentials) =
+			utils::without_credentials(settings.database_uri.as_ref().unwrap().as_str());
 
 		let with_options = |url: String| -> ConnectOptions {
 			let mut opt = ConnectOptions::new(url);
@@ -87,11 +77,22 @@ impl Db {
 			Driver::SQLite => (url.clone(), "".to_string()),
 			_ => utils::without_pathname(&url),
 		};
-		let url_with_database = url;
+		let url_with_database = url.clone();
 
-		let conn = Database::connect(with_options(url_without_database.clone()))
-			.await
-			.wrap_err(url_without_database.clone())?;
+		let conn =
+			Database::connect(with_options(url_without_database.clone())).await.map_err(|_| {
+				if has_credentials {
+					AppError::ConnectionWithCredentials {
+						service: Cow::Owned(settings.database_driver.to_string()),
+						url: Cow::Owned(url_without_credentials.to_string()),
+					}
+				} else {
+					AppError::Connection {
+						service: Cow::Owned(settings.database_driver.to_string()),
+						url: Cow::Owned(url.to_string()),
+					}
+				}
+			})?;
 
 		let db = match conn.get_database_backend() {
 			DbBackend::MySql => {
@@ -100,11 +101,13 @@ impl Db {
 					format!("CREATE DATABASE IF NOT EXISTS `{db_name}`;"),
 				))
 				.await
-				.wrap_err(url_without_database.clone())?;
+				.map_err(|_| AppError::Database {
+					error: Cow::Borrowed("could not create database"),
+				})?;
 
 				Database::connect(with_options(url_with_database.clone()))
 					.await
-					.wrap_err(url_with_database.clone())?
+					.map_err(|_| AppError::Database { error: Cow::Borrowed("could not connect") })?
 			}
 			DbBackend::Postgres => {
 				let result = conn
@@ -115,7 +118,9 @@ impl Db {
 						),
 					))
 					.await
-					.wrap_err(url_without_database.clone())?;
+					.map_err(|_| AppError::Database {
+						error: Cow::Borrowed("could not confirm database creation"),
+					})?;
 
 				if result.rows_affected() == 0 {
 					conn.execute(Statement::from_string(
@@ -123,15 +128,27 @@ impl Db {
 						format!(r#"CREATE DATABASE "{db_name}";"#),
 					))
 					.await
-					.wrap_err(url_without_database.clone())?;
+					.map_err(|_| AppError::Database {
+						error: Cow::Borrowed("could not create database"),
+					})?;
 				}
 
 				Database::connect(with_options(url_with_database.clone()))
 					.await
-					.wrap_err(url_with_database.clone())?
+					.map_err(|_| AppError::Database { error: Cow::Borrowed("could not connect") })?
 			}
 			DbBackend::Sqlite => conn,
 		};
+
+		info!(
+			"{}",
+			format!(
+				"{} is connected to {}{}",
+				settings.database_driver,
+				style(url_without_credentials).bold(),
+				if has_credentials { " (with credentials)" } else { "" }
+			)
+		);
 
 		Ok(Self { db })
 	}

@@ -24,6 +24,7 @@ struct DynamicRow {
 	data: std::collections::HashMap<String, serde_json::Value>,
 }
 
+// @TODO return better error messages like db does (eg: AppError::ConnectionWithCredentials)
 #[async_trait]
 impl DriverTrait for ClickHouse {
 	async fn new(settings: Arc<Settings>) -> Result<Self> {

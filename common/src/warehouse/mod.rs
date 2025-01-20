@@ -3,12 +3,12 @@ use console::style;
 use derive_more::Display;
 use eyre::{eyre, Result};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 use tracing::info;
 
 use crate::{
 	warehouse::{clickhouse::ClickHouse, duckdb::DuckDB},
-	Settings,
+	AppError, Settings,
 };
 
 pub mod clickhouse;
@@ -41,7 +41,19 @@ pub struct Warehouse {
 }
 
 impl Warehouse {
-	pub async fn new(settings: Arc<Settings>) -> Result<Self> {
+	pub async fn new(settings: Arc<Settings>) -> Result<Self, AppError<'static>> {
+		let driver: Box<dyn DriverTrait> =
+			match settings.warehouse_driver {
+				Driver::DuckDB => Box::new(DuckDB::new(settings.clone()).await.map_err(|_| {
+					AppError::Warehouse { error: Cow::Borrowed("could not connect") }
+				})?),
+				Driver::ClickHouse => {
+					Box::new(ClickHouse::new(settings.clone()).await.map_err(|_| {
+						AppError::Warehouse { error: Cow::Borrowed("could not connect") }
+					})?)
+				}
+			};
+
 		let log_message = settings
 			.warehouse_path
 			.as_ref()
@@ -59,11 +71,6 @@ impl Warehouse {
 				format!("{} is connected to {}", settings.warehouse_driver, style(url).bold())
 			);
 		}
-
-		let driver: Box<dyn DriverTrait> = match settings.warehouse_driver {
-			Driver::DuckDB => Box::new(DuckDB::new(settings).await?),
-			Driver::ClickHouse => Box::new(ClickHouse::new(settings).await?),
-		};
 
 		Ok(Self { driver })
 	}

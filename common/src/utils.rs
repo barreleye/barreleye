@@ -65,11 +65,26 @@ pub fn without_pathname(url: &str) -> (String, String) {
 	match Url::parse(url) {
 		Ok(mut parsed_url) => {
 			let path = parsed_url.path().trim_matches('/').to_string();
+
 			parsed_url.set_path("");
 
 			(parsed_url.to_string(), path)
 		}
 		_ => (url.to_string(), "".to_string()),
+	}
+}
+
+pub fn without_credentials(url: &str) -> (String, bool) {
+	match Url::parse(url) {
+		Ok(mut parsed_url) => {
+			let has_credentials = parsed_url.username() != "" || parsed_url.password().is_some();
+
+			parsed_url.set_username("").unwrap();
+			parsed_url.set_password(None).unwrap();
+
+			(parsed_url.as_str().to_string(), has_credentials)
+		}
+		_ => (url.to_string(), false),
 	}
 }
 

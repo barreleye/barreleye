@@ -1,4 +1,5 @@
 use eyre::Result;
+use std::env;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub fn setup() -> Result<()> {
@@ -13,10 +14,13 @@ pub fn setup() -> Result<()> {
 		.compact()
 		.with_writer(std::io::stdout);
 
-	let filter_layer = EnvFilter::try_from_default_env()
-		.or_else(|_| EnvFilter::try_new("info"))?
-		.add_directive("sea_orm=off".parse()?)
-		.add_directive("axum=off".parse()?);
+	let rust_log = env::var("RUST_LOG").unwrap_or_else(|_| "info".to_string());
+
+	let filter_layer = EnvFilter::new("off")
+		.add_directive(format!("barreleye={rust_log}").parse()?)
+		.add_directive(format!("barreleye_common={rust_log}").parse()?)
+		.add_directive(format!("barreleye_indexer={rust_log}").parse()?)
+		.add_directive(format!("barreleye_server={rust_log}").parse()?);
 
 	tracing_subscriber::registry().with(filter_layer).with(fmt_layer).init();
 

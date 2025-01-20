@@ -26,25 +26,16 @@ async fn main() -> Result<()> {
 
 	let settings = Arc::new(raw_settings);
 
-	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|url| {
-		quit(AppError::Connection {
-			service: Cow::Borrowed(&settings.database_driver.to_string()),
-			url: Cow::Owned(url.to_string()),
-		});
+	let db = Arc::new(Db::new(settings.clone()).await.unwrap_or_else(|e| {
+		quit(e);
 	}));
 
-	let storage = Arc::new(Storage::new(settings.clone()).unwrap_or_else(|url| {
-		quit(AppError::Connection {
-			service: Cow::Borrowed("storage"),
-			url: Cow::Owned(url.to_string()),
-		});
+	let storage = Arc::new(Storage::new(settings.clone()).unwrap_or_else(|e| {
+		quit(e);
 	}));
 
-	let warehouse = Arc::new(Warehouse::new(settings.clone()).await.unwrap_or_else(|url| {
-		quit(AppError::Connection {
-			service: Cow::Borrowed("warehouse"),
-			url: Cow::Owned(url.to_string()),
-		});
+	let warehouse = Arc::new(Warehouse::new(settings.clone()).await.unwrap_or_else(|e| {
+		quit(e);
 	}));
 
 	debug!("running database migrations");

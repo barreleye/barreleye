@@ -195,6 +195,26 @@ impl Settings {
 				error: Cow::Borrowed("invalid URI"),
 			})?;
 
+		// add database credentials
+		if let Some(username) = settings.db_user.clone() {
+			if database_parsed_uri.set_username(&username).is_err() {
+				return Err(AppError::Config {
+					config: Cow::Borrowed("database"),
+					error: Cow::Borrowed("could not set env username"),
+				}
+				.into());
+			}
+		}
+		if let Some(password) = settings.db_password.clone() {
+			if database_parsed_uri.set_password(Some(&password)).is_err() {
+				return Err(AppError::Config {
+					config: Cow::Borrowed("database"),
+					error: Cow::Borrowed("could not set env password"),
+				}
+				.into());
+			}
+		}
+
 		// set the database driver
 		settings.database_driver =
 			database_parsed_uri.scheme().to_ascii_lowercase().parse::<DatabaseDriver>().map_err(
@@ -324,11 +344,31 @@ impl Settings {
 				settings.warehouse_path = Some(PathBuf::from(path));
 			}
 			WarehouseDriver::ClickHouse => {
-				let warehouse_url =
+				let mut warehouse_url =
 					Url::parse(&settings.warehouse).map_err(|_| AppError::Config {
 						config: Cow::Borrowed("warehouse"),
 						error: Cow::Borrowed("invalid URI"),
 					})?;
+
+				// add credentials
+				if let Some(username) = settings.warehouse_user.clone() {
+					if warehouse_url.set_username(&username).is_err() {
+						return Err(AppError::Config {
+							config: Cow::Borrowed("warehouse"),
+							error: Cow::Borrowed("could not set env username"),
+						}
+						.into());
+					}
+				}
+				if let Some(password) = settings.warehouse_password.clone() {
+					if warehouse_url.set_password(Some(&password)).is_err() {
+						return Err(AppError::Config {
+							config: Cow::Borrowed("warehouse"),
+							error: Cow::Borrowed("could not set env password"),
+						}
+						.into());
+					}
+				}
 
 				// check that "database_name" is included in the URL
 				if warehouse_url.path().trim_start_matches('/').is_empty() {

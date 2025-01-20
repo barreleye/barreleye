@@ -4,7 +4,7 @@ use eyre::Result;
 use std::{fs, sync::Arc};
 use tracing::info;
 
-use crate::{models::PrimaryId, BlockHeight, Settings};
+use crate::{models::PrimaryId, AppError, BlockHeight, Settings};
 
 pub trait StorageModelTrait {
 	fn create_table(&self, db: &Connection) -> Result<()>;
@@ -16,7 +16,7 @@ pub struct Storage {
 }
 
 impl Storage {
-	pub fn new(settings: Arc<Settings>) -> Result<Self> {
+	pub fn new(settings: Arc<Settings>) -> Result<Self, AppError<'static>> {
 		if let Some(storage_path) = &settings.storage_path {
 			info!(
 				"{}",
