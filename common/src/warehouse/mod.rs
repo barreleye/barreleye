@@ -66,10 +66,7 @@ impl Warehouse {
 			});
 
 		if let Some(url) = log_message {
-			info!(
-				"{}",
-				format!("{} is connected to {}", settings.warehouse_driver, style(url).bold())
-			);
+			info!("{} is connected to {}", settings.warehouse_driver, style(url).bold());
 		}
 
 		Ok(Self { driver })

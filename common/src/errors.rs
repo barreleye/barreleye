@@ -24,7 +24,7 @@ pub enum AppError<'a> {
 	#[display("warehouse: {error}")]
 	Warehouse { error: Cow<'a, str> },
 
-	#[display("could not complete network setup:\n{error}")]
+	#[display("networks: {error}")]
 	Network { error: Cow<'a, str> },
 
 	#[display("indexing failed: {error}")]

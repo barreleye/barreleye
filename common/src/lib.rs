@@ -1,16 +1,13 @@
 use chrono::NaiveDateTime;
 use clap::{builder::PossibleValue, ValueEnum};
-use console::style;
 use derive_more::Display;
-use eyre::{bail, eyre, Result};
-use futures::future::join_all;
+use eyre::{Report, Result};
+use futures::{stream::FuturesUnordered, StreamExt};
 use governor::{
 	clock::DefaultClock,
 	state::{direct::NotKeyed, InMemoryState},
 	RateLimiter as GovernorRateLimiter,
 };
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use itertools::{Either, Itertools};
 use sea_orm::{entity::prelude::*, DatabaseTransaction, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -22,8 +19,8 @@ use std::{
 		Arc,
 	},
 };
-use tokio::{sync::RwLock, time::Duration};
-use tracing::{error, warn};
+use tokio::sync::RwLock;
+use tracing::{error, info, warn};
 
 use crate::{
 	chain::{Bitcoin, BoxedChain, Evm},
@@ -100,10 +97,7 @@ impl App {
 				.values()
 				.filter(|chain| settings.is_indexer && chain.get_network().rps == 0)
 				.for_each(|chain| {
-					warn!(
-						"{}",
-						format!("{} rpc requests are not rate-limited", chain.get_network().name)
-					);
+					warn!("{} rpc requests are not rate-limited", chain.get_network().name);
 				});
 		}
 
@@ -152,68 +146,50 @@ impl App {
 		})
 	}
 
-	// @TODO rework all this to use tracing logging
 	pub async fn connect_networks(&self, silent: bool) -> Result<()> {
-		let template = format!(
-			"       {{spinner}}  {} {{prefix:.bold}}: {{wide_msg:.bold.dim}}",
-			style("↳").bold().dim()
-		);
-		let spinner_style =
-			ProgressStyle::with_template(&template).unwrap().tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+		let mut futures = FuturesUnordered::new();
+		let networks = Network::get_all_existing(self.db(), Some(false)).await?;
 
-		let m = MultiProgress::new();
+		for n in networks {
+			futures.push(async move {
+				if !silent {
+					info!("connecting to {} ({})…", n.name, n.id);
+				}
 
-		let mut threads = vec![];
-		for n in Network::get_all_existing(self.db(), Some(false)).await?.into_iter() {
-			let pb = m.add(ProgressBar::new(1_000_000));
-			pb.set_style(spinner_style.clone());
-			pb.set_prefix(n.name.clone());
-			pb.enable_steady_tick(Duration::from_millis(50));
+				let mut boxed_chain: BoxedChain = match n.architecture {
+					Architecture::Bitcoin => Box::new(Bitcoin::new(n.clone())),
+					Architecture::Evm => Box::new(Evm::new(n.clone())),
+				};
 
-			threads.push({
-				tokio::spawn({
-					let mut boxed_chain: BoxedChain = match n.architecture {
-						Architecture::Bitcoin => Box::new(Bitcoin::new(n.clone())),
-						Architecture::Evm => Box::new(Evm::new(n.clone())),
-					};
-
-					async move {
-						if !silent {
-							pb.set_message("connecting…");
-						}
-
-						if boxed_chain.connect().await? {
-							if !silent {
-								pb.finish_with_message(format!(
-									"connected to {}",
-									utils::with_masked_auth(&boxed_chain.get_rpc().unwrap())
-								));
-							}
-
-							Ok(Arc::new(boxed_chain))
-						} else {
-							if !silent {
-								pb.finish_with_message("could not connect");
-							}
-
-							Err(eyre!("{}: Could not connect to an RPC endpoint.", n.name))
-						}
+				if boxed_chain.connect().await? {
+					Ok(Arc::new(boxed_chain))
+				} else {
+					if !silent {
+						warn!("could not connect to {} ({})", n.name, n.id);
 					}
-				})
+					Err(Report::msg(format!(
+						"could not connect to an rpc endpoint for {} ({})",
+						n.name, n.id
+					)))
+				}
 			});
 		}
 
-		let (connected_networks, failures): (HashMap<_, _>, Vec<_>) =
-			join_all(threads).await.into_iter().partition_map(|r| match r.unwrap() {
+		let mut connected_networks = HashMap::new();
+		let mut failures = Vec::new();
+
+		while let Some(result) = futures.next().await {
+			match result {
 				Ok(chain) => {
 					let network_id = chain.get_network().network_id;
-					Either::Left((network_id, chain))
+					connected_networks.insert(network_id, chain);
 				}
-				Err(e) => Either::Right(e),
-			});
+				Err(e) => failures.push(e.to_string()),
+			}
+		}
 
 		if !failures.is_empty() {
-			bail!(failures.iter().map(|e| format!("- {e}")).join("\n"));
+			return Err(Report::msg(failures.join("\n")));
 		}
 
 		let mut networks = self.networks.write().await;

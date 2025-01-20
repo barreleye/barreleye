@@ -538,8 +538,6 @@ dependencies = [
  "eyre",
  "futures",
  "governor",
- "indicatif",
- "itertools 0.14.0",
  "log",
  "nanoid",
  "num_cpus",
@@ -2933,19 +2931,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indicatif"
-version = "0.17.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbf675b85ed934d3c67b5c5469701eec7db22689d0a2139d856e0925fa28b281"
-dependencies = [
- "console",
- "number_prefix",
- "portable-atomic",
- "unicode-width",
- "web-time",
-]
-
-[[package]]
 name = "inherent"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2991,15 +2976,6 @@ name = "itertools"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
 dependencies = [
  "either",
 ]
@@ -3075,7 +3051,7 @@ dependencies = [
  "ascii-canvas",
  "bit-set",
  "ena",
- "itertools 0.11.0",
+ "itertools",
  "lalrpop-util",
  "petgraph",
  "regex",
@@ -3500,12 +3476,6 @@ dependencies = [
  "quote",
  "syn 2.0.96",
 ]
-
-[[package]]
-name = "number_prefix"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "object"
@@ -5173,7 +5143,7 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c425ce1c59f4b154717592f0bdf4715c3a1d55058883622d3157e1f0908a5b26"
 dependencies = [
- "itertools 0.11.0",
+ "itertools",
  "lalrpop",
  "lalrpop-util",
  "phf",

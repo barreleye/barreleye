@@ -141,13 +141,10 @@ impl Db {
 		};
 
 		info!(
-			"{}",
-			format!(
-				"{} is connected to {}{}",
-				settings.database_driver,
-				style(url_without_credentials).bold(),
-				if has_credentials { " (with credentials)" } else { "" }
-			)
+			"{} is connected to {}{}",
+			settings.database_driver,
+			style(url_without_credentials).bold(),
+			if has_credentials { " (with credentials)" } else { "" }
 		);
 
 		Ok(Self { db })

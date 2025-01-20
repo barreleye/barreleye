@@ -766,11 +766,8 @@ pub fn show() -> Result<()> {
 		}
 	);
 
-	println!("{}", banner);
-	debug!(
-		"{}",
-		format!("Barreleye v{} <{}>", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_HOMEPAGE"))
-	);
+	println!("{banner}");
+	debug!("Barreleye v{} <{}>", env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_HOMEPAGE"));
 
 	Ok(())
 }

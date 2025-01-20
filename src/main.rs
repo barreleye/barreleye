@@ -53,6 +53,8 @@ async fn main() -> Result<()> {
 	});
 
 	if settings.is_indexer {
+		// @TODO figure out a way to continue startup; otherwise, use cannot correct network
+		// settings via api
 		debug!("checking blockchain nodes connectivity");
 		if let Err(e) = app.connect_networks(false).await {
 			quit(AppError::Network { error: Cow::Owned(e.to_string()) });

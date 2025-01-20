@@ -18,10 +18,7 @@ pub struct Storage {
 impl Storage {
 	pub fn new(settings: Arc<Settings>) -> Result<Self, AppError<'static>> {
 		if let Some(storage_path) = &settings.storage_path {
-			info!(
-				"{}",
-				format!("txs will sync to {}", style(storage_path.display().to_string()).bold()),
-			);
+			info!("txs will sync to {}", style(storage_path.display().to_string()).bold());
 		} else if let Some(storage_url) = &settings.storage_url {
 			info!(
 				message = format!("txs will sync to {}", style(storage_url.service.clone()).bold()),

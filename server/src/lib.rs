@@ -123,16 +123,16 @@ impl Server {
 
 				match TcpListener::bind(&ip_addr).await {
 					Err(_) => {
-						warn!("{}", format!("tried listening on port {}", *port));
+						warn!("tried listening on port {}", *port);
 
 						if *port == *ports_to_try.last().unwrap() {
 							quit(AppError::ServerStartup {
-								error: Cow::Borrowed("Ran out of ports to try"),
+								error: Cow::Borrowed("ran out of ports to try"),
 							});
 						}
 					}
 					Ok(l) => {
-						info!("{}", format!("listening on {ip_addr}…"));
+						info!("listening on {ip_addr}…");
 
 						listener = Some(l);
 						break;

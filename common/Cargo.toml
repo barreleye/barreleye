@@ -19,7 +19,6 @@ nanoid = "0.4.0"
 serde = { version = "1.0", features = [ "derive" ] }
 log = "0.4.25"
 derive_more = { version = "1.0.0", features = [ "full" ] }
-indicatif = "0.17.9"
 serde_json = "1.0.137"
 chrono = { version = "0.4.39", default-features = false, features = ["clock", "std"] }
 url = "2.5.4"
@@ -29,7 +28,6 @@ bitcoin = { version = "0.32.5", features = ["default", "serde"] }
 regex = "1.11.1"
 governor = "0.8.0"
 base64 = "0.22.1"
-itertools = "0.14.0"
 futures = "0.3.31"
 num_cpus = "1.16.0"
 bitcoincore-rpc-json = "0.19.0"
