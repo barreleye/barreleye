@@ -18,7 +18,7 @@ sea-orm-migration = "1.1.4"
 nanoid = "0.4.0"
 serde = { version = "1.0", features = [ "derive" ] }
 log = "0.4.25"
-derive_more = { version = "1.0.0", features = [ "full" ] }
+derive_more = { version = "2.0.1", features = [ "full" ] }
 serde_json = "1.0.138"
 chrono = { version = "0.4.39", default-features = false, features = ["clock", "std"] }
 url = "2.5.4"
@@ -36,8 +36,8 @@ reqwest = { version = "0.12.12", features = ["rustls-tls", "json"] }
 tokio = { version = "1.43.0", features = ["full"] }
 ethers = { version = "2.0.14", features = ["rustls"] }
 clickhouse = { version = "0.13.1", features = ["uuid"] }
-clap = { version = "4.5.27", features = ["cargo", "derive", "env"] }
-uuid = { version = "1.12.1", features = ["v4", "fast-rng"] }
+clap = { version = "4.5.28", features = ["cargo", "derive", "env"] }
+uuid = { version = "1.13.1", features = ["v4", "fast-rng"] }
 tracing = "0.1.41"
 sha2 = "0.10.8"
 base58 = "0.2.0"
