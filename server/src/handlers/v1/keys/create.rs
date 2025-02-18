@@ -17,12 +17,12 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<Json<ApiKey>> {
+) -> ServerResult<'static, Json<ApiKey>> {
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
 		if !is_valid_id(&id, IdPrefix::ApiKey) || ApiKey::get_by_id(app.db(), &id).await?.is_some()
 		{
-			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+			return Err(ServerError::InvalidParam { field: "id".into(), value: id.into() });
 		}
 	}
 

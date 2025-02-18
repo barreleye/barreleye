@@ -265,6 +265,7 @@ pub enum IdPrefix {
 	Ord,
 	Serialize,
 	Deserialize,
+	EnumIter,
 )]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
 #[serde(rename_all = "camelCase")]
@@ -275,15 +276,6 @@ pub enum RiskLevel {
 	Critical = 3,
 }
 
-// @TODO for some reason `EnumIter` in sea-orm v1.0.0 doesn't work
-impl strum::IntoEnumIterator for RiskLevel {
-	type Iterator = std::array::IntoIter<RiskLevel, 3>;
-
-	fn iter() -> Self::Iterator {
-		[RiskLevel::Low, RiskLevel::High, RiskLevel::Critical].into_iter()
-	}
-}
-
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum RiskReason {
@@ -291,22 +283,15 @@ pub enum RiskReason {
 	Source,
 }
 
-#[derive(Default, Debug, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+	Default, Debug, DeriveActiveEnum, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, EnumIter,
+)]
 #[sea_orm(rs_type = "i16", db_type = "SmallInteger")]
 #[serde(rename_all = "camelCase")]
 pub enum Architecture {
 	#[default]
 	Bitcoin = 1,
 	Evm = 2,
-}
-
-// @TODO for some reason `EnumIter` in sea-orm v1.0.0 doesn't work
-impl strum::IntoEnumIterator for Architecture {
-	type Iterator = std::array::IntoIter<Architecture, 2>;
-
-	fn iter() -> Self::Iterator {
-		[Architecture::Bitcoin, Architecture::Evm].into_iter()
-	}
 }
 
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -23,7 +23,7 @@ pub struct Response {
 	networks: Vec<ResponseNetwork>,
 }
 
-pub async fn handler(State(app): State<Arc<App>>) -> ServerResult<Json<Response>> {
+pub async fn handler(State(app): State<Arc<App>>) -> ServerResult<'static, Json<Response>> {
 	let mut networks = vec![];
 
 	for network in Network::get_all(app.db()).await?.into_iter() {

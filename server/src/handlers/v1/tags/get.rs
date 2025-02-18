@@ -23,7 +23,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(tag_id): Path<String>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	if let Some(mut tag) = Tag::get_by_id(app.db(), &tag_id).await? {
 		let (tags_map, entities, addresses, networks) =
 			get_data_by_tag_ids(app.clone(), tag.tag_id.into()).await?;

@@ -23,7 +23,7 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(api_key_id): Path<String>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<StatusCode> {
+) -> ServerResult<'static, StatusCode> {
 	match ApiKey::get_by_id(app.db(), &api_key_id).await? {
 		Some(_) => {
 			let update_data = ApiKeyActiveModel {

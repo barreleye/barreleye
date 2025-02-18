@@ -19,17 +19,17 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<Json<Tag>> {
+) -> ServerResult<'static, Json<Tag>> {
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
 		if !is_valid_id(&id, IdPrefix::Tag) || Tag::get_by_id(app.db(), &id).await?.is_some() {
-			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+			return Err(ServerError::InvalidParam { field: "id".into(), value: id.into() });
 		}
 	}
 
 	// check for duplicate name
 	if Tag::get_by_name(app.db(), &payload.name).await?.is_some() {
-		return Err(ServerError::Duplicate { field: "name".to_string(), value: payload.name });
+		return Err(ServerError::Duplicate { field: "name".into(), value: payload.name.into() });
 	}
 
 	// create new

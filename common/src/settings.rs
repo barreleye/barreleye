@@ -3,7 +3,6 @@ use dirs::home_dir;
 use eyre::Result;
 use regex::Regex;
 use std::{
-	borrow::Cow,
 	fs,
 	net::IpAddr,
 	path::{Path, PathBuf},
@@ -53,7 +52,7 @@ pub struct Settings {
 		verbatim_doc_comment,
 		env = "BARRELEYE_DATABASE",
 		hide_env_values = true,
-		default_value = "sqlite://${HOME}/.barreleye/data.db",
+		default_value = "sqlite://${HOME}/.barreleye/barreleye.sqlite.db",
         value_hint = ValueHint::DirPath,
 		value_name = "URI"
 	)]
@@ -128,7 +127,7 @@ pub struct Settings {
 		verbatim_doc_comment,
 		env = "BARRELEYE_WAREHOUSE",
 		hide_env_values = true,
-		default_value = "${HOME}/.barreleye/analytics.db",
+		default_value = "${HOME}/.barreleye/barreleye.duckdb.db",
 		value_name = "URI"
 	)]
 	pub warehouse: String,
@@ -183,24 +182,21 @@ impl Settings {
 
 		// clean the database path
 		let database_path = Self::clean_path("database", settings.database.trim())?;
-		let database_path_str = database_path.to_str().ok_or(AppError::Config {
-			config: Cow::Borrowed("database"),
-			error: Cow::Borrowed("invalid path"),
-		})?;
+		let database_path_str = database_path
+			.to_str()
+			.ok_or(AppError::Config { config: "database".into(), error: "invalid path".into() })?;
 
 		// parse the database URI
-		let mut database_parsed_uri =
-			Url::parse(database_path_str).map_err(|_| AppError::Config {
-				config: Cow::Borrowed("database"),
-				error: Cow::Borrowed("invalid URI"),
-			})?;
+		let mut database_parsed_uri = Url::parse(database_path_str).map_err(|_| {
+			AppError::Config { config: "database".into(), error: "invalid URI".into() }
+		})?;
 
 		// add database credentials
 		if let Some(username) = settings.db_user.clone() {
 			if database_parsed_uri.set_username(&username).is_err() {
 				return Err(AppError::Config {
-					config: Cow::Borrowed("database"),
-					error: Cow::Borrowed("could not set env username"),
+					config: "database".into(),
+					error: "could not set env username".into(),
 				}
 				.into());
 			}
@@ -208,8 +204,8 @@ impl Settings {
 		if let Some(password) = settings.db_password.clone() {
 			if database_parsed_uri.set_password(Some(&password)).is_err() {
 				return Err(AppError::Config {
-					config: Cow::Borrowed("database"),
-					error: Cow::Borrowed("could not set env password"),
+					config: "database".into(),
+					error: "could not set env password".into(),
 				}
 				.into());
 			}
@@ -218,10 +214,7 @@ impl Settings {
 		// set the database driver
 		settings.database_driver =
 			database_parsed_uri.scheme().to_ascii_lowercase().parse::<DatabaseDriver>().map_err(
-				|_| AppError::Config {
-					config: Cow::Borrowed("database"),
-					error: Cow::Borrowed("invalid URI"),
-				},
+				|_| AppError::Config { config: "database".into(), error: "invalid URI".into() },
 			)?;
 
 		match settings.database_driver {
@@ -229,8 +222,8 @@ impl Settings {
 				// ensure the directories exist, creating them if necessary
 				if let Some(parent) = database_path.parent() {
 					fs::create_dir_all(parent).map_err(|_| AppError::Config {
-						config: Cow::Borrowed("database"),
-						error: Cow::Borrowed("invalid path or could not create"),
+						config: "database".into(),
+						error: "invalid path or could not create".into(),
 					})?;
 				}
 
@@ -249,8 +242,8 @@ impl Settings {
 
 				if database_name.is_none() {
 					return Err(AppError::Config {
-						config: Cow::Borrowed("database"),
-						error: Cow::Borrowed("missing database name in the URI"),
+						config: "database".into(),
+						error: "missing database name in the URI".into(),
 					}
 					.into());
 				}
@@ -270,8 +263,8 @@ impl Settings {
 			// check if the folder exists, create if not
 			if !path.exists() && fs::create_dir_all(&path).is_err() {
 				return Err(AppError::Config {
-					config: Cow::Borrowed("storage"),
-					error: Cow::Borrowed("invalid path or could not create"),
+					config: "storage".into(),
+					error: "invalid path or could not create".into(),
 				}
 				.into());
 			}
@@ -285,8 +278,8 @@ impl Settings {
 
 			if !has_bucket_name {
 				return Err(AppError::Config {
-					config: Cow::Borrowed("storage"),
-					error: Cow::Borrowed("missing bucket name in the URI"),
+					config: "storage".into(),
+					error: "missing bucket name in the URI".into(),
 				}
 				.into());
 			} else {
@@ -294,8 +287,8 @@ impl Settings {
 				let storage_url = S3::from_str(&settings.storage)?;
 				if storage_url.service == S3Service::Unknown || storage_url.bucket.is_none() {
 					return Err(AppError::Config {
-						config: Cow::Borrowed("storage"),
-						error: Cow::Borrowed("invalid URL"),
+						config: "storage".into(),
+						error: "invalid URL".into(),
 					}
 					.into());
 				}
@@ -304,8 +297,8 @@ impl Settings {
 			}
 		} else {
 			return Err(AppError::Config {
-				config: Cow::Borrowed("storage"),
-				error: Cow::Borrowed("invalid URL or folder path"),
+				config: "storage".into(),
+				error: "invalid URL or folder path".into(),
 			}
 			.into());
 		}
@@ -317,8 +310,8 @@ impl Settings {
 				settings.warehouse_driver = WarehouseDriver::ClickHouse;
 			} else {
 				return Err(AppError::Config {
-					config: Cow::Borrowed("warehouse"),
-					error: Cow::Borrowed("invalid URI"),
+					config: "warehouse".into(),
+					error: "invalid URI".into(),
 				}
 				.into());
 			}
@@ -334,8 +327,8 @@ impl Settings {
 				if !path.exists() {
 					if let Some(parent) = path.parent() {
 						fs::create_dir_all(parent).map_err(|_| AppError::Config {
-							config: Cow::Borrowed("warehouse"),
-							error: Cow::Borrowed("invalid path or could not create"),
+							config: "warehouse".into(),
+							error: "invalid path or could not create".into(),
 						})?;
 					}
 				}
@@ -344,18 +337,16 @@ impl Settings {
 				settings.warehouse_path = Some(PathBuf::from(path));
 			}
 			WarehouseDriver::ClickHouse => {
-				let mut warehouse_url =
-					Url::parse(&settings.warehouse).map_err(|_| AppError::Config {
-						config: Cow::Borrowed("warehouse"),
-						error: Cow::Borrowed("invalid URI"),
-					})?;
+				let mut warehouse_url = Url::parse(&settings.warehouse).map_err(|_| {
+					AppError::Config { config: "warehouse".into(), error: "invalid URI".into() }
+				})?;
 
 				// add credentials
 				if let Some(username) = settings.warehouse_user.clone() {
 					if warehouse_url.set_username(&username).is_err() {
 						return Err(AppError::Config {
-							config: Cow::Borrowed("warehouse"),
-							error: Cow::Borrowed("could not set env username"),
+							config: "warehouse".into(),
+							error: "could not set env username".into(),
 						}
 						.into());
 					}
@@ -363,8 +354,8 @@ impl Settings {
 				if let Some(password) = settings.warehouse_password.clone() {
 					if warehouse_url.set_password(Some(&password)).is_err() {
 						return Err(AppError::Config {
-							config: Cow::Borrowed("warehouse"),
-							error: Cow::Borrowed("could not set env password"),
+							config: "warehouse".into(),
+							error: "could not set env password".into(),
 						}
 						.into());
 					}
@@ -373,8 +364,8 @@ impl Settings {
 				// check that "database_name" is included in the URL
 				if warehouse_url.path().trim_start_matches('/').is_empty() {
 					return Err(AppError::Config {
-						config: Cow::Borrowed("warehouse"),
-						error: Cow::Borrowed("missing database name in the URI"),
+						config: "warehouse".into(),
+						error: "missing database name in the URI".into(),
 					}
 					.into());
 				}
@@ -386,8 +377,8 @@ impl Settings {
 
 		// parse ip address
 		settings.ip_addr = Some(IpAddr::V4(settings.ip.parse().map_err(|_| AppError::Config {
-			config: Cow::Borrowed("ip"),
-			error: Cow::Borrowed("could not parse IPv4"),
+			config: "ip".into(),
+			error: "could not parse IPv4".into(),
 		})?));
 
 		Ok(settings)
@@ -395,30 +386,30 @@ impl Settings {
 
 	fn clean_path(config: &str, path_str: &str) -> Result<PathBuf, AppError<'static>> {
 		let home_path = home_dir().ok_or(AppError::Config {
-			config: Cow::Owned(config.to_string()),
-			error: Cow::Borrowed("could not resolve home directory"),
+			config: config.to_string().into(),
+			error: "could not resolve home directory".into(),
 		})?;
 
 		// resolve home path as a string
 		let home_str = home_path
 			.to_str()
 			.ok_or(AppError::Config {
-				config: Cow::Owned(config.to_string()),
-				error: Cow::Borrowed("invalid home path"),
+				config: config.to_string().into(),
+				error: "invalid home path".into(),
 			})?
 			.to_string();
 
 		// replace `${HOME}` with the home directory path, case-insensitively
 		let home_regex = Regex::new(r"(?i)\$\{home\}").map_err(|_| AppError::Config {
-			config: Cow::Owned(config.to_string()),
-			error: Cow::Borrowed("failed to compile regex for ${HOME}"),
+			config: config.to_string().into(),
+			error: "failed to compile regex for ${HOME}".into(),
 		})?;
 		let replaced = home_regex.replace_all(path_str, home_str).to_string();
 
 		// remove "file://" prefix, case-insensitively, if exists
 		let file_regex = Regex::new(r"(?i)^file://").map_err(|_| AppError::Config {
-			config: Cow::Owned(config.to_string()),
-			error: Cow::Borrowed("failed to compile regex for file://"),
+			config: config.to_string().into(),
+			error: "failed to compile regex for file://".into(),
 		})?;
 		let database_path = file_regex.replace_all(&replaced, "").to_string();
 

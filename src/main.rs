@@ -2,7 +2,7 @@ extern crate dotenvy;
 
 use dotenvy::dotenv;
 use eyre::Result;
-use std::{borrow::Cow, sync::Arc};
+use std::sync::Arc;
 use tokio::{signal, task::JoinSet};
 use tracing::{debug, warn};
 
@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
 	let raw_settings = Settings::new().await.unwrap_or_else(|e| {
 		quit(match e.downcast_ref::<AppError>() {
 			Some(app_error) => app_error.clone(),
-			None => AppError::Unexpected { error: Cow::Owned(e.to_string()) },
+			None => AppError::Unexpected { error: e.to_string().into() },
 		})
 	});
 
@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
 		// settings via api
 		debug!("checking blockchain nodes connectivity");
 		if let Err(e) = app.connect_networks(false).await {
-			quit(AppError::Network { error: Cow::Owned(e.to_string()) });
+			quit(AppError::Network { error: e.to_string().into() });
 		}
 
 		set.spawn({
@@ -87,7 +87,7 @@ async fn main() -> Result<()> {
 		if let Err(e) = res? {
 			quit(match e.downcast_ref::<AppError>() {
 				Some(app_error) => app_error.clone(),
-				None => AppError::Unexpected { error: Cow::Owned(e.to_string()) },
+				None => AppError::Unexpected { error: e.to_string().into() },
 			});
 		}
 	}

@@ -24,7 +24,7 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<Json<Network>> {
+) -> ServerResult<'static, Json<Network>> {
 	let chain_id = payload.chain_id.unwrap_or_default();
 	let rps = payload.rps.unwrap_or(100);
 
@@ -33,20 +33,20 @@ pub async fn handler(
 		if !is_valid_id(&id, IdPrefix::Network) ||
 			Network::get_by_id(app.db(), &id).await?.is_some()
 		{
-			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+			return Err(ServerError::InvalidParam { field: "id".into(), value: id.into() });
 		}
 	}
 
 	// check name for soft-deleted matches
 	if Network::get_by_name(app.db(), &payload.name, Some(true)).await?.is_some() {
 		return Err(ServerError::TooEarly {
-			reason: format!("network hasn't been deleted yet: {}", payload.name),
+			reason: format!("network hasn't been deleted yet: {}", payload.name).into(),
 		});
 	}
 
 	// check name for any duplicate
 	if Network::get_by_name(app.db(), &payload.name, None).await?.is_some() {
-		return Err(ServerError::Duplicate { field: "name".to_string(), value: payload.name });
+		return Err(ServerError::Duplicate { field: "name".into(), value: payload.name.into() });
 	}
 
 	// check for duplicate chain id
@@ -60,8 +60,8 @@ pub async fn handler(
 	.is_some()
 	{
 		return Err(ServerError::Duplicate {
-			field: "chainId".to_string(),
-			value: chain_id.to_string(),
+			field: "chainId".into(),
+			value: chain_id.to_string().into(),
 		});
 	}
 
@@ -72,7 +72,7 @@ pub async fn handler(
 		Architecture::Evm => Box::new(Evm::new(n)),
 	};
 	if !boxed_chain.connect().await? {
-		return Err(ServerError::InvalidService { name: boxed_chain.get_network().name });
+		return Err(ServerError::InvalidService { name: boxed_chain.get_network().name.into() });
 	}
 
 	// create new

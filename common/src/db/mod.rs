@@ -7,7 +7,7 @@ use sea_orm::{
 	Statement, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, str::FromStr, sync::Arc, time::Duration};
+use std::{str::FromStr, sync::Arc, time::Duration};
 use tracing::info;
 
 use crate::{utils, AppError, Settings};
@@ -83,13 +83,13 @@ impl Db {
 			Database::connect(with_options(url_without_database.clone())).await.map_err(|_| {
 				if has_credentials {
 					AppError::ConnectionWithCredentials {
-						service: Cow::Owned(settings.database_driver.to_string()),
-						url: Cow::Owned(url_without_credentials.to_string()),
+						service: settings.database_driver.to_string().into(),
+						url: url_without_credentials.to_string().into(),
 					}
 				} else {
 					AppError::Connection {
-						service: Cow::Owned(settings.database_driver.to_string()),
-						url: Cow::Owned(url.to_string()),
+						service: settings.database_driver.to_string().into(),
+						url: url.to_string().into(),
 					}
 				}
 			})?;
@@ -101,13 +101,11 @@ impl Db {
 					format!("CREATE DATABASE IF NOT EXISTS `{db_name}`;"),
 				))
 				.await
-				.map_err(|_| AppError::Database {
-					error: Cow::Borrowed("could not create database"),
-				})?;
+				.map_err(|_| AppError::Database { error: "could not create database".into() })?;
 
 				Database::connect(with_options(url_with_database.clone()))
 					.await
-					.map_err(|_| AppError::Database { error: Cow::Borrowed("could not connect") })?
+					.map_err(|_| AppError::Database { error: "could not connect".into() })?
 			}
 			DbBackend::Postgres => {
 				let result = conn
@@ -119,7 +117,7 @@ impl Db {
 					))
 					.await
 					.map_err(|_| AppError::Database {
-						error: Cow::Borrowed("could not confirm database creation"),
+						error: "could not confirm database creation".into(),
 					})?;
 
 				if result.rows_affected() == 0 {
@@ -129,13 +127,13 @@ impl Db {
 					))
 					.await
 					.map_err(|_| AppError::Database {
-						error: Cow::Borrowed("could not create database"),
+						error: "could not create database".into(),
 					})?;
 				}
 
 				Database::connect(with_options(url_with_database.clone()))
 					.await
-					.map_err(|_| AppError::Database { error: Cow::Borrowed("could not connect") })?
+					.map_err(|_| AppError::Database { error: "could not connect".into() })?
 			}
 			DbBackend::Sqlite => conn,
 		};

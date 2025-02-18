@@ -29,21 +29,24 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(entity_id): Path<String>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<StatusCode> {
+) -> ServerResult<'static, StatusCode> {
 	if let Some(entity) = Entity::get_existing_by_id(app.db(), &entity_id).await? {
 		// check name
 		if let Some(Some(name)) = payload.name.clone() {
 			// check for soft-deleted matches
 			if Entity::get_by_name(app.db(), &name, Some(true)).await?.is_some() {
 				return Err(ServerError::TooEarly {
-					reason: format!("entity hasn't been deleted yet: {name}"),
+					reason: format!("entity hasn't been deleted yet: {name}").into(),
 				});
 			}
 
 			// check for any duplicate
 			if let Some(other_entity) = Entity::get_by_name(app.db(), &name, None).await? {
 				if other_entity.id != entity.id {
-					return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
+					return Err(ServerError::Duplicate {
+						field: "name".into(),
+						value: name.into(),
+					});
 				}
 			}
 		}
@@ -63,8 +66,8 @@ pub async fn handler(
 			)?;
 			if tag_ids.len() != tags.len() {
 				return Err(ServerError::InvalidValues {
-					field: "tags".to_string(),
-					values: tags.join(", "),
+					field: "tags".into(),
+					values: tags.join(", ").into(),
 				});
 			}
 		}

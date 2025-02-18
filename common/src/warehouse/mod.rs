@@ -3,7 +3,7 @@ use console::style;
 use derive_more::Display;
 use eyre::{eyre, Result};
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, sync::Arc};
+use std::sync::Arc;
 use tracing::info;
 
 use crate::{
@@ -42,17 +42,18 @@ pub struct Warehouse {
 
 impl Warehouse {
 	pub async fn new(settings: Arc<Settings>) -> Result<Self, AppError<'static>> {
-		let driver: Box<dyn DriverTrait> =
-			match settings.warehouse_driver {
-				Driver::DuckDB => Box::new(DuckDB::new(settings.clone()).await.map_err(|_| {
-					AppError::Warehouse { error: Cow::Borrowed("could not connect") }
-				})?),
-				Driver::ClickHouse => {
-					Box::new(ClickHouse::new(settings.clone()).await.map_err(|_| {
-						AppError::Warehouse { error: Cow::Borrowed("could not connect") }
-					})?)
-				}
-			};
+		let driver: Box<dyn DriverTrait> = match settings.warehouse_driver {
+			Driver::DuckDB => Box::new(
+				DuckDB::new(settings.clone())
+					.await
+					.map_err(|_| AppError::Warehouse { error: "could not connect".into() })?,
+			),
+			Driver::ClickHouse => Box::new(
+				ClickHouse::new(settings.clone())
+					.await
+					.map_err(|_| AppError::Warehouse { error: "could not connect".into() })?,
+			),
+		};
 
 		let log_message = settings
 			.warehouse_path

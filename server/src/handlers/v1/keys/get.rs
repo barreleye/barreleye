@@ -20,7 +20,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(api_key_id): Path<String>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	ApiKey::get_by_id(app.db(), &api_key_id)
 		.await?
 		.map(|key| Response { key: key.format() }.into())

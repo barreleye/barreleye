@@ -21,7 +21,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(address_id): Path<String>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	if let Some(address) = Address::get_existing_by_id(app.db(), &address_id).await? {
 		let networks =
 			Network::get_all_by_network_ids(app.db(), address.network_id.into(), Some(false))

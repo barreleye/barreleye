@@ -23,21 +23,21 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<Json<Token>> {
+) -> ServerResult<'static, Json<Token>> {
 	let address = payload.address.unwrap_or_default();
 
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
 		if !is_valid_id(&id, IdPrefix::Token) || Token::get_by_id(app.db(), &id).await?.is_some() {
-			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+			return Err(ServerError::InvalidParam { field: "id".into(), value: id.into() });
 		}
 	}
 
 	// fetch network
 	let network =
 		Network::get_by_id(app.db(), &payload.network).await?.ok_or(ServerError::InvalidParam {
-			field: "network".to_string(),
-			value: payload.network,
+			field: "network".into(),
+			value: payload.network.into(),
 		})?;
 
 	// check for duplicate network + address
@@ -50,7 +50,7 @@ pub async fn handler(
 	.await?
 	.is_empty()
 	{
-		return Err(ServerError::Duplicate { field: "address".to_string(), value: address });
+		return Err(ServerError::Duplicate { field: "address".into(), value: address.into() });
 	}
 
 	// create new

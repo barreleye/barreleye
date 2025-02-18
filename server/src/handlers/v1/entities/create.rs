@@ -22,12 +22,12 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<Json<Entity>> {
+) -> ServerResult<'static, Json<Entity>> {
 	// check that id is valid
 	if let Some(id) = payload.id.clone() {
 		if !is_valid_id(&id, IdPrefix::Entity) || Entity::get_by_id(app.db(), &id).await?.is_some()
 		{
-			return Err(ServerError::InvalidParam { field: "id".to_string(), value: id });
+			return Err(ServerError::InvalidParam { field: "id".into(), value: id.into() });
 		}
 	}
 
@@ -36,13 +36,13 @@ pub async fn handler(
 		// check for soft-deleted matches
 		if Entity::get_by_name(app.db(), &name, Some(true)).await?.is_some() {
 			return Err(ServerError::TooEarly {
-				reason: format!("entity hasn't been deleted yet: {name}"),
+				reason: format!("entity hasn't been deleted yet: {name}").into(),
 			});
 		}
 
 		// check for any duplicate
 		if Entity::get_by_name(app.db(), &name, None).await?.is_some() {
-			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
+			return Err(ServerError::Duplicate { field: "name".into(), value: name.into() });
 		}
 	}
 
@@ -61,8 +61,8 @@ pub async fn handler(
 		)?;
 		if tag_ids.len() != tags.len() {
 			return Err(ServerError::InvalidValues {
-				field: "tags".to_string(),
-				values: tags.join(", "),
+				field: "tags".into(),
+				values: tags.join(", ").into(),
 			});
 		}
 	}

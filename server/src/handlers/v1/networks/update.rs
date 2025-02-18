@@ -30,7 +30,7 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(network_id): Path<String>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<StatusCode> {
+) -> ServerResult<'static, StatusCode> {
 	let network =
 		Network::get_existing_by_id(app.db(), &network_id).await?.ok_or(ServerError::NotFound)?;
 
@@ -39,7 +39,7 @@ pub async fn handler(
 		// check for soft-deleted matches
 		if Network::get_by_name(app.db(), &name, Some(true)).await?.is_some() {
 			return Err(ServerError::TooEarly {
-				reason: format!("network hasn't been deleted yet: {name}"),
+				reason: format!("network hasn't been deleted yet: {name}").into(),
 			});
 		}
 
@@ -47,7 +47,7 @@ pub async fn handler(
 		if network_id != network.id &&
 			network.name.trim().to_lowercase() == name.trim().to_lowercase()
 		{
-			return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
+			return Err(ServerError::Duplicate { field: "name".into(), value: name.into() });
 		}
 	}
 
@@ -63,8 +63,8 @@ pub async fn handler(
 		.is_some()
 		{
 			return Err(ServerError::Duplicate {
-				field: "chainId".to_string(),
-				value: chain_id.to_string(),
+				field: "chainId".into(),
+				value: chain_id.to_string().into(),
 			});
 		}
 	}

@@ -18,7 +18,7 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<StatusCode> {
+) -> ServerResult<'static, StatusCode> {
 	// exit if no input
 	if payload.addresses.is_empty() {
 		return Ok(StatusCode::NO_CONTENT);

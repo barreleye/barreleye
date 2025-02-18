@@ -28,7 +28,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Query(payload): Query<Payload>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	let mut tags = Tag::get_all_paginated(app.db(), payload.offset, payload.limit).await?;
 
 	let (tags_map, entities, addresses, networks) =

@@ -29,8 +29,8 @@ pub fn extract_primary_ids(
 
 		if !invalid_ids.is_empty() {
 			return Err(ServerError::InvalidValues {
-				field: field.to_string(),
-				values: invalid_ids.join(", "),
+				field: field.to_string().into(),
+				values: invalid_ids.join(", ").into(),
 			});
 		}
 

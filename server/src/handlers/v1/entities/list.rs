@@ -34,7 +34,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Query(payload): Query<Payload>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	let mut entities = Entity::get_all_paginated_where(
 		app.db(),
 		EntityColumn::IsDeleted.eq(false),

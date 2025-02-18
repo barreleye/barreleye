@@ -26,7 +26,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Query(payload): Query<Payload>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	let networks = Network::get_all_paginated_where(
 		app.db(),
 		NetworkColumn::IsDeleted.eq(false),

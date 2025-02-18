@@ -27,7 +27,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(entity_id): Path<String>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	if let Some(mut entity) = Entity::get_existing_by_id(app.db(), &entity_id).await? {
 		let (tags_data, addresses_data) = tokio::join!(
 			get_tags_data(app.clone(), entity.entity_id.into()),

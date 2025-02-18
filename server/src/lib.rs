@@ -8,7 +8,7 @@ use axum::{
 };
 use eyre::{Report, Result};
 use signal::unix::SignalKind;
-use std::{borrow::Cow, net::SocketAddr, sync::Arc, time::Duration};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, signal};
 use tower::ServiceBuilder;
 use tower_http::{trace, trace::TraceLayer, LatencyUnit};
@@ -21,7 +21,7 @@ mod errors;
 mod handlers;
 mod utils;
 
-pub type ServerResult<T> = Result<T, ServerError>;
+pub type ServerResult<'a, T> = Result<T, ServerError<'a>>;
 
 pub struct Server {
 	app: Arc<App>,
@@ -32,7 +32,11 @@ impl Server {
 		Self { app }
 	}
 
-	async fn auth(State(app): State<Arc<App>>, req: Request, next: Next) -> ServerResult<Response> {
+	async fn auth(
+		State(app): State<Arc<App>>,
+		req: Request,
+		next: Next,
+	) -> ServerResult<'static, Response> {
 		if ApiKey::count(app.db()).await? == 0 {
 			return Ok(next.run(req).await);
 		}
@@ -74,7 +78,7 @@ impl Server {
 	pub async fn start(&self) -> Result<()> {
 		let settings = self.app.settings.clone();
 
-		async fn handle_404() -> ServerResult<StatusCode> {
+		async fn handle_404() -> ServerResult<'static, StatusCode> {
 			Err(ServerError::NotFound)
 		}
 
@@ -82,7 +86,7 @@ impl Server {
 			method: Method,
 			uri: Uri,
 			_err: BoxError,
-		) -> ServerResult<StatusCode> {
+		) -> ServerResult<'static, StatusCode> {
 			Err(ServerError::Internal { error: Report::msg(format!("`{method} {uri}` timed out")) })
 		}
 
@@ -127,7 +131,7 @@ impl Server {
 
 						if *port == *ports_to_try.last().unwrap() {
 							quit(AppError::ServerStartup {
-								error: Cow::Borrowed("ran out of ports to try"),
+								error: "ran out of ports to try".into(),
 							});
 						}
 					}

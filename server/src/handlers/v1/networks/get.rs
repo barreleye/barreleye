@@ -20,7 +20,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(network_id): Path<String>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	Network::get_existing_by_id(app.db(), &network_id)
 		.await?
 		.map(|mut n| {

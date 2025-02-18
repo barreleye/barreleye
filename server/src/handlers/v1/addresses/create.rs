@@ -31,26 +31,26 @@ pub struct Payload {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<Json<Vec<Address>>> {
+) -> ServerResult<'static, Json<Vec<Address>>> {
 	// fetch entity
-	let entity = Entity::get_existing_by_id(app.db(), &payload.entity)
-		.await?
-		.ok_or(ServerError::InvalidParam { field: "entity".to_string(), value: payload.entity })?;
+	let entity = Entity::get_existing_by_id(app.db(), &payload.entity).await?.ok_or(
+		ServerError::InvalidParam { field: "entity".into(), value: payload.entity.into() },
+	)?;
 
 	// ensure addresses are unique
 	let unique_addresses: HashSet<String> =
 		HashSet::from_iter(payload.addresses.iter().map(|a| a.address.clone()));
 	if unique_addresses.len() < payload.addresses.len() {
 		return Err(ServerError::BadRequest {
-			reason: "request contains duplicate addresses".to_string(),
+			reason: "request contains duplicate addresses".into(),
 		});
 	}
 
 	// get network
 	let network =
 		Network::get_by_id(app.db(), &payload.network).await?.ok_or(ServerError::InvalidParam {
-			field: "network".to_string(),
-			value: payload.network,
+			field: "network".into(),
+			value: payload.network.into(),
 		})?;
 
 	// check for soft-deleted address conflicts
@@ -67,7 +67,8 @@ pub async fn handler(
 			reason: format!(
 				"addresses haven't been deleted yet: {}",
 				addresses.into_iter().map(|a| a.address).collect::<Vec<String>>().join(", ")
-			),
+			)
+			.into(),
 		});
 	}
 
@@ -82,8 +83,13 @@ pub async fn handler(
 	.await?;
 	if !addresses.is_empty() {
 		return Err(ServerError::Duplicates {
-			field: "addresses".to_string(),
-			values: addresses.into_iter().map(|a| a.address).collect::<Vec<String>>().join(", "),
+			field: "addresses".into(),
+			values: addresses
+				.into_iter()
+				.map(|a| a.address)
+				.collect::<Vec<String>>()
+				.join(", ")
+				.into(),
 		});
 	}
 

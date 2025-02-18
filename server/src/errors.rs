@@ -7,41 +7,36 @@ use derive_more::{Display, Error};
 use eyre::{ErrReport, Report};
 use sea_orm::DbErr;
 use serde_json::json;
+use std::borrow::Cow;
 
 #[derive(Debug, Display, Error)]
-pub enum ServerError {
+pub enum ServerError<'a> {
 	#[display("unauthorized")]
 	Unauthorized,
 
-	#[display("validation error @ `{field}`")]
-	Validation { field: String },
+	#[display("invalid parameter for `{field}`: {value}")]
+	InvalidParam { field: Cow<'a, str>, value: Cow<'a, str> },
 
-	#[display("invalid parameter @ `{field}`: {value}")]
-	InvalidParam { field: String, value: String },
-
-	#[display("invalid value(s) @ parameter `{field}`: {values}")]
-	InvalidValues { field: String, values: String },
-
-	#[display("exceeded limit @ parameter `{field}`: {limit}")]
-	ExceededLimit { field: String, limit: usize },
+	#[display("invalid value(s) for `{field}`: {values}")]
+	InvalidValues { field: Cow<'a, str>, values: Cow<'a, str> },
 
 	#[display("missing input params")]
 	MissingInputParams,
 
 	#[display("could not connect to `{name}`")]
-	InvalidService { name: String },
+	InvalidService { name: Cow<'a, str> },
 
-	#[display("duplicate found @ `{field}`: {value}")]
-	Duplicate { field: String, value: String },
+	#[display("duplicate found at `{field}`: {value}")]
+	Duplicate { field: Cow<'a, str>, value: Cow<'a, str> },
 
-	#[display("duplicates found @ `{field}`: {values}")]
-	Duplicates { field: String, values: String },
+	#[display("duplicates found at `{field}`: {values}")]
+	Duplicates { field: Cow<'a, str>, values: Cow<'a, str> },
 
 	#[display("bad request: {reason}")]
-	BadRequest { reason: String },
+	BadRequest { reason: Cow<'a, str> },
 
 	#[display("too early: {reason}")]
-	TooEarly { reason: String },
+	TooEarly { reason: Cow<'a, str> },
 
 	#[display("not found")]
 	NotFound,
@@ -50,7 +45,7 @@ pub enum ServerError {
 	Internal { error: Report },
 }
 
-impl IntoResponse for ServerError {
+impl IntoResponse for ServerError<'static> {
 	fn into_response(self) -> Response {
 		let http_code = match self {
 			ServerError::NotFound => StatusCode::NOT_FOUND,
@@ -68,20 +63,20 @@ impl IntoResponse for ServerError {
 	}
 }
 
-impl From<DbErr> for ServerError {
-	fn from(e: DbErr) -> ServerError {
+impl From<DbErr> for ServerError<'static> {
+	fn from(e: DbErr) -> ServerError<'static> {
 		ServerError::Internal { error: Report::new(e) }
 	}
 }
 
-impl From<ErrReport> for ServerError {
-	fn from(e: ErrReport) -> ServerError {
+impl From<ErrReport> for ServerError<'static> {
+	fn from(e: ErrReport) -> ServerError<'static> {
 		ServerError::Internal { error: e }
 	}
 }
 
-impl From<serde_json::Error> for ServerError {
-	fn from(e: serde_json::Error) -> ServerError {
+impl From<serde_json::Error> for ServerError<'static> {
+	fn from(e: serde_json::Error) -> ServerError<'static> {
 		ServerError::Internal { error: Report::new(e) }
 	}
 }

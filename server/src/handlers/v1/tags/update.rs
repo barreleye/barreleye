@@ -24,13 +24,16 @@ pub async fn handler(
 	State(app): State<Arc<App>>,
 	Path(tag_id): Path<String>,
 	Json(payload): Json<Payload>,
-) -> ServerResult<StatusCode> {
+) -> ServerResult<'static, StatusCode> {
 	if let Some(tag) = Tag::get_by_id(app.db(), &tag_id).await? {
 		// check for duplicate name
 		if let Some(name) = payload.name.clone() {
 			if let Some(other_tag) = Tag::get_by_name(app.db(), &name).await? {
 				if other_tag.id != tag.id {
-					return Err(ServerError::Duplicate { field: "name".to_string(), value: name });
+					return Err(ServerError::Duplicate {
+						field: "name".into(),
+						value: name.into(),
+					});
 				}
 			}
 		}

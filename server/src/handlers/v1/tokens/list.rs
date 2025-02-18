@@ -26,7 +26,7 @@ pub struct Response {
 pub async fn handler(
 	State(app): State<Arc<App>>,
 	Query(payload): Query<Payload>,
-) -> ServerResult<Json<Response>> {
+) -> ServerResult<'static, Json<Response>> {
 	let tokens = Token::get_all_paginated(app.db(), payload.offset, payload.limit).await?;
 
 	let network_ids = tokens.iter().map(|t| t.network_id).collect::<Vec<PrimaryId>>();
