@@ -237,7 +237,7 @@ impl Settings {
 				// check if "database_name" is set in the path
 				let database_name = database_parsed_uri
 					.path_segments()
-					.and_then(|segments| segments.last())
+					.and_then(|mut segments| segments.next_back())
 					.filter(|name| !name.is_empty());
 
 				if database_name.is_none() {
@@ -274,7 +274,7 @@ impl Settings {
 		} else if let Ok(parsed_url) = Url::parse(&settings.storage) {
 			// ensure the URL has a bucket name
 			let has_bucket_name =
-				parsed_url.path_segments().and_then(|segments| segments.last()).is_some();
+				parsed_url.path_segments().and_then(|mut segments| segments.next_back()).is_some();
 
 			if !has_bucket_name {
 				return Err(AppError::Config {
